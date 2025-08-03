@@ -1,12 +1,12 @@
 package me.nanova.summaryexpressive.vm
 
-import android.app.Application
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,95 +17,88 @@ import kotlinx.coroutines.withContext
 import me.nanova.summaryexpressive.UserPreferencesRepository
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.LLMHandler
-import me.nanova.summaryexpressive.llm.Prompts
-import me.nanova.summaryexpressive.llm.YouTube
+import me.nanova.summaryexpressive.llm.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryException
 import me.nanova.summaryexpressive.model.SummaryResult
 import me.nanova.summaryexpressive.model.TextSummary
-import me.nanova.summaryexpressive.util.extractTextFromArticleUrl
 import java.net.URL
-import java.util.Locale
 import java.util.UUID
+import javax.inject.Inject
 
 sealed class SummarySource {
-    data class Document(val filename: String?, val content: String) : SummarySource()
+    data class Document(val filename: String?, val uri: String) : SummarySource()
     data class Article(val url: String) : SummarySource()
     data class Video(val url: String) : SummarySource()
     data class Text(val content: String) : SummarySource()
     data object None : SummarySource()
-
-    val contentType: Prompts.ContentType?
-        get() = when (this) {
-            is Article -> Prompts.ContentType.ARTICLE
-            is Document -> Prompts.ContentType.DOCUMENT
-            is Text -> Prompts.ContentType.TEXT
-            is Video -> Prompts.ContentType.VIDEO_TRANSCRIPT
-            is None -> null
-        }
 }
 
-class SummaryViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class SummaryViewModel @Inject constructor(
+    private val llmHandler: LLMHandler,
+    private val userPreferencesRepository: UserPreferencesRepository,
+) : ViewModel() {
     val textSummaries = mutableStateListOf<TextSummary>()
 
     // Original Language in summary
     private val _useOriginalLanguage = MutableStateFlow(true)
     val useOriginalLanguage: StateFlow<Boolean> = _useOriginalLanguage.asStateFlow()
     fun setUseOriginalLanguageValue(newValue: Boolean) =
-        savePreference(UserPreferencesRepository::setUseOriginalLanguage, newValue)
+        savePreference(userPreferencesRepository::setUseOriginalLanguage, newValue)
 
     // Multiline URL-Field
     private val _multiLine = MutableStateFlow(true)
     val multiLine: StateFlow<Boolean> = _multiLine.asStateFlow()
     fun setMultiLineValue(newValue: Boolean) =
-        savePreference(UserPreferencesRepository::setMultiLine, newValue)
+        savePreference(userPreferencesRepository::setMultiLine, newValue)
 
     // UltraDark - Mode
     private val _ultraDark = MutableStateFlow(false)
     val ultraDark: StateFlow<Boolean> = _ultraDark.asStateFlow()
     fun setUltraDarkValue(newValue: Boolean) =
-        savePreference(UserPreferencesRepository::setUltraDark, newValue)
+        savePreference(userPreferencesRepository::setUltraDark, newValue)
 
     // DesignNumber for Dark, Light or System
     private val _designNumber = MutableStateFlow(0)
     val designNumber: StateFlow<Int> = _designNumber.asStateFlow()
     fun setDesignNumber(newValue: Int) =
-        savePreference(UserPreferencesRepository::setDesignNumber, newValue)
+        savePreference(userPreferencesRepository::setDesignNumber, newValue)
 
     // API Key
     private val _apiKey = MutableStateFlow("")
     val apiKey: StateFlow<String> = _apiKey.asStateFlow()
     fun setApiKeyValue(newValue: String) =
-        savePreference(UserPreferencesRepository::setApiKey, newValue)
+        savePreference(userPreferencesRepository::setApiKey, newValue)
 
     // API base url
     private val _baseUrl = MutableStateFlow("")
     val baseUrl: StateFlow<String> = _baseUrl.asStateFlow()
     fun setBaseUrlValue(newValue: String) =
-        savePreference(UserPreferencesRepository::setBaseUrl, newValue)
+        savePreference(userPreferencesRepository::setBaseUrl, newValue)
 
     // AI-Model
     private val _model = MutableStateFlow(AIProvider.OPENAI)
     val model: StateFlow<AIProvider> = _model.asStateFlow()
     fun setModelValue(newValue: String) =
-        savePreference(UserPreferencesRepository::setModel, newValue)
+        savePreference(userPreferencesRepository::setModel, newValue)
 
     // OnboardingScreen
     private val _showOnboardingScreen = MutableStateFlow(false)
     val showOnboardingScreen: StateFlow<Boolean> = _showOnboardingScreen.asStateFlow()
     fun setShowOnboardingScreenValue(newValue: Boolean) =
-        savePreference(UserPreferencesRepository::setShowOnboarding, newValue)
+        savePreference(userPreferencesRepository::setShowOnboarding, newValue)
 
     // Show length
     private val _showLength = MutableStateFlow(true)
     val showLength: StateFlow<Boolean> = _showLength.asStateFlow()
     fun setShowLengthValue(newValue: Boolean) =
-        savePreference(UserPreferencesRepository::setShowLength, newValue)
+        savePreference(userPreferencesRepository::setShowLength, newValue)
 
-    // Length number
-    private val _lengthNumber = MutableStateFlow(0)
-    val lengthNumber: StateFlow<Int> = _lengthNumber.asStateFlow()
-    fun setShowLengthNumberValue(newValue: Int) =
-        savePreference(UserPreferencesRepository::setShowLengthNumber, newValue)
+    // Summary Length
+    private val _summaryLength = MutableStateFlow(SummaryLength.MEDIUM)
+    val summaryLength: StateFlow<SummaryLength> = _summaryLength.asStateFlow()
+    fun setSummaryLength(newValue: SummaryLength) =
+        savePreference(userPreferencesRepository::setSummaryLength, newValue.name)
 
     init {
         loadSummaries()
@@ -114,7 +107,7 @@ class SummaryViewModel(application: Application) : AndroidViewModel(application)
 
     private fun loadSummaries() {
         viewModelScope.launch {
-            UserPreferencesRepository.getTextSummaries(getApplication()).collect { summariesJson ->
+            userPreferencesRepository.getTextSummaries().collect { summariesJson ->
                 val type = object : TypeToken<List<TextSummary>>() {}.type
                 val summaries =
                     kotlin.runCatching { Gson().fromJson<List<TextSummary>>(summariesJson, type) }
@@ -126,20 +119,19 @@ class SummaryViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun loadPreferences() {
-        UserPreferencesRepository.getUseOriginalLanguage(getApplication())
-            .collectInto(_useOriginalLanguage)
-        UserPreferencesRepository.getMultiLine(getApplication()).collectInto(_multiLine)
-        UserPreferencesRepository.getUltraDark(getApplication()).collectInto(_ultraDark)
-        UserPreferencesRepository.getDesignNumber(getApplication()).collectInto(_designNumber)
-        UserPreferencesRepository.getApiKey(getApplication()).collectInto(_apiKey)
-        UserPreferencesRepository.getBaseUrl(getApplication()).collectInto(_baseUrl)
-        UserPreferencesRepository.getModel(getApplication())
+        userPreferencesRepository.getUseOriginalLanguage().collectInto(_useOriginalLanguage)
+        userPreferencesRepository.getMultiLine().collectInto(_multiLine)
+        userPreferencesRepository.getUltraDark().collectInto(_ultraDark)
+        userPreferencesRepository.getDesignNumber().collectInto(_designNumber)
+        userPreferencesRepository.getApiKey().collectInto(_apiKey)
+        userPreferencesRepository.getBaseUrl().collectInto(_baseUrl)
+        userPreferencesRepository.getModel()
             .collectInto(_model) { AIProvider.valueOf(it) }
-        UserPreferencesRepository.getShowOnboarding(getApplication())
+        userPreferencesRepository.getShowOnboarding()
             .collectInto(_showOnboardingScreen)
-        UserPreferencesRepository.getShowLength(getApplication()).collectInto(_showLength)
-        UserPreferencesRepository.getShowLengthNumber(getApplication())
-            .collectInto(_lengthNumber)
+        userPreferencesRepository.getShowLength().collectInto(_showLength)
+        userPreferencesRepository.getSummaryLength()
+            .collectInto(_summaryLength) { SummaryLength.valueOf(it) }
     }
 
     fun addTextSummary(title: String?, author: String?, text: String?, youtubeLink: Boolean) {
@@ -159,7 +151,7 @@ class SummaryViewModel(application: Application) : AndroidViewModel(application)
     private fun saveTextSummaries() {
         viewModelScope.launch {
             val textSummariesJson = Gson().toJson(textSummaries)
-            UserPreferencesRepository.setTextSummaries(getApplication(), textSummariesJson)
+            userPreferencesRepository.setTextSummaries(textSummariesJson)
         }
     }
 
@@ -211,319 +203,96 @@ class SummaryViewModel(application: Application) : AndroidViewModel(application)
             _currentSummaryResult.value = null
             _error.value = null
             try {
-                _currentSummaryResult.value = summarizeInternal(source)
+                if (apiKey.value.isEmpty()) {
+                    throw SummaryException.NoKeyException
+                }
+
+                val inputString = prepareSummarizationInput(source)
+
+                val agent = llmHandler.createSummarizationAgent(
+                    provider = model.value,
+                    apiKey = apiKey.value,
+                    baseUrl = if (model.value == AIProvider.OPENAI) baseUrl.value else null,
+                    modelName = null, // TODO: user custom model selection
+                    summaryLength = summaryLength.value
+                )
+
+                val summary = withContext(Dispatchers.IO) {
+                    agent.run(inputString)
+                }
+
+                if (summary.startsWith("Error:")) {
+                    if (summary.contains(
+                            "API key",
+                            ignoreCase = true
+                        )
+                    ) throw SummaryException.IncorrectKeyException
+                    if (summary.contains(
+                            "rate limit",
+                            ignoreCase = true
+                        )
+                    ) throw SummaryException.RateLimitException
+                    throw SummaryException.UnknownException(summary)
+                }
+
+                val result = createSummaryResult(source, summary)
+                _currentSummaryResult.value = result
+                addTextSummary(result.title, result.author, result.summary, result.isYoutubeLink)
+
             } catch (e: Exception) {
-                Log.e("SummaryViewModel", "Failed to summerize", e)
-                _error.value = e
+                Log.e("SummaryViewModel", "Failed to summarize", e)
+                _error.value =
+                    if (e is SummaryException) e else SummaryException.UnknownException(
+                        e.message ?: "An unknown error occurred."
+                    )
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    private suspend fun summarizeInternal(source: SummarySource): SummaryResult {
-        // API key is required for all LLM calls, regardless of input type
-        if (apiKey.value.isEmpty()) {
-            throw SummaryException.NoKeyException
-        }
-
-        if (source is SummarySource.None) {
-            throw SummaryException.NoContentException // Or a more specific "unsupported type"
-        }
-
-        val content = when (source) {
+    private fun prepareSummarizationInput(source: SummarySource): String {
+        val inputString = when (source) {
             is SummarySource.Article -> source.url
-            is SummarySource.Document -> source.content
+            is SummarySource.Document -> source.uri
             is SummarySource.Text -> source.content
             is SummarySource.Video -> source.url
-            is SummarySource.None -> throw SummaryException.NoContentException
+            is SummarySource.None -> ""
         }
 
-        if (content.isBlank()) {
+        if (inputString.isBlank()) {
             throw SummaryException.NoContentException
         }
 
         if (source is SummarySource.Article || source is SummarySource.Video) {
-            if (runCatching { URL(content).host }.getOrNull().isNullOrEmpty()) {
+            if (runCatching { URL(inputString).host }.getOrNull().isNullOrEmpty()) {
                 throw SummaryException.InvalidLinkException
             }
         }
-
-        return when (source) {
-            is SummarySource.Document -> summarizeDocument(source)
-            is SummarySource.Article -> summarizeArticle(source)
-            is SummarySource.Video -> summarizeYouTubeVideo(source)
-            is SummarySource.Text -> summarizeText(source)
-            is SummarySource.None -> throw SummaryException.NoContentException
-        }
+        return inputString
     }
 
-    private suspend fun summarizeYouTubeVideo(source: SummarySource.Video): SummaryResult {
-        try {
-            val videoId = YouTube.extractVideoId(source.url)
-                ?: throw SummaryException.InvalidLinkException
+    private fun createSummaryResult(source: SummarySource, summary: String): SummaryResult {
+        val isYoutube = source is SummarySource.Video
+        val title = when (source) {
+            is SummarySource.Article -> runCatching { URL(source.url).host }.getOrNull()
+                ?: "Article"
 
-            val detailsResult = YouTube.getVideoDetails(videoId)
-                ?: throw SummaryException.NoContentException // Or more specific
-
-            val (details, playerResponse) = detailsResult
-
-            val contentToSummarize: String
-            val systemPrompt: String
-
-            val currentLocale: Locale =
-                getApplication<Application>().resources.configuration.locales[0]
-            var languageName =
-                if (useOriginalLanguage.value) currentLocale.displayLanguage else "English"
-
-            when (model.value) {
-                AIProvider.GEMINI -> {
-                    contentToSummarize = source.url // Gemini uses URL for YouTube videos
-                    systemPrompt = Prompts.geminiPrompt(
-                        source.contentType!!,
-                        details.title,
-                        lengthNumber.value,
-                        languageName
-                    )
-                }
-
-                AIProvider.OPENAI, AIProvider.GROQ -> {
-                    val transcriptData = YouTube.getTranscript(videoId, playerResponse)
-                        ?: throw SummaryException.NoTranscriptException
-
-                    contentToSummarize = transcriptData.first // The transcript text
-                    val langCode = transcriptData.second
-                    languageName = if (useOriginalLanguage.value)
-                        Locale.forLanguageTag(langCode.split("-").first()).displayLanguage
-                    else "English"
-
-                    systemPrompt = when (model.value) {
-                        AIProvider.OPENAI -> Prompts.openAIPrompt(
-                            source.contentType!!,
-                            details.title,
-                            lengthNumber.value,
-                            languageName
-                        )
-
-                        AIProvider.GROQ -> Prompts.groqPrompt(
-                            source.contentType!!,
-                            details.title,
-                            lengthNumber.value,
-                            languageName
-                        )
-
-                        else -> "" // Should not happen
-                    }
-                }
-            }
-
-            if (systemPrompt.isBlank()) {
-                throw SummaryException.UnknownException("Error: Unsupported model for YouTube summary.")
-            }
-
-            return executeSummary(
-                contentToSummarize,
-                systemPrompt,
-                details.title,
-                details.author,
-                isYoutube = true
-            )
-
-        } catch (e: SummaryException) {
-            throw e // re-throw known exceptions
-        } catch (e: Exception) {
-            Log.e("SummaryViewModel", "Failed to summerize youtube", e)
-            throw SummaryException.UnknownException("Error: ${e.message}")
+            is SummarySource.Document -> source.filename ?: "Document"
+            is SummarySource.Text -> "Text"
+            is SummarySource.Video -> "YouTube Video"
+            is SummarySource.None -> ""
         }
+        val author = when (source) {
+            is SummarySource.Article -> "Web"
+            is SummarySource.Document -> "File"
+            is SummarySource.Text -> "User Input"
+            is SummarySource.Video -> "YouTube"
+            is SummarySource.None -> ""
+        }
+        return SummaryResult(title, author, summary.trim(), isYoutube)
     }
 
-    private suspend fun summarizeArticle(source: SummarySource.Article): SummaryResult =
-        withContext(Dispatchers.IO) {
-            try {
-                val article = extractTextFromArticleUrl(source.url)
-                val transcript = article.text
-                val title = article.title
-                val author = article.author
-
-                val language: String = if (useOriginalLanguage.value) {
-                    "the same language as the text"
-                } else {
-                    getApplication<Application>().resources.configuration.locales[0].getDisplayLanguage(
-                        Locale.ENGLISH
-                    )
-                }
-
-                val systemPrompt = when (model.value) {
-                    AIProvider.OPENAI -> Prompts.openAIPrompt(
-                        source.contentType!!,
-                        title,
-                        lengthNumber.value,
-                        language
-                    )
-
-                    AIProvider.GEMINI -> Prompts.geminiPrompt(
-                        source.contentType!!,
-                        title,
-                        lengthNumber.value,
-                        language
-                    )
-
-                    AIProvider.GROQ -> Prompts.groqPrompt(
-                        source.contentType!!,
-                        title,
-                        lengthNumber.value,
-                        language
-                    )
-                }
-
-                return@withContext executeSummary(
-                    transcript,
-                    systemPrompt,
-                    title,
-                    author,
-                    isYoutube = false
-                )
-
-            } catch (e: SummaryException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e("SummaryViewModel", "Failed to summerize article", e)
-                throw SummaryException.UnknownException("Error: ${e.message}")
-            }
-        }
-
-    private suspend fun summarizeDocument(source: SummarySource.Document): SummaryResult {
-        if (source.content.length < 100) {
-            throw SummaryException.TooShortException
-        }
-
-        val language: String = if (useOriginalLanguage.value) {
-            "the same language as the text"
-        } else {
-            getApplication<Application>().resources.configuration.locales[0].getDisplayLanguage(
-                Locale.ENGLISH
-            )
-        }
-
-        val systemPrompt = when (model.value) {
-            AIProvider.OPENAI -> Prompts.openAIPrompt(
-                source.contentType!!,
-                null,
-                lengthNumber.value,
-                language
-            )
-
-            AIProvider.GEMINI -> Prompts.geminiPrompt(
-                source.contentType!!,
-                null,
-                lengthNumber.value,
-                language
-            )
-
-            AIProvider.GROQ -> Prompts.groqPrompt(
-                source.contentType!!,
-                null,
-                lengthNumber.value,
-                language
-            )
-        }
-
-        return executeSummary(
-            source.content,
-            systemPrompt,
-            title = source.filename ?: "Document",
-            author = "Document",
-            isYoutube = false
-        )
-    }
-
-    private suspend fun summarizeText(source: SummarySource.Text): SummaryResult {
-        val language: String = if (useOriginalLanguage.value) {
-            "the same language as the text"
-        } else {
-            getApplication<Application>().resources.configuration.locales[0].getDisplayLanguage(
-                Locale.ENGLISH
-            )
-        }
-
-        val systemPrompt = when (model.value) {
-            AIProvider.OPENAI -> Prompts.openAIPrompt(
-                source.contentType!!,
-                null,
-                lengthNumber.value,
-                language
-            )
-
-            AIProvider.GEMINI -> Prompts.geminiPrompt(
-                source.contentType!!,
-                null,
-                lengthNumber.value,
-                language
-            )
-
-            AIProvider.GROQ -> Prompts.groqPrompt(
-                source.contentType!!,
-                null,
-                lengthNumber.value,
-                language
-            )
-        }
-
-        return executeSummary(
-            source.content,
-            systemPrompt,
-            title = null,
-            author = null,
-            isYoutube = false
-        )
-    }
-
-    private suspend fun llmSummarize(textToSummarize: String, systemPrompt: String): String =
-        withContext(Dispatchers.IO) {
-            val currentModel = model.value
-            val currentApiKey = apiKey.value
-            val currentBaseUrl = baseUrl.value
-
-            val summary = LLMHandler.generateContent(
-                provider = currentModel,
-                apiKey = currentApiKey,
-                instructions = systemPrompt,
-                text = textToSummarize,
-                baseUrl = if (currentModel == AIProvider.OPENAI) currentBaseUrl else null
-            )
-
-            if (summary.startsWith("Error:")) {
-                // The handlers already return a string starting with "Error: " on failure.
-                if (summary.contains(
-                        "API key not valid",
-                        ignoreCase = true
-                    ) || summary.contains("API key is invalid", ignoreCase = true)
-                ) {
-                    throw SummaryException.IncorrectKeyException
-                }
-                if (summary.contains("rate limit", ignoreCase = true)) {
-                    throw SummaryException.RateLimitException
-                }
-                // For other errors from LLMHandler, wrap them
-                throw SummaryException.UnknownException(summary)
-            }
-            return@withContext summary
-        }
-
-    private suspend fun executeSummary(
-        textToSummarize: String,
-        systemPrompt: String,
-        title: String?,
-        author: String?,
-        isYoutube: Boolean,
-    ): SummaryResult {
-        val summary = llmSummarize(textToSummarize, systemPrompt)
-        val resultSummary = summary.trim()
-
-        val result = SummaryResult(title, author, resultSummary, isYoutubeLink = isYoutube)
-        addTextSummary(result.title, result.author, result.summary, isYoutube)
-        return result
-    }
 
     // --- Preference Handling Helpers ---
     private fun <T, R> Flow<T>.collectInto(
@@ -538,9 +307,9 @@ class SummaryViewModel(application: Application) : AndroidViewModel(application)
     private fun <T> Flow<T>.collectInto(stateFlow: MutableStateFlow<T>) =
         collectInto(stateFlow) { it }
 
-    private fun <T> savePreference(setter: suspend (android.content.Context, T) -> Unit, value: T) {
+    private fun <T> savePreference(setter: suspend (T) -> Unit, value: T) {
         viewModelScope.launch {
-            setter(getApplication(), value)
+            setter(value)
         }
     }
 }

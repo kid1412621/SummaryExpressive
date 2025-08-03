@@ -1,13 +1,15 @@
-package me.nanova.summaryexpressive.llm
+package me.nanova.summaryexpressive.llm.tools
 
+import ai.koog.agents.core.tools.SimpleTool
+import ai.koog.agents.core.tools.ToolArgs
+import ai.koog.agents.core.tools.ToolDescriptor
+import ai.koog.agents.core.tools.ToolParameterDescriptor
+import ai.koog.agents.core.tools.ToolParameterType
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.android.Android
-import io.ktor.client.plugins.cookies.AcceptAllCookiesStorage
-import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
@@ -18,9 +20,55 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
 import java.util.regex.Pattern
 
-data class VideoDetails(val title: String, val author: String)
+@Serializable
+data class YouTubeTranscript(val url: String) : ToolArgs
+
+class YouTubeTranscriptTool(client: HttpClient) : SimpleTool<YouTubeTranscript>() {
+    private val youtubeExtractor = YouTubeExtractor(client)
+
+    override val argsSerializer = serializer<YouTubeTranscript>()
+    override val descriptor = ToolDescriptor(
+        name = "extract_transcript_from_youtube_url",
+        description = "Fetches the transcript for a given YouTube video URL.",
+        requiredParameters = listOf(
+            ToolParameterDescriptor(
+                name = "url",
+                description = "The full URL of the YouTube video.",
+                type = ToolParameterType.String
+            )
+        )
+    )
+
+    override suspend fun doExecute(args: YouTubeTranscript): String {
+        return try {
+            val videoId = YouTubeExtractor.extractVideoId(args.url)
+                ?: return "Error: Could not extract video ID from URL."
+            val detailsResult = youtubeExtractor.getVideoDetails(videoId)
+                ?: return "Error: Could not get video details."
+            val details = detailsResult.first
+            val playerResponse = detailsResult.second
+            val transcriptResult = youtubeExtractor.getTranscript(videoId, playerResponse)
+                ?: return "Error: Could not get transcript."
+            val transcript = transcriptResult.first
+            val lang = transcriptResult.second
+            "Title: ${details.title}\nAuthor: ${details.author}\nLanguage: $lang\n\n$transcript"
+        } catch (e: Exception) {
+            "Error getting YouTube transcript: ${e.message}"
+        }
+    }
+
+    companion object {
+        fun isYouTubeLink(input: String): Boolean {
+            return YouTubeExtractor.isYouTubeLink(input)
+        }
+    }
+}
+
+private data class VideoDetails(val title: String, val author: String)
 
 private data class CaptionTrack(
     val baseUrl: String,
@@ -31,25 +79,41 @@ private data class CaptionTrack(
     data class Name(val simpleText: String)
 }
 
+
 /**
  * ref: https://github.com/jdepoix/youtube-transcript-api/blob/d2a409d0ce7a7bd35fe6b911ac698038ebf599cc/youtube_transcript_api/_transcripts.py#L359
  */
-object YouTube {
-    private const val INNERTUBE_CONTEXT_JSON =
-        """{"client": {"clientName": "ANDROID", "clientVersion": "20.10.38"}}"""
+private class YouTubeExtractor(private val client: HttpClient) {
     private val gson = Gson()
-    private val client = HttpClient(Android) {
-        install(HttpCookies) {
-            storage = AcceptAllCookiesStorage()
-        }
-    }
 
-    fun extractVideoId(url: String): String? {
-        val pattern =
-            "(?<=watch\\?v=|/videos/|embed/|youtu.be/|/v/|/e/|watch\\?v%3D|watch\\?feature=player_embedded&v=|%2Fvideos%2F|embed%\u200C\u200B2F|youtu.be%2F|%2Fv%2F)[a-zA-Z0-9_-]+"
-        val compiledPattern = Pattern.compile(pattern)
-        val matcher = compiledPattern.matcher(url)
-        return if (matcher.find()) matcher.group() else null
+    companion object {
+        private const val INNERTUBE_CONTEXT_JSON =
+            """{"client": {"clientName": "ANDROID", "clientVersion": "20.10.38"}}"""
+
+        fun extractVideoId(url: String): String? {
+            val pattern =
+                "(?<=watch\\?v=|/videos/|embed/|youtu.be/|/v/|/e/|watch\\?v%3D|watch\\?feature=player_embedded&v=|%2Fvideos%2F|embed%\u200C\u200B2F|youtu.be%2F|%2Fv%2F)[a-zA-Z0-9_-]+"
+            val compiledPattern = Pattern.compile(pattern)
+            val matcher = compiledPattern.matcher(url)
+            return if (matcher.find()) matcher.group() else null
+        }
+
+        fun isYouTubeLink(input: String): Boolean {
+            try {
+                val urlString = if (!input.matches(Regex("^https?://.*"))) {
+                    "https://$input"
+                } else {
+                    input
+                }
+                val url = io.ktor.http.Url(urlString)
+                val host = url.host.lowercase()
+                // Valid hosts: youtu.be, youtube.com, or any subdomain of youtube.com (e.g., www.youtube.com, m.youtube.com)
+                return host == "youtu.be" || host == "youtube.com" || host.endsWith(".youtube.com")
+            } catch (e: Exception) {
+                Log.e("YouTube", "Exception in isYouTubeLink", e)
+                return false
+            }
+        }
     }
 
     private suspend fun getWatchPageHtml(videoId: String): String? = withContext(Dispatchers.IO) {
@@ -248,24 +312,6 @@ object YouTube {
         } catch (e: Exception) {
             Log.e("YouTube", "Failed to parse JSON transcript", e)
             ""
-        }
-    }
-
-    fun isYouTubeLink(input: String): Boolean {
-        try {
-            // Ktor's Url parser requires a scheme.
-            val urlString = if (!input.matches(Regex("^https?://.*"))) {
-                "https://$input"
-            } else {
-                input
-            }
-            val url = io.ktor.http.Url(urlString)
-            val host = url.host.lowercase()
-            // Valid hosts: youtu.be, youtube.com, or any subdomain of youtube.com (e.g., www.youtube.com, m.youtube.com)
-            return host == "youtu.be" || host == "youtube.com" || host.endsWith(".youtube.com")
-        } catch (e: Exception) {
-            // Malformed URL or other parsing errors
-            return false
         }
     }
 }

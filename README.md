@@ -47,8 +47,6 @@ There are 2 releases available:
 
 - History-Section
 
-- Intelligent paywall detection
-
 - OLED-Dark Mode
 
 - Easy to use and user-friendly.

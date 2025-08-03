@@ -6,7 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
@@ -86,14 +85,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.R
-import me.nanova.summaryexpressive.llm.YouTube.isYouTubeLink
+import me.nanova.summaryexpressive.llm.SummaryLength
+import me.nanova.summaryexpressive.llm.tools.YouTubeTranscriptTool.Companion.isYouTubeLink
+import me.nanova.summaryexpressive.llm.tools.getFileName
 import me.nanova.summaryexpressive.model.SummaryException
 import me.nanova.summaryexpressive.model.SummaryResult
 import me.nanova.summaryexpressive.ui.component.SummaryCard
-import me.nanova.summaryexpressive.util.extractTextFromDocx
-import me.nanova.summaryexpressive.util.extractTextFromImage
-import me.nanova.summaryexpressive.util.extractTextFromPdf
-import me.nanova.summaryexpressive.util.getFileName
 import me.nanova.summaryexpressive.vm.SummarySource
 import me.nanova.summaryexpressive.vm.SummaryViewModel
 
@@ -122,7 +119,6 @@ fun HomeScreen(
     initialUrl: String? = null,
     viewModel: SummaryViewModel = hiltViewModel(),
 ) {
-    var isExtracting by remember { mutableStateOf(false) } // For Loading-Animation
     var urlOrText by remember { mutableStateOf(initialUrl ?: "") }
     val scope = rememberCoroutineScope() // Coroutine scope for async calls
     val context = LocalContext.current
@@ -157,8 +153,7 @@ fun HomeScreen(
     }
     var singleLine by remember { mutableStateOf(false) }
     val showLength by viewModel.showLength.collectAsState()
-    val showLengthNumber by viewModel.lengthNumber.collectAsState()
-    var selectedIndex by remember { mutableIntStateOf(showLengthNumber) } // Summary length index
+    val summaryLength by viewModel.summaryLength.collectAsState()
     val multiLine by viewModel.multiLine.collectAsState()
 
     val result = remember { mutableStateOf<Uri?>(null) }
@@ -167,18 +162,10 @@ fun HomeScreen(
             result.value = uri
             if (uri == null) return@rememberLauncherForActivityResult
 
-            val mimeType = context.contentResolver.getType(uri)
             scope.launch {
                 viewModel.clearCurrentSummary()
-                isExtracting = true
                 documentFilename = getFileName(context, uri)
-                val extractedText = when (mimeType) {
-                    MimeTypes.PDF -> extractTextFromPdf(context, uri)
-                    MimeTypes.DOCX -> extractTextFromDocx(context, uri)
-                    else -> extractTextFromImage(context, uri)
-                }
-                urlOrText = extractedText
-                isExtracting = false
+                urlOrText = uri.toString()
             }
         }
 
@@ -212,7 +199,7 @@ fun HomeScreen(
                     }
                 },
                 onSummarize = { summarize() },
-                isExtracting = isExtracting,
+                isLoading = isLoading,
                 onShowSnackbar = { message ->
                     scope.launch {
                         snackbarHostState.showSnackbar(message)
@@ -242,10 +229,6 @@ fun HomeScreen(
                         urlOrText = urlOrText,
                         onUrlChange = { newText ->
                             urlOrText = newText
-                            // If user edits text that came from a document, treat it as plain text from now on
-                            if (documentFilename != null) {
-                                documentFilename = null
-                            }
                         },
                         onSummarize = { summarize() },
                         error = error,
@@ -256,7 +239,7 @@ fun HomeScreen(
                             launcher.launch(MimeTypes.allSupported)
                         },
                         inputSource = inputSource,
-                        isExtracting = isExtracting,
+                        isLoading = isLoading,
                         multiLine = multiLine,
                         singleLine = singleLine,
                         onSingleLineChange = { singleLine = it }
@@ -265,12 +248,10 @@ fun HomeScreen(
                     val currentResult = summaryResult
                     if (showLength) {
                         SummaryLengthSelector(
-                            selectedIndex = selectedIndex,
-                            onSelectedIndexChange = {
-                                selectedIndex = it
-                                viewModel.setShowLengthNumberValue(it)
-                            },
+                            selectedIndex = summaryLength.ordinal,
+                            onSelectedIndexChange = { viewModel.setSummaryLength(SummaryLength.entries[it]) },
                             options = options,
+                            enabled = !isLoading,
                         )
                     }
 
@@ -346,42 +327,31 @@ private fun InputSection(
     onClear: () -> Unit,
     focusRequester: FocusRequester,
     onLaunchFilePicker: () -> Unit,
-    isExtracting: Boolean,
+    isLoading: Boolean,
     multiLine: Boolean,
     singleLine: Boolean,
     onSingleLineChange: (Boolean) -> Unit,
 ) {
     val showCancelIcon = remember(urlOrText) { urlOrText.isNotBlank() }
+    val textToShow =
+        if (inputSource is SummarySource.Document) inputSource.filename ?: urlOrText else urlOrText
 
     Column {
         Row(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
-                value = urlOrText,
+                value = textToShow,
                 onValueChange = onUrlChange,
                 label = { Text("URL/Text") },
+                enabled = !isLoading,
+                readOnly = inputSource is SummarySource.Document,
                 isError = error != null,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { onSummarize() }),
                 supportingText = {
                     if (error != null) {
-                        Text(
-                            modifier = Modifier.fillMaxWidth(),
-                            text = getErrorMessage(error.message, apiKey),
-                            color = MaterialTheme.colorScheme.error
-                        )
+                        ErrorMessage(error.message, apiKey)
                     } else {
                         Column {
-                            if (inputSource is SummarySource.Document) {
-                                inputSource.filename?.let {
-                                    Text(
-                                        text = "File: $it",
-                                        modifier = Modifier.fillMaxWidth(),
-                                        textAlign = TextAlign.End,
-                                        color = MaterialTheme.colorScheme.secondaryFixedDim,
-                                        style = MaterialTheme.typography.labelMedium,
-                                    )
-                                }
-                            }
                             if (inputSource is SummarySource.Text && urlOrText.isNotBlank()) {
                                 // Based on the rule of thumb that 100 tokens is about 75 words.
                                 // ref: https://platform.openai.com/tokenizer
@@ -422,26 +392,16 @@ private fun InputSection(
             Column {
                 OutlinedButton(
                     onClick = onLaunchFilePicker,
+                    enabled = !isLoading,
                     modifier = Modifier
                         .padding(top = 27.dp)
                         .height(58.dp)
                 ) {
-                    Box {
-                        if (isExtracting) {
-                            LoadingIndicator(
-                                modifier = Modifier
-                                    .size(55.dp)
-                                    .align(Alignment.Center)
-                            )
-                        } else {
-                            Icon(
-                                if (inputSource is SummarySource.Document) Icons.Filled.CheckCircle
-                                else Icons.Filled.AddCircle,
-                                contentDescription = "Floating action button",
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                        }
-                    }
+                    Icon(
+                        if (inputSource is SummarySource.Document) Icons.Filled.CheckCircle
+                        else Icons.Filled.AddCircle,
+                        contentDescription = "Floating action button",
+                    )
                 }
                 if (multiLine) {
                     val textLength = urlOrText.length
@@ -449,6 +409,7 @@ private fun InputSection(
                     if (textLength >= 100 || lineBreaks >= 1) {
                         Button(
                             onClick = { onSingleLineChange(!singleLine) },
+                            enabled = !isLoading,
                             modifier = Modifier
                                 .height(72.dp)
                                 .padding(top = 15.dp)
@@ -473,6 +434,7 @@ private fun SummaryLengthSelector(
     selectedIndex: Int,
     onSelectedIndexChange: (Int) -> Unit,
     options: List<String>,
+    enabled: Boolean,
 ) {
     Row(
         Modifier.fillMaxWidth(),
@@ -482,15 +444,15 @@ private fun SummaryLengthSelector(
             ToggleButton(
                 checked = selectedIndex == index,
                 onCheckedChange = { onSelectedIndexChange(index) },
+                enabled = enabled,
                 modifier = Modifier
                     .weight(1f)
                     .semantics { role = Role.RadioButton },
-                shapes =
-                    when (index) {
-                        0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                        options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                        else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                    },
+                shapes = when (index) {
+                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                    options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                },
             ) {
                 Text(label)
             }
@@ -553,12 +515,12 @@ private fun SummaryResultSection(
     }
 }
 
-
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun HomeFloatingActionButtons(
     onPaste: () -> Unit,
     onSummarize: () -> Unit,
-    isExtracting: Boolean,
+    isLoading: Boolean,
     onShowSnackbar: (String) -> Unit,
 ) {
     val stillLoading = stringResource(id = R.string.stillLoading)
@@ -567,7 +529,7 @@ private fun HomeFloatingActionButtons(
         horizontalAlignment = Alignment.End
     ) {
         FloatingActionButton(
-            onClick = onPaste
+            onClick = { if (!isLoading) onPaste() }
         ) {
             Icon(
                 Icons.Rounded.ContentPaste,
@@ -577,21 +539,22 @@ private fun HomeFloatingActionButtons(
         }
         FloatingActionButton(
             onClick = {
-                if (isExtracting) {
+                if (isLoading) {
                     onShowSnackbar(stillLoading)
                 } else {
                     onSummarize()
                 }
             }
         ) {
-            Icon(Icons.Filled.Check, "Check")
+            if (isLoading) LoadingIndicator()
+            else Icon(Icons.Filled.Check, "Check")
         }
     }
 }
 
 @Composable
-private fun getErrorMessage(errorMessage: String?, apiKey: String): String {
-    return when (errorMessage) {
+private fun ErrorMessage(errorMessage: String?, apiKey: String) {
+    val errMsg = when (errorMessage) {
         SummaryException.NoInternetException.message -> stringResource(id = R.string.noInternet)
         SummaryException.InvalidLinkException.message -> stringResource(id = R.string.invalidURL)
         SummaryException.NoTranscriptException.message -> stringResource(id = R.string.noTranscript)
@@ -611,7 +574,13 @@ private fun getErrorMessage(errorMessage: String?, apiKey: String): String {
         SummaryException.NoKeyException.message -> stringResource(id = R.string.noKey)
         else -> errorMessage ?: "unknown error"
     }
+    Text(
+        modifier = Modifier.fillMaxWidth(),
+        text = errMsg,
+        color = MaterialTheme.colorScheme.error
+    )
 }
+
 
 @Preview
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -631,7 +600,7 @@ private fun UrlInputSectionPreview() {
             focusRequester = focusRequester,
             onLaunchFilePicker = {},
             inputSource = SummarySource.Article(url),
-            isExtracting = false,
+            isLoading = false,
             multiLine = true,
             singleLine = false,
             onSingleLineChange = {}
@@ -650,9 +619,9 @@ private fun UrlInputSectionPreview() {
             onLaunchFilePicker = {},
             inputSource = SummarySource.Document(
                 filename = "some image or documentations",
-                content = ""
+                uri = ""
             ),
-            isExtracting = false,
+            isLoading = false,
             multiLine = true,
             singleLine = false,
             onSingleLineChange = {}
@@ -671,6 +640,7 @@ private fun SummaryLengthSelectorPreview() {
     SummaryLengthSelector(
         selectedIndex = selectedIndex,
         onSelectedIndexChange = {},
-        options = options
+        options = options,
+        enabled = true
     )
 }

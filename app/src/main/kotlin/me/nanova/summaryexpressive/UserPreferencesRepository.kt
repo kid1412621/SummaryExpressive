@@ -11,84 +11,85 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import me.nanova.summaryexpressive.llm.AIProvider
+import me.nanova.summaryexpressive.llm.SummaryLength
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-object UserPreferencesRepository {
-    private val USE_ORIGINAL_LANGUAGE = booleanPreferencesKey("use_original_language")
-    private val MULTI_LINE = booleanPreferencesKey("multi_line")
-    private val ULTRA_DARK = booleanPreferencesKey("ultra_dark")
-    private val DESIGN_NUMBER = intPreferencesKey("design_number")
-    private val BASE_URL = stringPreferencesKey("base_url")
-    private val API_KEY = stringPreferencesKey("api_key")
-    private val MODEL = stringPreferencesKey("model")
-    private val SHOW_ONBOARDING = booleanPreferencesKey("show_onboarding")
-    private val SHOW_LENGTH = booleanPreferencesKey("show_length")
-    private val SHOW_LENGTH_NUMBER = intPreferencesKey("show_length_number")
-    private val TEXT_SUMMARIES = stringPreferencesKey("text_summaries_json")
+class UserPreferencesRepository(private val context: Context) {
+    private val useOriginalLanguage = booleanPreferencesKey("use_original_language")
+    private val multiLine = booleanPreferencesKey("multi_line")
+    private val ultraDark = booleanPreferencesKey("ultra_dark")
+    private val designNum = intPreferencesKey("design_number")
+    private val baseUrl = stringPreferencesKey("base_url")
+    private val apiKey = stringPreferencesKey("api_key")
+    private val model = stringPreferencesKey("model")
+    private val showOnboarding = booleanPreferencesKey("show_onboarding")
+    private val showLengthSelection = booleanPreferencesKey("show_length")
+    private val summaryLength = stringPreferencesKey("summary_length")
+    private val history = stringPreferencesKey("text_summaries_json")
 
-    fun getUseOriginalLanguage(context: Context): Flow<Boolean> =
-        context.dataStore.data.map { it[USE_ORIGINAL_LANGUAGE] ?: false }
+    fun getUseOriginalLanguage(): Flow<Boolean> =
+        context.dataStore.data.map { it[useOriginalLanguage] ?: true }
 
-    suspend fun setUseOriginalLanguage(context: Context, value: Boolean) =
-        context.dataStore.edit { it[USE_ORIGINAL_LANGUAGE] = value }
+    suspend fun setUseOriginalLanguage(value: Boolean) =
+        context.dataStore.edit { it[useOriginalLanguage] = value }
 
-    fun getMultiLine(context: Context): Flow<Boolean> =
-        context.dataStore.data.map { it[MULTI_LINE] ?: true }
+    fun getMultiLine(): Flow<Boolean> =
+        context.dataStore.data.map { it[multiLine] ?: true }
 
-    suspend fun setMultiLine(context: Context, value: Boolean) =
-        context.dataStore.edit { it[MULTI_LINE] = value }
+    suspend fun setMultiLine(value: Boolean) =
+        context.dataStore.edit { it[multiLine] = value }
 
-    fun getUltraDark(context: Context): Flow<Boolean> =
-        context.dataStore.data.map { it[ULTRA_DARK] ?: false }
+    fun getUltraDark(): Flow<Boolean> =
+        context.dataStore.data.map { it[ultraDark] ?: false }
 
-    suspend fun setUltraDark(context: Context, value: Boolean) =
-        context.dataStore.edit { it[ULTRA_DARK] = value }
+    suspend fun setUltraDark(value: Boolean) =
+        context.dataStore.edit { it[ultraDark] = value }
 
-    fun getDesignNumber(context: Context): Flow<Int> =
-        context.dataStore.data.map { it[DESIGN_NUMBER] ?: 0 }
+    fun getDesignNumber(): Flow<Int> =
+        context.dataStore.data.map { it[designNum] ?: 0 }
 
-    suspend fun setDesignNumber(context: Context, value: Int) =
-        context.dataStore.edit { it[DESIGN_NUMBER] = value }
+    suspend fun setDesignNumber(value: Int) =
+        context.dataStore.edit { it[designNum] = value }
 
-    fun getBaseUrl(context: Context): Flow<String> =
-        context.dataStore.data.map { it[BASE_URL] ?: "" }
+    fun getBaseUrl(): Flow<String> =
+        context.dataStore.data.map { it[baseUrl] ?: "" }
 
-    suspend fun setBaseUrl(context: Context, value: String) =
-        context.dataStore.edit { it[BASE_URL] = value }
+    suspend fun setBaseUrl(value: String) =
+        context.dataStore.edit { it[baseUrl] = value }
 
-    fun getApiKey(context: Context): Flow<String> = context.dataStore.data.map { it[API_KEY] ?: "" }
-    suspend fun setApiKey(context: Context, value: String) =
-        context.dataStore.edit { it[API_KEY] = value }
+    fun getApiKey(): Flow<String> = context.dataStore.data.map { it[apiKey] ?: "" }
+    suspend fun setApiKey(value: String) =
+        context.dataStore.edit { it[apiKey] = value }
 
-    fun getModel(context: Context): Flow<String> =
+    fun getModel(): Flow<String> =
         // fixme handle default value
-        context.dataStore.data.map { it[MODEL] ?: AIProvider.OPENAI.name }
+        context.dataStore.data.map { it[model] ?: AIProvider.OPENAI.name }
 
-    suspend fun setModel(context: Context, value: String) =
-        context.dataStore.edit { it[MODEL] = value }
+    suspend fun setModel(value: String) =
+        context.dataStore.edit { it[model] = value }
 
-    fun getShowOnboarding(context: Context): Flow<Boolean> =
-        context.dataStore.data.map { it[SHOW_ONBOARDING] ?: false }
+    fun getShowOnboarding(): Flow<Boolean> =
+        context.dataStore.data.map { it[showOnboarding] ?: false }
 
-    suspend fun setShowOnboarding(context: Context, value: Boolean) =
-        context.dataStore.edit { it[SHOW_ONBOARDING] = value }
+    suspend fun setShowOnboarding(value: Boolean) =
+        context.dataStore.edit { it[showOnboarding] = value }
 
-    fun getShowLength(context: Context): Flow<Boolean> =
-        context.dataStore.data.map { it[SHOW_LENGTH] ?: true }
+    fun getShowLength(): Flow<Boolean> =
+        context.dataStore.data.map { it[showLengthSelection] ?: true }
 
-    suspend fun setShowLength(context: Context, value: Boolean) =
-        context.dataStore.edit { it[SHOW_LENGTH] = value }
+    suspend fun setShowLength(value: Boolean) =
+        context.dataStore.edit { it[showLengthSelection] = value }
 
-    fun getShowLengthNumber(context: Context): Flow<Int> =
-        context.dataStore.data.map { it[SHOW_LENGTH_NUMBER] ?: 0 }
+    fun getSummaryLength(): Flow<String> =
+        context.dataStore.data.map { it[summaryLength] ?: SummaryLength.MEDIUM.name }
 
-    suspend fun setShowLengthNumber(context: Context, value: Int) =
-        context.dataStore.edit { it[SHOW_LENGTH_NUMBER] = value }
+    suspend fun setSummaryLength(value: String) =
+        context.dataStore.edit { it[summaryLength] = value }
 
-    fun getTextSummaries(context: Context): Flow<String> =
-        context.dataStore.data.map { it[TEXT_SUMMARIES] ?: "[]" }
+    fun getTextSummaries(): Flow<String> =
+        context.dataStore.data.map { it[history] ?: "[]" }
 
-    suspend fun setTextSummaries(context: Context, json: String) =
-        context.dataStore.edit { it[TEXT_SUMMARIES] = json }
+    suspend fun setTextSummaries(json: String) =
+        context.dataStore.edit { it[history] = json }
 }

@@ -7,6 +7,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    kotlin("plugin.serialization")
 }
 
 android {
@@ -20,8 +21,8 @@ android {
         applicationId = "me.nanova.summaryexpressive"
         minSdk = 33
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.0.9"
+        versionCode = 10
+        versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -98,18 +99,20 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     // di
     implementation("com.google.dagger:hilt-android:2.57")
     ksp("com.google.dagger:hilt-compiler:2.57")
     // nav
-    implementation("androidx.navigation:navigation-compose:2.9.2")
+    implementation("androidx.navigation:navigation-compose:2.9.3")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     // jetpack
     implementation(platform("androidx.compose:compose-bom:2025.07.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material:material-icons-extended")
     // use alpha version for material expressive
-    implementation("androidx.compose.material3:material3:1.4.0-alpha18")
+    // https://developer.android.com/jetpack/androidx/releases/compose-material3#compose_material3_version_15_2
+    implementation("androidx.compose.material3:material3:1.5.0-alpha01")
 
     // store
     implementation("androidx.datastore:datastore-preferences:1.1.7")
@@ -119,7 +122,7 @@ dependencies {
     "standaloneImplementation"("com.google.mlkit:text-recognition:16.0.1")
     "gmsImplementation"("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
-    implementation("io.ktor:ktor-client-android:3.2.2")
+    implementation("io.ktor:ktor-client-android:3.2.3")
     implementation("ai.koog:koog-agents:0.3.0") {
         exclude(group = "io.ktor", module = "ktor-client-cio")
     }
@@ -135,8 +138,8 @@ dependencies {
 //    debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation(platform("androidx.compose:compose-bom:2025.07.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 }
