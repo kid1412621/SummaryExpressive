@@ -4,10 +4,12 @@
 
 # Summary Expressive
 
+![Discord](https://img.shields.io/discord/1406171833119801394?style=flat&logo=discord&link=https%3A%2F%2Fdiscord.gg%2FWjN73wKTqd)
+
 Summarize YouTube-Videos, Articles, Images and Documents with AI
 
 [MAD](https://developer.android.com/courses/pathways/android-architecture): Kotlin + Jetpack
-compose + M3 Expressive
+Compose + M3 Expressive
 
 </div>
 
@@ -21,8 +23,6 @@ compose + M3 Expressive
 
 </div>
 </div>
-
----
 
 ## 🔗 Download
 
@@ -49,22 +49,34 @@ package previously.
 
 ## 📖 Features
 
-- Summarize YouTube-Videos, Articles, Images and Documents with AI
+- Summarize multiple media types
+
+| media       | supported types                        |
+|-------------|----------------------------------------|
+| Video(link) | Youtube, BiliBili(Planed)              |
+| Document    | MS Word, PDF(very long content planed) |
+| Image       | Jpg, Png, Webp (Latin only for now)    |
+| Text        | Article link, Plain text               |
+
+- Multiple LLM models supported
+
+| provider    | models |
+|-------------|--------|
+| OpenAI      | TBD    |
+| Gemini      | TBD    |
+| Gemini nano | Planed |
+| Claude      | Planed |
 
 - [Material 3 Expressive](https://m3.material.io/blog/building-with-m3-expressive) style UI, with
   dynamic color theme.
 
-- Set length of summary
-
-- Read-Out the summaries
- 
 - Instant summarize via share sheet or text selection toolbar
 
-- History-Section
+- Configurable summary length
 
-- Multiple LLM model supported
+- Read-Out the summaries
 
-It uses OpenAI/Gemini to summarize.
+- History search
 
 ## 🌟 Credits
 
