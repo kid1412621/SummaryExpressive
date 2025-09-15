@@ -144,7 +144,7 @@ dependencies {
     }
 
     // Networking
-    implementation("io.ktor:ktor-client-android:3.2.3")
+    implementation("io.ktor:ktor-client-android:3.3.0")
 
     // Serialization & Utilities
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
