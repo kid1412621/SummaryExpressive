@@ -18,8 +18,8 @@ android {
         applicationId = "me.nanova.summaryexpressive"
         minSdk = 33
         targetSdk = 36
-        versionCode = 43
-        versionName = "1.2.0"
+        versionCode = 44
+        versionName = "1.2.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -74,10 +74,10 @@ android {
 
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            excludes += "/META-INF/io.netty.versions.properties"
-            excludes += "/META-INF/INDEX.LIST"
-            excludes += "/META-INF/DEPENDENCIES"
+            excludes += "META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/io.netty.versions.properties"
+            excludes += "META-INF/INDEX.LIST"
+            merges += "META-INF/DEPENDENCIES"
         }
     }
 
@@ -104,7 +104,7 @@ android {
 
 dependencies {
     // https://developer.android.com/develop/ui/compose/bom/bom-mapping
-    val composeBomVersion = "2025.10.01"
+    val composeBomVersion = "2025.11.00"
 
     // Core & Lifecycle
     implementation("androidx.core:core-ktx:1.17.0")
@@ -118,7 +118,7 @@ dependencies {
     ksp("com.google.dagger:hilt-compiler:2.57.2")
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.9.5")
+    implementation("androidx.navigation:navigation-compose:2.9.6")
     implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
 
     // Jetpack Compose
@@ -128,7 +128,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     // Keep alpha override for material expressive features, as intended
     // https://developer.android.com/jetpack/androidx/releases/compose-material3#compose_material3_version_15_2
-    implementation("androidx.compose.material3:material3:1.5.0-alpha07")
+    implementation("androidx.compose.material3:material3:1.5.0-alpha08")
 
     // Paging
     implementation("androidx.paging:paging-compose:3.3.6")
