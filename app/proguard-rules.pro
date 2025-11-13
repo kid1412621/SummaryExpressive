@@ -21,7 +21,18 @@
 #-renamesourcefileattribute SourceFile
 -keepattributes Signature,*Annotation*
 
--keep class ai.koog.** { *; }
+# Keep the ai.koog library classes from being obfuscated, as they are used via reflection.
+-keep class ai.koog.agents.** { *; }
+-keep class ai.koog.prompt.executor.clients.** { *; }
+-keep class ai.koog.prompt.llm.** { *; }
+
+# Keep rules for Kotlin Reflection.
+# The ai.koog library uses reflection to discover models at runtime (e.g., in `allModelsIn(obj: Any)`).
+# Because it reflects on a generic `Any` type, R8 cannot trace the usage. The following rule
+# is the recommended approach by the Kotlin team for projects using `kotlin-reflect`.
+# `allowobfuscation` is added as an optimization to let R8 rename the classes.
+-keep,allowobfuscation class kotlin.reflect.jvm.internal.** { *; }
+-dontwarn kotlin.reflect.jvm.internal.**
 
 -keep class io.ktor.client.engine.android.** { *; }
 -keep class io.ktor.client.plugins.contentnegotiation.** { *; }
