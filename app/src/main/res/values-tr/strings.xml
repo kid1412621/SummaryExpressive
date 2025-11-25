@@ -30,7 +30,7 @@
     <string name="useAutoExtractLinkDescription">Paylaşılan içerikten web bağlantısını otomatik olarak çıkar</string>
     <string name="setApiKey">API Anahtarını Ayarla</string>
     <string name="setAIProvider">Yapay Zeka Sağlayıcı</string>
-    <string name="setAIProvider">Yapay Zeka Modeli</string>
+    <string name="setAIProviderDescription">Yapay Zeka sağlayıcısını ayarlayın</string>
     <string name="setModel">Model Seç</string>
     <string name="setModelDescription">Özet için modeli ayarlayın</string>
     <string name="theme">Tema</string>
@@ -59,13 +59,13 @@
     <string name="noHistory">Henüz hiçbir şeyi özetlemediniz.</string>
     <string name="copied">Kopyalandı</string>
     <string name="stillLoading">Belge hala işleniyor…</string>
-    <string name="useLengthOptions">Uzunluk Seçeneklerini Kullan</string>.
-    <string name="useLengthOptionsDescription">Özet için uzunluk seçeneklerini kullanın</string>.
+    <string name="useLengthOptions">Uzunluk Seçeneklerini Kullan</string>
+    <string name="useLengthOptionsDescription">Özet için uzunluk seçeneklerini kullanın</string>
     <string name="shortcut_summarize_clipboard_short">Pano</string>
     <string name="shortcut_summarize_clipboard_long">Panodan özetle</string>
     <string name="instant_summarize">Anında Özetle</string>
-    <string name="discord">Discord Grubu</string>.
-    <string name="discordDescription">Topluluğumuza katılın</string>.
-    <string name="next">Sonraki</string>.
-    <string name="undo">Geri al</string>.
+    <string name="discord">Discord Grubu</string>
+    <string name="discordDescription">Topluluğumuza katılın</string>
+    <string name="next">Sonraki</string>
+    <string name="undo">Geri al</string>
 </resources>
