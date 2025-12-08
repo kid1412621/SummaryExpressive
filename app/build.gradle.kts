@@ -149,7 +149,7 @@ dependencies {
     // Uses Google Play Services
     "gmsImplementation"("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
-    implementation("ai.koog:koog-agents:0.5.3")
+    implementation("ai.koog:koog-agents:0.5.4")
 
     // Networking
     implementation("io.ktor:ktor-client-android:3.3.3")
