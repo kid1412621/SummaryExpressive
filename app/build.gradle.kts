@@ -115,8 +115,8 @@ dependencies {
     implementation("androidx.webkit:webkit:1.15.0")
 
     // DI (Hilt)
-    implementation("com.google.dagger:hilt-android:2.57.2")
-    ksp("com.google.dagger:hilt-compiler:2.57.2")
+    implementation("com.google.dagger:hilt-android:2.58")
+    ksp("com.google.dagger:hilt-compiler:2.58")
 
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.9.6")
