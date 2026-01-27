@@ -39,6 +39,7 @@ import androidx.compose.material.icons.automirrored.rounded.HelpCenter
 import androidx.compose.material.icons.automirrored.rounded.ShortText
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Link
@@ -130,6 +131,9 @@ data class SettingsActions(
     val onAutoExtractUrlChange: (Boolean) -> Unit,
     val onSessDataChange: (String, Long) -> Unit,
     val onSessDataClear: () -> Unit,
+    val onSavePrompt: (me.nanova.summaryexpressive.model.CustomPrompt) -> Unit,
+    val onDeletePrompt: (String) -> Unit,
+    val onSelectPrompt: (String?) -> Unit,
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -155,7 +159,10 @@ fun SettingsScreen(
         onShowLengthChange = appViewModel::setShowLengthValue,
         onAutoExtractUrlChange = appViewModel::setAutoExtractUrlValue,
         onSessDataChange = appViewModel::setSessData,
-        onSessDataClear = appViewModel::clearSessData
+        onSessDataClear = appViewModel::clearSessData,
+        onSavePrompt = appViewModel::savePrompt,
+        onDeletePrompt = appViewModel::deletePrompt,
+        onSelectPrompt = appViewModel::selectPrompt
     )
 
     var dialogState by remember { mutableStateOf(DialogState.NONE) }
@@ -202,6 +209,18 @@ fun SettingsScreen(
                 }
             )
         }
+    }
+
+    var showManagePromptsSheet by remember { mutableStateOf(false) }
+    if (showManagePromptsSheet) {
+        ManagePromptsSheet(
+            onDismissRequest = { showManagePromptsSheet = false },
+            sheetState = sheetState,
+            prompts = state.savedPrompts,
+            onAddPrompt = actions.onSavePrompt,
+            onEditPrompt = actions.onSavePrompt,
+            onDeletePrompt = actions.onDeletePrompt
+        )
     }
 
     AnimatedContent(
@@ -293,6 +312,7 @@ fun SettingsScreen(
             onShowModelDialog = { dialogState = DialogState.MODEL },
             onShowBiliBiliLoginSheet = { showBiliBiliLoginSheet = true },
             onShowClearSessDataDialog = { showClearSessDataDialog = true },
+            onShowManagePromptsSheet = { showManagePromptsSheet = true },
             highlightSection = highlightSection
         )
     }
@@ -309,6 +329,7 @@ private fun SettingsContent(
     onShowModelDialog: () -> Unit,
     onShowBiliBiliLoginSheet: () -> Unit,
     onShowClearSessDataDialog: () -> Unit,
+    onShowManagePromptsSheet: () -> Unit,
     highlightSection: String?,
 ) {
     val context = LocalContext.current
@@ -546,6 +567,60 @@ private fun SettingsContent(
                             checked = state.autoExtractUrl,
                             onCheckedChange = { actions.onAutoExtractUrlChange(it) }
                         )
+                    }
+                )
+
+                ListItem(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    headlineContent = { Text("Custom Prompt") },
+                    supportingContent = { Text("Override system prompt") },
+                    leadingContent = {
+                        Icon(
+                            Icons.Default.AutoAwesome, // Reusing AutoAwesome or similar
+                            contentDescription = "Custom Prompt",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
+                    trailingContent = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            var expanded by remember { mutableStateOf(false) }
+                            val selectedPrompt = state.savedPrompts.find { it.id == state.selectedPromptId }
+                            
+                            androidx.compose.foundation.layout.Box {
+                                TextButton(onClick = { expanded = true }) {
+                                    Text(selectedPrompt?.title ?: "Default")
+                                }
+                                androidx.compose.material3.DropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false }
+                                ) {
+                                    androidx.compose.material3.DropdownMenuItem(
+                                        text = { Text("Default") },
+                                        onClick = {
+                                            actions.onSelectPrompt(null)
+                                            expanded = false
+                                        }
+                                    )
+                                    state.savedPrompts.forEach { prompt ->
+                                        androidx.compose.material3.DropdownMenuItem(
+                                            text = { Text(prompt.title) },
+                                            onClick = {
+                                                actions.onSelectPrompt(prompt.id)
+                                                expanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            IconButton(onClick = onShowManagePromptsSheet) {
+                                Icon(
+                                    Icons.Default.Edit,
+                                    contentDescription = "Manage Prompts"
+                                )
+                            }
+                        }
                     }
                 )
             }
@@ -1106,7 +1181,10 @@ private fun ScrollContentPreview() {
             onShowLengthChange = {},
             onAutoExtractUrlChange = {},
             onSessDataChange = { _, _ -> },
-            onSessDataClear = {}
+            onSessDataClear = {},
+            onSavePrompt = {},
+            onDeletePrompt = {},
+            onSelectPrompt = {}
         )
         Scaffold { innerPadding ->
             SettingsContent(
@@ -1119,7 +1197,8 @@ private fun ScrollContentPreview() {
                 highlightSection = null,
                 onNav = {},
                 onShowBiliBiliLoginSheet = {},
-                onShowClearSessDataDialog = {}
+                onShowClearSessDataDialog = {},
+                onShowManagePromptsSheet = {}
             )
         }
     }

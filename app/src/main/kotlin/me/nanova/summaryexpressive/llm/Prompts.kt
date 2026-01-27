@@ -10,7 +10,14 @@ fun createSummarizationPrompt(
     length: SummaryLength,
     useContentLanguage: Boolean,
     appLanguage: String,
+    customPrompt: String? = null,
 ): Prompt {
+    if (!customPrompt.isNullOrBlank()) {
+        return Prompt.build("summarizer-prompt") {
+            system(customPrompt)
+        }
+    }
+
     val lengthInstruction = when (length) {
         SummaryLength.SHORT -> "a few sentences(better within 100 words)"
         SummaryLength.MEDIUM -> "two to three paragraphs"
@@ -33,8 +40,8 @@ fun createSummarizationPrompt(
             The summary should be about $lengthInstruction long, and must not exceed the length of the original content.
 
             - If the text is an article, focus on the main arguments, key points, and conclusions.
-            - If the text is a video transcript, focus on the key topics and speakers' points.
             - If the text is from a document, focus on the core information and purpose.
+            - If the text is a video transcript, focus on the key topics and speakers' points.
             
             Include the main point and any conclusion if relevant.
             Do not use any headings, introductions, or metacommentary.

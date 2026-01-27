@@ -99,6 +99,7 @@ class SummaryViewModel @Inject constructor(
             }
 
             val appLanguage = application.resources.configuration.locales[0]
+            val customPrompt = settings.savedPrompts.find { it.id == settings.selectedPromptId }?.content
 
             val agent = llmHandler.getSummarizationAgent(
                 provider = settings.aiProvider,
@@ -106,6 +107,7 @@ class SummaryViewModel @Inject constructor(
                 baseUrl = settings.baseUrl,
                 model = settings.model,
                 summaryLength = settings.summaryLength,
+                customPrompt = customPrompt,
                 useContentLanguage = settings.useOriginalLanguage,
                 appLanguage = appLanguage
             )

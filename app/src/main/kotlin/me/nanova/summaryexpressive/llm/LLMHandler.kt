@@ -78,6 +78,7 @@ class LLMHandler(context: Context, httpClient: HttpClient) {
         baseUrl: String? = null,
         model: String? = null,
         summaryLength: SummaryLength = SummaryLength.MEDIUM,
+        customPrompt: String? = null,
         useContentLanguage: Boolean,
         appLanguage: Locale,
     ): AIAgent<SummarySource, SummaryOutput> {
@@ -91,7 +92,7 @@ class LLMHandler(context: Context, httpClient: HttpClient) {
             articleToolRegistry + youtubeToolRegistry + bilibiliToolRegistry + fileToolRegistry
 
         val agentConfig =
-            createAgentConfig(provider, model, summaryLength, useContentLanguage, appLanguage)
+            createAgentConfig(provider, model, summaryLength, customPrompt, useContentLanguage, appLanguage)
 
         return AIAgent(
             promptExecutor = executor,
@@ -128,6 +129,7 @@ class LLMHandler(context: Context, httpClient: HttpClient) {
         provider: AIProvider,
         modelName: String?,
         summaryLength: SummaryLength,
+        customPrompt: String?,
         useContentLanguage: Boolean,
         appLanguage: Locale,
     ): AIAgentConfig {
@@ -146,7 +148,7 @@ class LLMHandler(context: Context, httpClient: HttpClient) {
 
         val lang = appLanguage.getDisplayLanguage(Locale.ENGLISH)
         return AIAgentConfig(
-            prompt = createSummarizationPrompt(summaryLength, useContentLanguage, lang),
+            prompt = createSummarizationPrompt(summaryLength, useContentLanguage, lang, customPrompt),
             model = llmModel,
             maxAgentIterations = 10,
         )
