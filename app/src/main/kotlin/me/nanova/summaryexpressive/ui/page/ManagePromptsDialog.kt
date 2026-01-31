@@ -92,7 +92,7 @@ fun ManagePromptsSheet(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.weight(1f)
                     ) {
-                        items(prompts) { prompt ->
+                        items(prompts, key = { it.id }) { prompt ->
                             PromptItem(
                                 prompt = prompt,
                                 onEdit = { showEditDialog = prompt },
@@ -111,7 +111,7 @@ fun ManagePromptsSheet(
             title = "Add New Prompt",
             onDismiss = { showAddDialog = false },
             onConfirm = { title, content ->
-                onAddPrompt(CustomPrompt(id = UUID.randomUUID().toString(), title = title, content = content))
+                onAddPrompt(CustomPrompt(title = title, content = content))
                 showAddDialog = false
             }
         )
