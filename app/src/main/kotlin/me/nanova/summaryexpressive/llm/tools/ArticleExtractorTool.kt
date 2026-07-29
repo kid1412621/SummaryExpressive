@@ -2,6 +2,7 @@ package me.nanova.summaryexpressive.llm.tools
 
 import ai.koog.agents.core.tools.Tool
 import ai.koog.agents.core.tools.annotations.LLMDescription
+import ai.koog.serialization.typeToken
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
@@ -16,8 +17,8 @@ data class Article(
 )
 
 class ArticleExtractorTool(private val client: HttpClient) : Tool<Article, ExtractedContent>(
-    argsSerializer = Article.serializer(),
-    resultSerializer = ExtractedContent.serializer(),
+    argsType = typeToken<Article>(),
+    resultType = typeToken<ExtractedContent>(),
     name = "extract_article_text_from_url",
     description = "Fetches the content of a web article from a given URL and extracts its main textual content."
 ) {

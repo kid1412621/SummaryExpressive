@@ -155,17 +155,17 @@ The app supports multiple LLM providers configured in settings:
 
 ### `build.gradle.kts` (root)
 Defines plugin versions:
-- Android Gradle Plugin: 8.13.1
-- Kotlin: 2.2.20
-- KSP: 2.2.20-2.0.3
-- Hilt: 2.57.2
+- Android Gradle Plugin: 9.2.1
+- Kotlin: 2.3.0
+- KSP: 2.3.4
+- Hilt: 2.60
 
 ### `app/build.gradle.kts`
 Main app configuration:
-- Min SDK: 33 (Android 13)
-- Target SDK: 36
-- Java 21 toolchain
-- Compose BOM: 2025.12.01
+- Min SDK: 35 (Android 15)
+- Target SDK: 37
+- Java 25 toolchain
+- Compose BOM: 2026.06.00
 - Room: 2.8.4
 - Key signing configuration in `keystore.properties`
 
@@ -200,7 +200,7 @@ Release signing keys (not tracked in git)
 - Type converters in `converters/` package
 
 ### Material 3 Expressive
-The app uses Material 3 Expressive alpha features for enhanced UI. Material version: `1.5.0-alpha09`
+The app uses Material 3 Expressive alpha features for enhanced UI. Material version: `1.5.0-alpha22`
 
 ## Testing
 - Unit tests in `src/test/kotlin/`
@@ -222,7 +222,7 @@ The app uses Material 3 Expressive alpha features for enhanced UI. Material vers
   2. **Google Play Store**: GMS variant with Google-managed signing
 
 ### Version Info
-Current version: 1.2.3 (versionCode 46)
+Current version: 1.3.2 (versionCode 49)
 - Update version in `app/build.gradle.kts:21-22`
 
 ## Permissions & Security
@@ -233,7 +233,7 @@ The app likely requires:
 - Overlay permission (for instant summary overlay)
 
 ## Known Dependencies
-- `ai.koog:koog-agents:0.6.0` - Kotlin-based LLM interactions
+- `ai.koog:koog-agents:1.0.0` - Kotlin-based LLM interactions
 - `io.ktor:ktor-client-android:3.3.3` - HTTP client
 - `org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0` - JSON serialization
 - `org.jsoup:jsoup:1.22.1` - HTML parsing

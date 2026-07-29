@@ -11,14 +11,15 @@ plugins {
 
 android {
     namespace = "me.nanova.summaryexpressive"
-    compileSdk = 36
+    compileSdk = 37
+    buildToolsVersion = "37.0.0"
 
     defaultConfig {
         applicationId = "me.nanova.summaryexpressive"
         minSdk = 33
-        targetSdk = 36
-        versionCode = 49
-        versionName = "1.3.2"
+        targetSdk = 37
+        versionCode = 50
+        versionName = "1.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -81,8 +82,6 @@ android {
         }
     }
 
-
-
     androidResources {
         generateLocaleConfig = true
     }
@@ -94,36 +93,38 @@ android {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
 
 kotlin {
     compilerOptions {
         languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_3
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25
     }
 }
 
 dependencies {
     // https://developer.android.com/develop/ui/compose/bom/bom-mapping
-    val composeBomVersion = "2026.01.00"
+    val composeBomVersion = "2026.06.01"
     val roomVersion = "2.8.4"
+    val koogVersion = "1.1.1"
+    val koogBetaVersion = "1.1.1-beta"
 
     // Core & Lifecycle
-    implementation("androidx.core:core-ktx:1.17.0")
-    implementation("androidx.activity:activity-compose:1.12.2")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
-    implementation("androidx.webkit:webkit:1.15.0")
+    implementation("androidx.core:core-ktx:1.19.0")
+    implementation("androidx.activity:activity-compose:1.13.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
+    implementation("androidx.webkit:webkit:1.16.0")
 
     // DI (Hilt)
-    implementation("com.google.dagger:hilt-android:2.59")
-    ksp("com.google.dagger:hilt-compiler:2.59")
+    implementation("com.google.dagger:hilt-android:2.60.1")
+    ksp("com.google.dagger:hilt-compiler:2.60.1")
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.9.6")
-    implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
+    implementation("androidx.navigation:navigation-compose:2.9.8")
+    implementation("androidx.hilt:hilt-navigation-compose:1.4.0")
 
     // Jetpack Compose
     implementation(platform("androidx.compose:compose-bom:$composeBomVersion"))
@@ -132,14 +133,14 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     // Keep alpha override for material expressive features, as intended
     // https://developer.android.com/jetpack/androidx/releases/compose-material3#compose_material3_version_15_2
-    implementation("androidx.compose.material3:material3:1.5.0-alpha12")
+    implementation("androidx.compose.material3:material3:1.5.0-alpha24")
 
     // Paging
-    implementation("androidx.paging:paging-compose:3.3.6")
-    implementation("androidx.paging:paging-runtime-ktx:3.3.6")
+    implementation("androidx.paging:paging-compose:3.5.0")
+    implementation("androidx.paging:paging-runtime-ktx:3.5.0")
 
     // Data Persistence
-    implementation("androidx.datastore:datastore-preferences:1.2.0")
+    implementation("androidx.datastore:datastore-preferences:1.2.1")
     implementation("androidx.room:room-runtime:${roomVersion}")
     implementation("androidx.room:room-paging:${roomVersion}")
     implementation("androidx.room:room-ktx:${roomVersion}")
@@ -151,15 +152,31 @@ dependencies {
     "standaloneImplementation"("com.google.mlkit:text-recognition:16.0.1")
     // Uses Google Play Services
     "gmsImplementation"("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
-    implementation("ai.koog:koog-agents:0.6.0")
+    
+    // Koog Stable (Version 1.1.1)
+    implementation("ai.koog:koog-agents:${koogVersion}")
+    implementation("ai.koog:http-client-ktor:${koogVersion}")
+    implementation("ai.koog:prompt-executor-openai-client-android:${koogVersion}")
+    implementation("ai.koog:prompt-executor-anthropic-client-android:${koogVersion}")
+    implementation("ai.koog:prompt-executor-ollama-client-android:${koogVersion}")
+    implementation("ai.koog:prompt-executor-openrouter-client-android:${koogVersion}")
+    implementation("ai.koog:prompt-executor-bedrock-client-android:${koogVersion}")
+
+    // Koog only provided the beta version
+    implementation("ai.koog:koog-agents-additions:${koogBetaVersion}")
+    implementation("ai.koog:prompt-executor-google-client-android:${koogBetaVersion}")
+    implementation("ai.koog:prompt-executor-deepseek-client-android:${koogBetaVersion}")
+    implementation("ai.koog:prompt-executor-mistralai-client-android:${koogBetaVersion}")
+    implementation("ai.koog:prompt-executor-dashscope-client-android:${koogBetaVersion}")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
 
     // Networking
-    implementation("io.ktor:ktor-client-android:3.4.0")
+    implementation("io.ktor:ktor-client-android:3.5.1")
 
     // Serialization & Utilities
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
-    implementation("org.jsoup:jsoup:1.22.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+    implementation("org.jsoup:jsoup:1.22.2")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("io.coil-kt:coil-gif:2.7.0")
 

@@ -1,6 +1,7 @@
 package me.nanova.summaryexpressive.llm
 
-import ai.koog.prompt.dsl.Prompt
+import ai.koog.prompt.Prompt
+import ai.koog.prompt.dsl.prompt
 
 enum class SummaryLength {
     SHORT, MEDIUM, LONG
@@ -25,7 +26,7 @@ fun createSummarizationPrompt(
         """
     } else "The summary should be written in $appLanguage."
 
-    return Prompt.build("summarizer-prompt") {
+    return prompt("summarizer-prompt") {
         system(
             """
             You are an expert summarization assistant. Your task is to produce a clear, concise, and accurate summary of the provided text.

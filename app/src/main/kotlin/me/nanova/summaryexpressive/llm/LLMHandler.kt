@@ -3,12 +3,14 @@ package me.nanova.summaryexpressive.llm
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
-import ai.koog.agents.core.dsl.builder.forwardTo
+import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
+import ai.koog.agents.core.dsl.builder.subgraph
 import ai.koog.agents.core.dsl.extension.nodeExecuteSingleTool
-import ai.koog.agents.core.dsl.extension.nodeLLMRequest
+import ai.koog.agents.core.dsl.extension.nodeLLMRequestWithoutTools
 import ai.koog.agents.core.environment.SafeTool
 import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.http.client.ktor.KtorKoogHttpClient
 import ai.koog.prompt.executor.clients.anthropic.AnthropicClientSettings
 import ai.koog.prompt.executor.clients.anthropic.AnthropicLLMClient
 import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
@@ -30,10 +32,10 @@ import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.clients.openrouter.OpenRouterClientSettings
 import ai.koog.prompt.executor.clients.openrouter.OpenRouterLLMClient
 import ai.koog.prompt.executor.clients.openrouter.OpenRouterModels
-import ai.koog.prompt.executor.llms.SingleLLMPromptExecutor
+import ai.koog.prompt.executor.llms.MultiLLMPromptExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.executor.ollama.client.OllamaClient
-import ai.koog.prompt.llm.OllamaModels
+import ai.koog.prompt.executor.ollama.client.OllamaModels
 import ai.koog.prompt.message.Message
 import android.content.Context
 import io.ktor.client.HttpClient
@@ -65,8 +67,10 @@ data class SummaryOutput(
     val length: SummaryLength,
 ) : SummaryData
 
-class LLMHandler(context: Context, httpClient: HttpClient) {
+@Suppress("UnstableApiUsage")
+class LLMHandler(context: Context, private val httpClient: HttpClient) {
     private val userPreferencesRepository = UserPreferencesRepository(context)
+    private val koogHttpClientFactory = KtorKoogHttpClient.Factory(httpClient)
     private val fileExtractorTool: FileExtractorTool = FileExtractorTool(context)
     private val articleExtractorTool = ArticleExtractorTool(httpClient)
     private val youTubeTranscriptTool = YouTubeTranscriptTool(httpClient)
@@ -136,8 +140,8 @@ class LLMHandler(context: Context, httpClient: HttpClient) {
         } ?: when (provider) {
             AIProvider.OPENAI -> OpenAIModels.Chat.GPT4oMini
             AIProvider.GEMINI -> GoogleModels.Gemini2_5Flash
-            AIProvider.CLAUDE -> AnthropicModels.Sonnet_3_5
-            AIProvider.DEEPSEEK -> DeepSeekModels.DeepSeekChat
+            AIProvider.CLAUDE -> AnthropicModels.Sonnet_4
+            AIProvider.DEEPSEEK -> DeepSeekModels.DeepSeekV4Flash
             AIProvider.MISTRAL -> MistralAIModels.Chat.MistralMedium31
             AIProvider.QWEN -> DashscopeModels.QWEN_FLASH
             AIProvider.OLLAMA -> OllamaModels.Alibaba.QWQ
@@ -154,42 +158,42 @@ class LLMHandler(context: Context, httpClient: HttpClient) {
 
     private fun createOpenAIExecutor(apiKey: String, baseUrl: String?): PromptExecutor {
         val client = baseUrl?.takeIf { it.isNotBlank() }
-            ?.let { OpenAILLMClient(apiKey, settings = OpenAIClientSettings(baseUrl = it)) }
-            ?: OpenAILLMClient(apiKey)
+            ?.let { OpenAILLMClient(apiKey, settings = OpenAIClientSettings(baseUrl = it), httpClientFactory = koogHttpClientFactory) }
+            ?: OpenAILLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
 
-        return SingleLLMPromptExecutor(client)
+        return MultiLLMPromptExecutor(client)
     }
 
     private fun createGeminiExecutor(apiKey: String, baseUrl: String?): PromptExecutor {
         val client = baseUrl?.takeIf { it.isNotBlank() }
-            ?.let { GoogleLLMClient(apiKey, settings = GoogleClientSettings(baseUrl = it)) }
-            ?: GoogleLLMClient(apiKey)
+            ?.let { GoogleLLMClient(apiKey, settings = GoogleClientSettings(baseUrl = it), httpClientFactory = koogHttpClientFactory) }
+            ?: GoogleLLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
 
-        return SingleLLMPromptExecutor(client)
+        return MultiLLMPromptExecutor(client)
     }
 
     private fun createClaudExecutor(apiKey: String, baseUrl: String?): PromptExecutor {
         val client = baseUrl?.takeIf { it.isNotBlank() }
-            ?.let { AnthropicLLMClient(apiKey, settings = AnthropicClientSettings(baseUrl = it)) }
-            ?: AnthropicLLMClient(apiKey)
+            ?.let { AnthropicLLMClient(apiKey, settings = AnthropicClientSettings(baseUrl = it), httpClientFactory = koogHttpClientFactory) }
+            ?: AnthropicLLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
 
-        return SingleLLMPromptExecutor(client)
+        return MultiLLMPromptExecutor(client)
     }
 
     private fun createDeepSeekExecutor(apiKey: String, baseUrl: String?): PromptExecutor {
         val client = baseUrl?.takeIf { it.isNotBlank() }
-            ?.let { DeepSeekLLMClient(apiKey, settings = DeepSeekClientSettings(baseUrl = it)) }
-            ?: DeepSeekLLMClient(apiKey)
+            ?.let { DeepSeekLLMClient(apiKey, settings = DeepSeekClientSettings(baseUrl = it), httpClientFactory = koogHttpClientFactory) }
+            ?: DeepSeekLLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
 
-        return SingleLLMPromptExecutor(client)
+        return MultiLLMPromptExecutor(client)
     }
 
     private fun createMistralExecutor(apiKey: String, baseUrl: String?): PromptExecutor {
         val client = baseUrl?.takeIf { it.isNotBlank() }
-            ?.let { MistralAILLMClient(apiKey, settings = MistralAIClientSettings(baseUrl = it)) }
-            ?: MistralAILLMClient(apiKey)
+            ?.let { MistralAILLMClient(apiKey, settings = MistralAIClientSettings(baseUrl = it), httpClientFactory = koogHttpClientFactory) }
+            ?: MistralAILLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
 
-        return SingleLLMPromptExecutor(client)
+        return MultiLLMPromptExecutor(client)
     }
 
     private fun createQwenExecutor(
@@ -206,26 +210,26 @@ class LLMHandler(context: Context, httpClient: HttpClient) {
             baseUrl
         }
         val client = finalBaseUrl?.takeIf { it.isNotBlank() }
-            ?.let { DashscopeLLMClient(apiKey, settings = DashscopeClientSettings(baseUrl = it)) }
-            ?: DashscopeLLMClient(apiKey)
+            ?.let { DashscopeLLMClient(apiKey, settings = DashscopeClientSettings(baseUrl = it), httpClientFactory = koogHttpClientFactory) }
+            ?: DashscopeLLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
 
-        return SingleLLMPromptExecutor(client)
+        return MultiLLMPromptExecutor(client)
     }
 
     private fun createOllamaExecutor(baseUrl: String?): PromptExecutor {
         val client = baseUrl?.takeIf { it.isNotBlank() }
-            ?.let { OllamaClient(baseUrl = it) }
+            ?.let { OllamaClient(baseUrl = it, httpClientFactory = koogHttpClientFactory) }
             ?: throw IllegalArgumentException("Base URL is required for Ollama")
 
-        return SingleLLMPromptExecutor(client)
+        return MultiLLMPromptExecutor(client)
     }
 
     private fun createOpenRouterExecutor(apiKey: String, baseUrl: String?): PromptExecutor {
         val client = baseUrl?.takeIf { it.isNotBlank() }
-            ?.let { OpenRouterLLMClient(apiKey, settings = OpenRouterClientSettings(baseUrl = it)) }
-            ?: OpenRouterLLMClient(apiKey)
+            ?.let { OpenRouterLLMClient(apiKey, settings = OpenRouterClientSettings(baseUrl = it), httpClientFactory = koogHttpClientFactory) }
+            ?: OpenRouterLLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
 
-        return SingleLLMPromptExecutor(client)
+        return MultiLLMPromptExecutor(client)
     }
 
     private fun createSummarizationStrategy(
@@ -316,13 +320,12 @@ class LLMHandler(context: Context, httpClient: HttpClient) {
                 })
             }
 
-            val nodeSummarizeText by nodeLLMRequest(
+            val nodeSummarizeText by nodeLLMRequestWithoutTools(
                 "summarize_extracted_text",
-                allowToolCalls = false,
             )
 
-            val nodeCombineResult by node<Message.Response, SummaryOutput>("combine_result") { response ->
-                val content = response.content
+            val nodeCombineResult by node<Message.Assistant, SummaryOutput>("combine_result") { response ->
+                val content = response.textContent()
                 if (content.isBlank() || content.startsWith("Error:", ignoreCase = true)) {
                     throw SummaryException.fromMessage(content)
                 }

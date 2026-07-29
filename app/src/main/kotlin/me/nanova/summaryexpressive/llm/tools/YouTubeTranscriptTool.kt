@@ -2,6 +2,7 @@ package me.nanova.summaryexpressive.llm.tools
 
 import ai.koog.agents.core.tools.Tool
 import ai.koog.agents.core.tools.annotations.LLMDescription
+import ai.koog.serialization.typeToken
 import android.util.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -33,8 +34,8 @@ data class YouTubeTranscript(
 )
 
 class YouTubeTranscriptTool(client: HttpClient) : Tool<YouTubeTranscript, ExtractedContent>(
-    argsSerializer = YouTubeTranscript.serializer(),
-    resultSerializer = ExtractedContent.serializer(),
+    argsType = typeToken<YouTubeTranscript>(),
+    resultType = typeToken<ExtractedContent>(),
     name = "extract_transcript_from_youtube_url",
     description = "Fetches the transcript for a given YouTube video URL."
 ) {

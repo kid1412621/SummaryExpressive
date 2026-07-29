@@ -5,13 +5,6 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
-
 # Uncomment this to preserve the line number information for
 # debugging stack traces.
 #-keepattributes SourceFile,LineNumberTable
@@ -19,28 +12,52 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
--keepattributes Signature,*Annotation*
 
-# 1. Keep the ai.koog library classes, as they are used extensively via reflection.
--keep class ai.koog.** { *; }
+# Global Attributes
+-keepattributes Signature,*Annotation*,ServiceLoader,EnclosingMethod,InnerClasses
 
-# 2. Preserve the kotlin.Metadata annotation, which is required for reflection to work.
-# This is a more memory-efficient way than keeping all annotated classes, which caused an OOM error.
+# Preserve the kotlin.Metadata annotation, which is required for reflection to work.
 -keepattributes kotlin.Metadata
 -keep class kotlin.Metadata { *; }
 
-# 3. Keep the entire Kotlin Reflection package. This is critical.
-# The reflection implementation depends on classes like `KVisibility` from the root package,
-# not just the internal classes. Failing to keep the whole package causes the `getVisibility` crash.
--keep class kotlin.reflect.** { *; }
+# 1. ai.koog library rules
+# The library uses reflection and ServiceLoader extensively for dynamic tool discovery.
+-keep class ai.koog.agents.core.tools.Tool { *; }
+-keep class ai.koog.prompt.executor.model.PromptExecutor { *; }
+-keep class ai.koog.prompt.llm.LLMProvider { *; }
+-keep class ai.koog.** {
+    <fields>;
+    <methods>;
+}
+-keep interface ai.koog.** { *; }
+
+# Preserve ServiceLoader implementations for KoogHttpClient
+-keep class * implements ai.koog.http.client.KoogHttpClient$Factory
+
+# Suppress warnings for Java 9+ features not available on Android
+-dontwarn java.lang.ProcessHandle
+-dontwarn ai.koog.agents.ext.tool.shell.JvmShellCommandExecutor
+
+# 2. Kotlin Reflection
+# Narrowed keep for kotlin-reflect to reduce impact on binary size.
+-keep class kotlin.reflect.jvm.internal.** { *; }
+-keep class kotlin.reflect.KClass { *; }
+-keep class kotlin.reflect.KType { *; }
+-keep class kotlin.reflect.KProperty* { *; }
+-keep class kotlin.reflect.KCallable { *; }
 -dontwarn kotlin.reflect.**
 
+# 3. Ktor & Networking
+# Recommended rules for Ktor on Android to prevent deadlocks and ensure coroutine safety.
+-keepclassmembers class kotlinx.** { volatile <fields>; }
+-keepclassmembers class io.ktor.** { volatile <fields>; }
 -keep class io.ktor.client.engine.android.** { *; }
--keep class io.ktor.client.plugins.contentnegotiation.** { *; }
--keep class io.ktor.serialization.kotlinx.** { *; }
+-dontwarn io.ktor.**
 
 # Ktor and its dependencies (Netty, Reactor, etc.) have optional references
-# to classes not present in Android. We must tell R8 not to warn about them.
+# to classes not present in Android.
+-dontwarn com.google.auto.value.AutoValue$CopyAnnotations
+-dontwarn com.google.errorprone.annotations.**
 -dontwarn io.micrometer.context.**
 -dontwarn io.netty.**
 -dontwarn io.opentelemetry.api.incubator.**
@@ -55,19 +72,36 @@
 -dontwarn com.fasterxml.jackson.core.JsonFactory
 -dontwarn com.fasterxml.jackson.core.JsonGenerator
 
-# Suppress warnings for missing classes in jsoup (optional re2j support)
--dontwarn com.google.re2j.**
--dontwarn org.jsoup.helper.Re2jRegex**
-
-# Suppress warnings for Java 9+ ProcessHandle used in ai.koog (not available on Android)
--dontwarn java.lang.ProcessHandle
--dontwarn ai.koog.agents.ext.tool.shell.JvmShellCommandExecutor
-
-# Keep rules for KotlinX Serialization
+# 4. KotlinX Serialization
 -keepclassmembers class ** {
     @kotlinx.serialization.Serializable *;
 }
 -keep class **$$serializer { *; }
+-keepclassmembers class ** {
+    @kotlinx.serialization.SerialName <fields>;
+}
+-keepclassmembers class * {
+    *** Companion;
+}
 
-# Keep specific data models to be safe, though the above rules should cover them.
+# 5. jsoup
+-dontwarn com.google.re2j.**
+-dontwarn org.jsoup.helper.Re2jRegex**
+
+# 6. Project specific data models
 -keep class me.nanova.summaryexpressive.model.** { *; }
+-keep class me.nanova.summaryexpressive.llm.SummaryOutput { *; }
+-keep class me.nanova.summaryexpressive.llm.SummaryLength { *; }
+
+# 7. LLM Tools (used by Koog via reflection)
+-keep class me.nanova.summaryexpressive.llm.tools.** { *; }
+
+# 8. Room Type Converters
+-keep class me.nanova.summaryexpressive.data.converters.** { *; }
+
+# 9. ViewModel state classes used in serialization/reflection
+-keep class me.nanova.summaryexpressive.vm.SummaryViewModel$SummarySource** { *; }
+
+# 10. Hilt/Dagger (General compat)
+-keep class * extends androidx.lifecycle.ViewModel
+-keep @dagger.hilt.android.lifecycle.HiltViewModel class * { *; }

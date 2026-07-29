@@ -14,7 +14,7 @@
         android:usesCleartextTraffic="true"
         android:windowSoftInputMode="adjustResize"
         tools:ignore="MissingApplicationIcon"
-        tools:targetApi="36">
+        tools:targetApi="37">
 
         <meta-data
             android:name="com.google.mlkit.vision.DEPENDENCIES"

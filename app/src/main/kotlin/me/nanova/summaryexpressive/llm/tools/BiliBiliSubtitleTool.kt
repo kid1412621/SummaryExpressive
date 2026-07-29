@@ -2,6 +2,7 @@ package me.nanova.summaryexpressive.llm.tools
 
 import ai.koog.agents.core.tools.Tool
 import ai.koog.agents.core.tools.annotations.LLMDescription
+import ai.koog.serialization.typeToken
 import android.util.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import me.nanova.summaryexpressive.UserPreferencesRepository
 import me.nanova.summaryexpressive.model.ExtractedContent
 import me.nanova.summaryexpressive.model.SummaryException
@@ -72,12 +74,13 @@ class BiliBiliSubtitleTool(
     private val client: HttpClient,
     private val userPreferencesRepository: UserPreferencesRepository,
 ) : Tool<BiliBiliVideo, ExtractedContent>(
-    argsSerializer = BiliBiliVideo.serializer(),
-    resultSerializer = ExtractedContent.serializer(),
+    argsType = typeToken<BiliBiliVideo>(),
+    resultType = typeToken<ExtractedContent>(),
     name = "extract_subtitle_from_bilibili_url",
     description = "Fetches the subtitle for a given BiliBili video URL."
 ) {
     private val bvidRegex = "(BV[1-9A-HJ-NP-Za-km-z]{10})".toRegex()
+    private val json = Json { ignoreUnknownKeys = true }
 
     companion object {
         private const val TAG = "BiliBiliSubtitleTool"

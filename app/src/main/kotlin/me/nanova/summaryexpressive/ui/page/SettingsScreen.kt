@@ -113,6 +113,7 @@ import me.nanova.summaryexpressive.vm.SettingsUiState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.platform.LocalLocale
 
 private enum class DialogState {
     NONE, THEME, AI_PROVIDER, MODEL
@@ -463,7 +464,7 @@ private fun SettingsContent(
                     headlineContent = { Text("BiliBili Account", color = itemColor) },
                     supportingContent = {
                         if (sessDataValid) {
-                            val expiryDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                            val expiryDate = SimpleDateFormat("yyyy-MM-dd", LocalLocale.current.platformLocale)
                                 .format(Date(state.sessDataExpires))
                             Text(
                                 "Logged in, expires on $expiryDate. Long press to clear.",
@@ -489,9 +490,6 @@ private fun SettingsContent(
             SettingsGroup {
                 ListItem(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = { Text(stringResource(id = R.string.useOriginalLanguage)) },
-                    supportingContent = { Text(stringResource(id = R.string.useOriginalLanguageDescription)) },
                     leadingContent = {
                         Icon(
                             Icons.Rounded.Translate,
@@ -506,7 +504,12 @@ private fun SettingsContent(
                                 actions.onUseOriginalLanguageChange(newValue)
                             }
                         )
-                    }
+                    },
+                    overlineContent = null,
+                    supportingContent = { Text(stringResource(id = R.string.useOriginalLanguageDescription)) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    elevation = ListItemDefaults.elevation(ListItemDefaults.Elevation),
+                    content = { Text(stringResource(id = R.string.useOriginalLanguage)) },
                 )
 
                 ListItem(
@@ -1076,7 +1079,7 @@ private fun AIProviderItemPreview() {
     SummaryExpressiveTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             AIProvider.entries
-                .map { AIProviderItem(it, selected = it == AIProvider.GEMINI) {} }
+                .map { AIProviderItem(it, selected = it == AIProvider.OPENAI) {} }
         }
     }
 }

@@ -2,6 +2,7 @@ package me.nanova.summaryexpressive.llm.tools
 
 import ai.koog.agents.core.tools.Tool
 import ai.koog.agents.core.tools.annotations.LLMDescription
+import ai.koog.serialization.typeToken
 import android.content.Context
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
@@ -163,8 +164,8 @@ data class File(
 )
 
 class FileExtractorTool(private val context: Context) : Tool<File, ExtractedContent>(
-    argsSerializer = File.serializer(),
-    resultSerializer = ExtractedContent.serializer(),
+    argsType = typeToken<File>(),
+    resultType = typeToken<ExtractedContent>(),
     name = "extract_text_from_file_uri",
     description = "Extracts text from a file (PDF, DOCX, image) given its content URI."
 ) {

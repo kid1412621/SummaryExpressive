@@ -4,14 +4,13 @@ import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
 import ai.koog.prompt.executor.clients.dashscope.DashscopeModels
 import ai.koog.prompt.executor.clients.deepseek.DeepSeekModels
 import ai.koog.prompt.executor.clients.google.GoogleModels
-import ai.koog.prompt.executor.clients.list
 import ai.koog.prompt.executor.clients.mistralai.MistralAIModels
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.clients.openrouter.OpenRouterModels
+import ai.koog.prompt.executor.ollama.client.OllamaModels
 import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
-import ai.koog.prompt.llm.OllamaModels
 import me.nanova.summaryexpressive.R
 
 enum class AIProvider(
@@ -28,7 +27,7 @@ enum class AIProvider(
         true,
         R.drawable.chatgpt,
         true,
-        OpenAIModels.list()
+        OpenAIModels.models
             .filter {
                 it.supports(LLMCapability.Completion)
                         && !it.supports(LLMCapability.Audio)
@@ -42,7 +41,7 @@ enum class AIProvider(
         true,
         R.drawable.gemini,
         false,
-        GoogleModels.list().filter { it.supports(LLMCapability.Completion) }
+        GoogleModels.models.filter { it.supports(LLMCapability.Completion) }
             .sortedBy { it.id }
     ),
     CLAUDE(
@@ -51,7 +50,7 @@ enum class AIProvider(
         true,
         R.drawable.claude,
         false,
-        AnthropicModels.list().filter { it.supports(LLMCapability.Completion) }
+        AnthropicModels.models.filter { it.supports(LLMCapability.Completion) }
             .sortedWith(compareBy<LLModel> { model ->
                 val versionRegex = Regex("(\\d[\\d.-]*\\d|\\d)")
                 val match = versionRegex.find(model.id)
@@ -64,7 +63,7 @@ enum class AIProvider(
         true,
         R.drawable.deepseek,
         false,
-        DeepSeekModels.list().filter { it.supports(LLMCapability.Completion) }
+        DeepSeekModels.models.filter { it.supports(LLMCapability.Completion) }
             .sortedBy { it.id }
     ),
     MISTRAL(
@@ -73,7 +72,7 @@ enum class AIProvider(
         true,
         R.drawable.mistral,
         false,
-        MistralAIModels.list().filter { it.supports(LLMCapability.Completion) }
+        MistralAIModels.models.filter { it.supports(LLMCapability.Completion) }
             .sortedBy { it.id }
     ),
     QWEN(
@@ -82,7 +81,7 @@ enum class AIProvider(
         true,
         R.drawable.qwen,
         false,
-        DashscopeModels.list().filter { it.supports(LLMCapability.Completion) }
+        DashscopeModels.models.filter { it.supports(LLMCapability.Completion) }
     ),
     OLLAMA(
         LLMProvider.Ollama,
@@ -110,8 +109,7 @@ enum class AIProvider(
         true,
         R.drawable.openrouter,
         false,
-        OpenRouterModels.list().filter { it.supports(LLMCapability.Completion) }
+        OpenRouterModels.models.filter { it.supports(LLMCapability.Completion) }
             .sortedBy { it.id }
     )
-
 }

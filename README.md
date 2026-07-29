@@ -35,7 +35,7 @@ documents with AI/LLM.
 [![Get it on Github](https://images.weserv.nl/?url=https://s1.ax1x.com/2023/01/12/pSu1a36.png&h=80)](https://github.com/kid1412621/SummaryExpressive/releases)
 [![Google Play badge](https://images.weserv.nl/?url=https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png&h=80)](https://play.google.com/store/apps/details?id=me.nanova.summaryexpressive)
 
-Minimal Android version: **13**
+Minimal Android version: **15**
 
 ### Github Release
 
