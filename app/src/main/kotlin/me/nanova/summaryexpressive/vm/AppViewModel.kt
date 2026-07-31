@@ -38,27 +38,36 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    val settingsUiState: StateFlow<SettingsUiState> =
-        userPreferencesRepository.preferencesFlow.map { prefs ->
+    val settingsUiState: StateFlow<SettingsUiState> = userPreferencesRepository.preferencesFlow
+        .map { prefs ->
+            val providerConfig = prefs.providerConfigs[prefs.aiProvider]
             SettingsUiState(
                 useOriginalLanguage = prefs.useOriginalLanguage,
                 dynamicColor = prefs.dynamicColor,
                 theme = prefs.theme,
-                apiKey = prefs.apiKey.takeIf { it.isNotBlank() },
-                baseUrl = prefs.baseUrl.takeIf { it.isNotBlank() },
+                apiKey = providerConfig?.apiKey?.takeIf { it.isNotBlank() },
+                baseUrl = providerConfig?.baseUrl?.takeIf { it.isNotBlank() },
                 aiProvider = AIProvider.valueOf(prefs.aiProvider),
-                model = prefs.model.takeIf { it.isNotBlank() },
+                providerConfigs = prefs.providerConfigs,
+                model = providerConfig?.model?.takeIf { it.isNotBlank() },
                 showLength = prefs.showLength,
                 summaryLength = SummaryLength.valueOf(prefs.summaryLength),
                 autoExtractUrl = prefs.autoExtractUrl,
                 sessData = prefs.sessData,
-                sessDataExpires = prefs.sessDataExpires,
+                sessDataExpires = prefs.sessDataExpires
             )
-        }.stateIn(
+        }
+        .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.Eagerly,
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = SettingsUiState()
         )
+
+    init {
+        viewModelScope.launch {
+            userPreferencesRepository.migrateLegacyFields()
+        }
+    }
 
     // Original Language in summary
     fun setUseOriginalLanguageValue(newValue: Boolean) =
@@ -86,6 +95,13 @@ class AppViewModel @Inject constructor(
     // AI provider
     fun setAIProviderValue(newValue: String) =
         savePreference(userPreferencesRepository::setAIProvider, newValue)
+
+    fun setProviderConfig(provider: String, baseUrl: String, apiKey: String) {
+        val baseUrlWithProtocol = if (baseUrl.isBlank() || baseUrl.startsWith("http")) baseUrl else "https://$baseUrl"
+        viewModelScope.launch {
+            userPreferencesRepository.setProviderConfig(provider, baseUrlWithProtocol, apiKey)
+        }
+    }
 
     // Model
     fun setModel(newValue: String) =

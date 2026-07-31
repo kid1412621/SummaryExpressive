@@ -1,5 +1,6 @@
 package me.nanova.summaryexpressive.vm
 
+import me.nanova.summaryexpressive.ProviderConfig
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.SummaryLength
 import me.nanova.summaryexpressive.llm.SummaryOutput
@@ -13,6 +14,7 @@ data class SettingsUiState(
     val apiKey: String? = null,
     val baseUrl: String? = null,
     val aiProvider: AIProvider = AIProvider.OPENAI,
+    val providerConfigs: Map<String, ProviderConfig> = emptyMap(),
     val model: String? = null,
     val autoExtractUrl: Boolean = true,
     val showLength: Boolean = true,

@@ -38,6 +38,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -56,7 +57,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
@@ -78,7 +79,7 @@ fun HistoryScreen(
     viewModel: HistoryViewModel = hiltViewModel<HistoryViewModel>(),
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    val searchText by viewModel.searchText.collectAsState()
+    val searchBarState = rememberSearchBarState()
     val selectedFilter by viewModel.filterType.collectAsState()
     val focusManager = LocalFocusManager.current
 
@@ -91,16 +92,15 @@ fun HistoryScreen(
                 )
             ) {
                 SearchBar(
+                    state = searchBarState,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(start = 20.dp, end = 20.dp, top = 15.dp),
                     inputField = {
                         SearchBarDefaults.InputField(
-                            query = searchText,
-                            onQueryChange = { viewModel.onSearchTextChanged(it) },
+                            textFieldState = viewModel.searchState,
+                            searchBarState = searchBarState,
                             onSearch = { focusManager.clearFocus() },
-                            expanded = false,
-                            onExpandedChange = {},
                             placeholder = { Text(stringResource(id = R.string.search)) },
                             leadingIcon = {
                                 Icon(
@@ -109,7 +109,7 @@ fun HistoryScreen(
                                 )
                             },
                             trailingIcon = {
-                                if (searchText.isNotBlank()) {
+                                if (viewModel.searchState.text.isNotBlank()) {
                                     IconButton(onClick = { viewModel.onSearchTextChanged("") }) {
                                         Icon(
                                             imageVector = Icons.Default.Clear,
@@ -120,9 +120,6 @@ fun HistoryScreen(
                             },
                         )
                     },
-                    expanded = false,
-                    onExpandedChange = {},
-                    content = {},
                 )
 
                 TypeFilters(
@@ -177,7 +174,7 @@ fun HistoryScreen(
             is LoadState.NotLoading -> {
                 if (historySummaries.itemCount == 0) {
                     val message = stringResource(
-                        id = if (searchText.isBlank() && selectedFilter == null) R.string.noHistory
+                        id = if (viewModel.searchState.text.isBlank() && selectedFilter == null) R.string.noHistory
                         else R.string.nothingFound
                     )
                     Column(
@@ -306,7 +303,6 @@ private fun SwipeableSummaryCard(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    @Suppress("Deprecation")
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = {
             if (it == SwipeToDismissBoxValue.EndToStart) {

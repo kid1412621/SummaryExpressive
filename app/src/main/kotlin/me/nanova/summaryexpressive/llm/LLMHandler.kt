@@ -67,7 +67,6 @@ data class SummaryOutput(
     val length: SummaryLength,
 ) : SummaryData
 
-@Suppress("UnstableApiUsage")
 class LLMHandler(context: Context, private val httpClient: HttpClient) {
     private val userPreferencesRepository = UserPreferencesRepository(context)
     private val koogHttpClientFactory = KtorKoogHttpClient.Factory(httpClient)

@@ -19,6 +19,13 @@ import java.io.IOException
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 @Serializable
+data class ProviderConfig(
+    val apiKey: String = "",
+    val baseUrl: String = "",
+    val model: String = ""
+)
+
+@Serializable
 data class UserPreferences(
     // state
     val isOnboarded: Boolean = false,
@@ -26,15 +33,17 @@ data class UserPreferences(
     val useOriginalLanguage: Boolean = true,
     val dynamicColor: Boolean = true,
     val theme: Int = 0,
-    val baseUrl: String = "",
-    val apiKey: String = "",
     val aiProvider: String = AIProvider.OPENAI.name,
-    val model: String = "",
+    val providerConfigs: Map<String, ProviderConfig> = emptyMap(),
     val showLength: Boolean = true,
     val summaryLength: String = SummaryLength.MEDIUM.name,
     val autoExtractUrl: Boolean = true,
     val sessData: String = "",
     val sessDataExpires: Long = 0L,
+    // legacy fields for migration
+    val baseUrl: String = "",
+    val apiKey: String = "",
+    val model: String = "",
 )
 
 class UserPreferencesRepository(private val context: Context) {
@@ -64,6 +73,29 @@ class UserPreferencesRepository(private val context: Context) {
         }
     }
 
+    suspend fun migrateLegacyFields() {
+        updatePreferences { userPrefs ->
+            if (userPrefs.apiKey.isNotEmpty() || userPrefs.baseUrl.isNotEmpty() || userPrefs.model.isNotEmpty()) {
+                val currentConfig = userPrefs.providerConfigs[userPrefs.aiProvider] ?: ProviderConfig()
+                val updatedConfig = currentConfig.copy(
+                    apiKey = userPrefs.apiKey.takeIf { it.isNotEmpty() } ?: currentConfig.apiKey,
+                    baseUrl = userPrefs.baseUrl.takeIf { it.isNotEmpty() } ?: currentConfig.baseUrl,
+                    model = userPrefs.model.takeIf { it.isNotEmpty() } ?: currentConfig.model
+                )
+                val newConfigs = userPrefs.providerConfigs.toMutableMap()
+                newConfigs[userPrefs.aiProvider] = updatedConfig
+                userPrefs.copy(
+                    providerConfigs = newConfigs,
+                    apiKey = "",
+                    baseUrl = "",
+                    model = ""
+                )
+            } else {
+                userPrefs
+            }
+        }
+    }
+
     suspend fun setUseOriginalLanguage(value: Boolean) =
         updatePreferences { it.copy(useOriginalLanguage = value) }
 
@@ -72,13 +104,31 @@ class UserPreferencesRepository(private val context: Context) {
 
     suspend fun setTheme(value: Int) = updatePreferences { it.copy(theme = value) }
 
-    suspend fun setBaseUrl(value: String) = updatePreferences { it.copy(baseUrl = value) }
+    private suspend fun updateProviderConfig(transform: (ProviderConfig) -> ProviderConfig) {
+        updatePreferences { prefs ->
+            val currentConfig = prefs.providerConfigs[prefs.aiProvider] ?: ProviderConfig()
+            val newConfigs = prefs.providerConfigs.toMutableMap()
+            newConfigs[prefs.aiProvider] = transform(currentConfig)
+            prefs.copy(providerConfigs = newConfigs)
+        }
+    }
 
-    suspend fun setApiKey(value: String) = updatePreferences { it.copy(apiKey = value) }
+    suspend fun setProviderConfig(provider: String, baseUrl: String, apiKey: String) {
+        updatePreferences { prefs ->
+            val currentConfig = prefs.providerConfigs[provider] ?: ProviderConfig()
+            val newConfigs = prefs.providerConfigs.toMutableMap()
+            newConfigs[provider] = currentConfig.copy(baseUrl = baseUrl, apiKey = apiKey)
+            prefs.copy(providerConfigs = newConfigs, aiProvider = provider)
+        }
+    }
+
+    suspend fun setBaseUrl(value: String) = updateProviderConfig { it.copy(baseUrl = value) }
+
+    suspend fun setApiKey(value: String) = updateProviderConfig { it.copy(apiKey = value) }
 
     suspend fun setAIProvider(value: String) = updatePreferences { it.copy(aiProvider = value) }
 
-    suspend fun setModel(value: String) = updatePreferences { it.copy(model = value) }
+    suspend fun setModel(value: String) = updateProviderConfig { it.copy(model = value) }
 
     suspend fun setIsOnboarded(value: Boolean) =
         updatePreferences { it.copy(isOnboarded = value) }
