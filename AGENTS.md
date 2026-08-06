@@ -42,8 +42,8 @@ SummaryExpressive is an AI/LLM summarizer FOSS Android app that summarizes YouTu
 ```
 
 ## Code Style Guidelines
-- Must follow best practices
 - Make the code structure as simple as possible
+- Never use full-qualified class name inline, use import statement instead
 - Follow [Kotlin style guide](https://developer.android.com/kotlin/style-guide)
 
 ## Dev Environment Tips
@@ -155,14 +155,14 @@ The app supports multiple LLM providers configured in settings:
 
 ### `build.gradle.kts` (root)
 Defines plugin versions:
-- Android Gradle Plugin: 9.2.1
-- Kotlin: 2.3.0
-- KSP: 2.3.4
+- Android Gradle Plugin: 9.3.1
+- Kotlin: 2.4.0
+- KSP: 2.3.11
 - Hilt: 2.60
 
 ### `app/build.gradle.kts`
 Main app configuration:
-- Min SDK: 35 (Android 15)
+- Min SDK: 33 (Android 13)
 - Target SDK: 37
 - Java 25 toolchain
 - Compose BOM: 2026.06.00

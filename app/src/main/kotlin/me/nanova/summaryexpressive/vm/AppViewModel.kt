@@ -33,32 +33,6 @@ class AppViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val prefs = userPreferencesRepository.preferencesFlow.first()
-            if (!prefs.hasMigratedFromLegacy) {
-                val legacy = userPreferencesRepository.getLegacyPreferences()
-                if (legacy != null) {
-                    val providerConfigsToMigrate = legacy.providerConfigs.toMutableMap()
-                    
-                    if (legacy.apiKey.isNotEmpty() || legacy.baseUrl.isNotEmpty() || legacy.model.isNotEmpty()) {
-                        val currentConfig = legacy.providerConfigs[legacy.aiProvider] ?: ProviderConfig()
-                        providerConfigsToMigrate[legacy.aiProvider] = currentConfig.copy(
-                            apiKey = legacy.apiKey.takeIf { it.isNotEmpty() } ?: currentConfig.apiKey,
-                            baseUrl = legacy.baseUrl.takeIf { it.isNotEmpty() } ?: currentConfig.baseUrl,
-                            model = legacy.model.takeIf { it.isNotEmpty() } ?: currentConfig.model
-                        )
-                    }
-
-                    for ((provider, config) in providerConfigsToMigrate) {
-                        aiProviderConfigDao.insertConfig(
-                            AIProviderConfigEntity.fromProviderConfig(provider, config)
-                        )
-                    }
-                    userPreferencesRepository.updateFromLegacy(legacy)
-                } else {
-                    userPreferencesRepository.markMigratedFromLegacy()
-                }
-            }
-            
             val isOnboardingCompleted = userPreferencesRepository.preferencesFlow.map { it.isOnboarded }.first()
             if (isOnboardingCompleted) {
                 _startDestination.value = Nav.Home
