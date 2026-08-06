@@ -65,6 +65,8 @@ data class SummaryOutput(
     val isYoutubeLink: Boolean,
     val isBiliBiliLink: Boolean,
     val length: SummaryLength,
+    val provider: String? = null,
+    val model: String? = null,
 ) : SummaryData
 
 class LLMHandler(context: Context, private val httpClient: HttpClient) {

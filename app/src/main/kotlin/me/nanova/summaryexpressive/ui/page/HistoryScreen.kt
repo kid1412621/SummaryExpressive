@@ -303,20 +303,18 @@ private fun SwipeableSummaryCard(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = {
-            if (it == SwipeToDismissBoxValue.EndToStart) {
-                onDismiss()
-            }
-            false
-        }
-    )
+    val dismissState = rememberSwipeToDismissBoxState()
 
     SwipeToDismissBox(
         state = dismissState,
         modifier = modifier.clip(CardDefaults.shape),
         enableDismissFromEndToStart = true,
         enableDismissFromStartToEnd = false,
+        onDismiss = {
+            if (it == SwipeToDismissBoxValue.EndToStart) {
+                onDismiss()
+            }
+        },
         backgroundContent = {
             val color by animateColorAsState(
                 targetValue = if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
@@ -350,6 +348,8 @@ private fun SwipeableSummaryCard(
                 isYoutubeLink = summary.isYoutubeLink,
                 isBiliBiliLink = summary.isBiliBiliLink,
                 length = summary.length,
+                provider = summary.provider,
+                model = summary.model,
             ),
             cardColors = CardDefaults.elevatedCardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant

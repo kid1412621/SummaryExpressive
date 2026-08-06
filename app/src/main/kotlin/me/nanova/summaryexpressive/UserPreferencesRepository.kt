@@ -2,27 +2,49 @@ package me.nanova.summaryexpressive
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.dataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.SummaryLength
 import java.io.IOException
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+val Context.dataStore: DataStore<UserPreferences> by dataStore(
+    fileName = "user_prefs.pb",
+    serializer = UserPreferencesSerializer
+)
+
+private val Context.legacyDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 @Serializable
 data class ProviderConfig(
     val apiKey: String = "",
     val baseUrl: String = "",
     val model: String = ""
+)
+
+@Serializable
+data class LegacyUserPreferences(
+    val isOnboarded: Boolean = false,
+    val useOriginalLanguage: Boolean = true,
+    val dynamicColor: Boolean = true,
+    val theme: Int = 0,
+    val aiProvider: String = AIProvider.OPENAI.name,
+    val providerConfigs: Map<String, ProviderConfig> = emptyMap(),
+    val showLength: Boolean = true,
+    val summaryLength: String = SummaryLength.MEDIUM.name,
+    val autoExtractUrl: Boolean = true,
+    val sessData: String = "",
+    val sessDataExpires: Long = 0L,
+    val baseUrl: String = "",
+    val apiKey: String = "",
+    val model: String = "",
 )
 
 @Serializable
@@ -34,65 +56,54 @@ data class UserPreferences(
     val dynamicColor: Boolean = true,
     val theme: Int = 0,
     val aiProvider: String = AIProvider.OPENAI.name,
-    val providerConfigs: Map<String, ProviderConfig> = emptyMap(),
     val showLength: Boolean = true,
     val summaryLength: String = SummaryLength.MEDIUM.name,
     val autoExtractUrl: Boolean = true,
     val sessData: String = "",
     val sessDataExpires: Long = 0L,
-    // legacy fields for migration
-    val baseUrl: String = "",
-    val apiKey: String = "",
-    val model: String = "",
+    val hasMigratedFromLegacy: Boolean = false
 )
 
 class UserPreferencesRepository(private val context: Context) {
-    private val userPreferencesKey = stringPreferencesKey("user_preferences")
-
     val preferencesFlow: Flow<UserPreferences> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
-                emit(emptyPreferences())
+                emit(UserPreferences())
             } else {
                 throw exception
             }
-        }.map { preferences ->
-            preferences[userPreferencesKey]?.let { jsonString ->
-                runCatching { Json.decodeFromString<UserPreferences>(jsonString) }.getOrNull()
-            } ?: UserPreferences()
         }
 
-    private suspend fun updatePreferences(transform: (UserPreferences) -> UserPreferences) {
-        context.dataStore.edit { preferences ->
-            val currentPreferencesJson = preferences[userPreferencesKey]
-            val currentPreferences = currentPreferencesJson?.let {
-                runCatching { Json.decodeFromString<UserPreferences>(it) }.getOrNull()
-            } ?: UserPreferences()
-            val newPreferences = transform(currentPreferences)
-            preferences[userPreferencesKey] = Json.encodeToString(newPreferences)
-        }
+    private suspend fun updatePreferences(transform: suspend (UserPreferences) -> UserPreferences) {
+        context.dataStore.updateData { transform(it) }
     }
 
-    suspend fun migrateLegacyFields() {
-        updatePreferences { userPrefs ->
-            if (userPrefs.apiKey.isNotEmpty() || userPrefs.baseUrl.isNotEmpty() || userPrefs.model.isNotEmpty()) {
-                val currentConfig = userPrefs.providerConfigs[userPrefs.aiProvider] ?: ProviderConfig()
-                val updatedConfig = currentConfig.copy(
-                    apiKey = userPrefs.apiKey.takeIf { it.isNotEmpty() } ?: currentConfig.apiKey,
-                    baseUrl = userPrefs.baseUrl.takeIf { it.isNotEmpty() } ?: currentConfig.baseUrl,
-                    model = userPrefs.model.takeIf { it.isNotEmpty() } ?: currentConfig.model
-                )
-                val newConfigs = userPrefs.providerConfigs.toMutableMap()
-                newConfigs[userPrefs.aiProvider] = updatedConfig
-                userPrefs.copy(
-                    providerConfigs = newConfigs,
-                    apiKey = "",
-                    baseUrl = "",
-                    model = ""
-                )
-            } else {
-                userPrefs
-            }
+    suspend fun getLegacyPreferences(): LegacyUserPreferences? {
+        val userPreferencesKey = stringPreferencesKey("user_preferences")
+        val prefs = context.legacyDataStore.data.firstOrNull() ?: return null
+        val jsonString = prefs[userPreferencesKey] ?: return null
+        return runCatching { Json { ignoreUnknownKeys = true }.decodeFromString<LegacyUserPreferences>(jsonString) }.getOrNull()
+    }
+
+    suspend fun markMigratedFromLegacy() {
+        updatePreferences { it.copy(hasMigratedFromLegacy = true) }
+    }
+
+    suspend fun updateFromLegacy(legacy: LegacyUserPreferences) {
+        updatePreferences {
+            it.copy(
+                isOnboarded = legacy.isOnboarded,
+                useOriginalLanguage = legacy.useOriginalLanguage,
+                dynamicColor = legacy.dynamicColor,
+                theme = legacy.theme,
+                aiProvider = legacy.aiProvider,
+                showLength = legacy.showLength,
+                summaryLength = legacy.summaryLength,
+                autoExtractUrl = legacy.autoExtractUrl,
+                sessData = legacy.sessData,
+                sessDataExpires = legacy.sessDataExpires,
+                hasMigratedFromLegacy = true
+            )
         }
     }
 
@@ -104,31 +115,7 @@ class UserPreferencesRepository(private val context: Context) {
 
     suspend fun setTheme(value: Int) = updatePreferences { it.copy(theme = value) }
 
-    private suspend fun updateProviderConfig(transform: (ProviderConfig) -> ProviderConfig) {
-        updatePreferences { prefs ->
-            val currentConfig = prefs.providerConfigs[prefs.aiProvider] ?: ProviderConfig()
-            val newConfigs = prefs.providerConfigs.toMutableMap()
-            newConfigs[prefs.aiProvider] = transform(currentConfig)
-            prefs.copy(providerConfigs = newConfigs)
-        }
-    }
-
-    suspend fun setProviderConfig(provider: String, baseUrl: String, apiKey: String) {
-        updatePreferences { prefs ->
-            val currentConfig = prefs.providerConfigs[provider] ?: ProviderConfig()
-            val newConfigs = prefs.providerConfigs.toMutableMap()
-            newConfigs[provider] = currentConfig.copy(baseUrl = baseUrl, apiKey = apiKey)
-            prefs.copy(providerConfigs = newConfigs, aiProvider = provider)
-        }
-    }
-
-    suspend fun setBaseUrl(value: String) = updateProviderConfig { it.copy(baseUrl = value) }
-
-    suspend fun setApiKey(value: String) = updateProviderConfig { it.copy(apiKey = value) }
-
     suspend fun setAIProvider(value: String) = updatePreferences { it.copy(aiProvider = value) }
-
-    suspend fun setModel(value: String) = updateProviderConfig { it.copy(model = value) }
 
     suspend fun setIsOnboarded(value: Boolean) =
         updatePreferences { it.copy(isOnboarded = value) }

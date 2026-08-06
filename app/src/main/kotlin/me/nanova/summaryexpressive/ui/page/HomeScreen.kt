@@ -15,10 +15,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
@@ -26,9 +24,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -49,6 +50,7 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
@@ -56,9 +58,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumFlexibleTopAppBar
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -86,6 +92,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -94,6 +101,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.toClipEntry
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -104,22 +112,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.graphics.Color
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.ListItem
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.R
 import me.nanova.summaryexpressive.llm.AIProvider
@@ -127,8 +120,10 @@ import me.nanova.summaryexpressive.llm.SummaryLength
 import me.nanova.summaryexpressive.llm.tools.getFileName
 import me.nanova.summaryexpressive.model.SummaryException
 import me.nanova.summaryexpressive.ui.Nav
+import me.nanova.summaryexpressive.ui.component.ProviderIndicator
 import me.nanova.summaryexpressive.ui.component.SummaryCard
 import me.nanova.summaryexpressive.vm.AppViewModel
+import me.nanova.summaryexpressive.vm.SettingsUiState
 import me.nanova.summaryexpressive.vm.SummaryViewModel
 
 
@@ -152,7 +147,7 @@ private object MimeTypes {
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    onNav: (dest: Nav, args: Map<String, String>?) -> Unit =  {dest, args-> {}},
+    onNav: (dest: Nav, args: Map<String, String>?) -> Unit = { _, _ -> run {} },
     appViewModel: AppViewModel,
     summaryViewModel: SummaryViewModel = hiltViewModel<SummaryViewModel>(),
 ) {
@@ -434,7 +429,7 @@ fun HomeScreen(
 private fun HomeTopAppBar(
     onNav: (dest: Nav) -> Unit = {},
     scrollBehavior: TopAppBarScrollBehavior,
-    settings: me.nanova.summaryexpressive.vm.SettingsUiState,
+    settings: SettingsUiState,
     onIndicatorClick: () -> Unit,
 ) {
     MediumFlexibleTopAppBar(
@@ -449,36 +444,12 @@ private fun HomeTopAppBar(
             }
         },
         actions = {
-            IconButton(onClick = onIndicatorClick) {
-                Box {
-                    Icon(
-                        painter = painterResource(id = settings.aiProvider.icon),
-                        contentDescription = settings.aiProvider.name,
-                        modifier = Modifier.size(24.dp).align(Alignment.Center),
-                        tint = if (settings.aiProvider.isMonochromeIcon) LocalContentColor.current else Color.Unspecified
-                    )
-                    
-                    val modelName = settings.model?.takeIf { it.isNotBlank() } ?: "Default"
-                    val shortName = modelName.replaceFirst(Regex("^(gpt|gemini|claude|deepseek)-", RegexOption.IGNORE_CASE), "")
-                    
-                    Text(
-                        text = shortName,
-                        fontSize = 10.sp,
-                        lineHeight = 10.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        maxLines = 1,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .offset(x = 1.dp, y = 8.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                shape = RoundedCornerShape(4.dp)
-                            )
-                            .padding(horizontal = 3.dp, vertical = 0.dp)
-                    )
-                }
-            }
+            ProviderIndicator(
+                provider = settings.aiProvider,
+                model = settings.model,
+                onClick = onIndicatorClick
+            )
+
             IconButton(
                 onClick = { onNav(Nav.History) }
             ) {
@@ -496,10 +467,10 @@ private fun HomeTopAppBar(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProviderModelSheetContent(
-    settings: me.nanova.summaryexpressive.vm.SettingsUiState,
+    settings: SettingsUiState,
     onProviderSelect: (AIProvider) -> Unit,
     onModelSelect: (String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -512,19 +483,43 @@ fun ProviderModelSheetContent(
             modifier = Modifier.fillMaxWidth()
         ) {
             items(AIProvider.entries.toTypedArray()) { provider ->
-                FilterChip(
-                    selected = settings.aiProvider == provider,
-                    onClick = { onProviderSelect(provider) },
-                    label = { Text(provider.name) },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(id = provider.icon),
-                            contentDescription = provider.name,
-                            modifier = Modifier.size(18.dp),
-                            tint = if (provider.isMonochromeIcon) LocalContentColor.current else Color.Unspecified
+                val isConfigured = settings.providerConfigs[provider.name]?.let { 
+                    it.apiKey.isNotBlank() || it.baseUrl.isNotBlank() 
+                } ?: false
+
+                val context = LocalContext.current
+                Box {
+                    FilterChip(
+                        selected = settings.aiProvider == provider,
+                        enabled = isConfigured,
+                        onClick = { if (isConfigured) onProviderSelect(provider) },
+                        label = { Text(provider.name) },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(id = provider.icon),
+                                contentDescription = provider.name,
+                                modifier = Modifier.size(18.dp),
+                                tint = if (!isConfigured) {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                } else if (provider.isMonochromeIcon) {
+                                    LocalContentColor.current
+                                } else {
+                                    Color.Unspecified
+                                }
+                            )
+                        }
+                    )
+                    
+                    if (!isConfigured) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable {
+                                    android.widget.Toast.makeText(context, "Please go to settings page to configure before use", android.widget.Toast.LENGTH_SHORT).show()
+                                }
                         )
                     }
-                )
+                }
             }
         }
         
@@ -538,16 +533,21 @@ fun ProviderModelSheetContent(
             ) {
                 items(models) { model ->
                     ListItem(
-                        modifier = Modifier.clickable { 
+                        modifier = Modifier.clickable {
                             onModelSelect(model.id)
                             onDismiss()
                         },
-                        headlineContent = { Text(model.id) },
+                        leadingContent = null,
                         trailingContent = {
                             if (settings.model == model.id) {
                                 Icon(Icons.Rounded.Check, contentDescription = "Selected")
                             }
-                        }
+                        },
+                        overlineContent = null,
+                        supportingContent = null,
+                        colors = ListItemDefaults.colors(),
+                        elevation = ListItemDefaults.elevation(),
+                        content = { Text(model.id) },
                     )
                 }
             }

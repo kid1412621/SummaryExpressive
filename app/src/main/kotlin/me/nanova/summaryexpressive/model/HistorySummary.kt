@@ -1,5 +1,6 @@
 package me.nanova.summaryexpressive.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
@@ -29,6 +30,10 @@ data class HistorySummary(
     val subtype: VideoSubtype? = null,
     val sourceLink: String? = null,
     val sourceText: String? = null,
+    @ColumnInfo(defaultValue = "NULL")
+    val provider: String? = null,
+    @ColumnInfo(defaultValue = "NULL")
+    val model: String? = null,
 ) {
     val isYoutubeLink: Boolean
         get() = type == SummaryType.VIDEO && subtype == VideoSubtype.YOUTUBE

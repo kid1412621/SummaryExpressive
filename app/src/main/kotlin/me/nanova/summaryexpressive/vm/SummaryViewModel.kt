@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.nanova.summaryexpressive.data.HistoryRepository
+import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.LLMHandler
 import me.nanova.summaryexpressive.llm.SummaryLength
 import me.nanova.summaryexpressive.llm.SummaryOutput
@@ -115,7 +116,7 @@ class SummaryViewModel @Inject constructor(
             }
 
             _summarizationState.update { it.copy(summaryResult = summaryOutput) }
-            saveSummaryToHistory(summaryOutput, settings.summaryLength, source)
+            saveSummaryToHistory(summaryOutput, settings.summaryLength, source, settings.aiProvider, settings.model)
 
         } catch (e: Exception) {
             Log.e("LLMViewModel", "Failed to summarize", e)
@@ -134,6 +135,8 @@ class SummaryViewModel @Inject constructor(
         summaryOutput: SummaryOutput,
         summaryLength: SummaryLength,
         source: SummarySource,
+        provider: AIProvider,
+        model: String?
     ) {
         if (source is SummarySource.None) return
 
@@ -179,7 +182,9 @@ class SummaryViewModel @Inject constructor(
             type = type,
             subtype = subtype,
             sourceLink = sourceLink,
-            sourceText = sourceText
+            sourceText = sourceText,
+            provider = provider.name,
+            model = model
         )
         if (summary.summary.isNotBlank() && summary.summary != "invalid link") {
             historyRepository.addSummary(summary)
