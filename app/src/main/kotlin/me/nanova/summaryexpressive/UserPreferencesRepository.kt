@@ -29,7 +29,7 @@ data class UserPreferences(
     val useOriginalLanguage: Boolean = true,
     val dynamicColor: Boolean = true,
     val theme: Int = 0,
-    val aiProvider: String = AIProvider.OPENAI.name,
+    val aiProvider: String? = null,
     val showLength: Boolean = true,
     val summaryLength: String = SummaryLength.MEDIUM.name,
     val autoExtractUrl: Boolean = true,
@@ -59,7 +59,7 @@ class UserPreferencesRepository(private val context: Context) {
 
     suspend fun setTheme(value: Int) = updatePreferences { it.copy(theme = value) }
 
-    suspend fun setAIProvider(value: String) = updatePreferences { it.copy(aiProvider = value) }
+    suspend fun setAIProvider(value: String?) = updatePreferences { it.copy(aiProvider = value) }
 
     suspend fun setIsOnboarded(value: Boolean) =
         updatePreferences { it.copy(isOnboarded = value) }

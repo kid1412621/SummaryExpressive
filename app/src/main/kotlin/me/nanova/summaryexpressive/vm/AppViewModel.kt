@@ -49,14 +49,14 @@ class AppViewModel @Inject constructor(
         val providerConfigs = configEntities.associate { 
             it.provider to it.toProviderConfig() 
         }
-        val providerConfig = providerConfigs[prefs.aiProvider]
+        val providerConfig = prefs.aiProvider?.let { providerConfigs[it] }
         SettingsUiState(
             useOriginalLanguage = prefs.useOriginalLanguage,
             dynamicColor = prefs.dynamicColor,
             theme = prefs.theme,
             apiKey = providerConfig?.apiKey?.takeIf { it.isNotBlank() },
             baseUrl = providerConfig?.baseUrl?.takeIf { it.isNotBlank() },
-            aiProvider = AIProvider.valueOf(prefs.aiProvider),
+            aiProvider = prefs.aiProvider?.let { runCatching { AIProvider.valueOf(it) }.getOrNull() },
             providerConfigs = providerConfigs,
             model = providerConfig?.model?.takeIf { it.isNotBlank() },
             showLength = prefs.showLength,
@@ -86,7 +86,7 @@ class AppViewModel @Inject constructor(
     // API Key
     fun setApiKeyValue(newValue: String) {
         viewModelScope.launch {
-            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider
+            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
             val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
             aiProviderConfigDao.insertConfig(
                 AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(apiKey = newValue))
@@ -98,7 +98,7 @@ class AppViewModel @Inject constructor(
     fun setBaseUrlValue(newValue: String) {
         val baseUrlWithProtocol = if (newValue.isBlank() || newValue.startsWith("http")) newValue else "https://$newValue"
         viewModelScope.launch {
-            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider
+            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
             val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
             aiProviderConfigDao.insertConfig(
                 AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(baseUrl = baseUrlWithProtocol))
@@ -124,7 +124,7 @@ class AppViewModel @Inject constructor(
     // Model
     fun setModel(newValue: String) {
         viewModelScope.launch {
-            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider
+            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
             val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
             aiProviderConfigDao.insertConfig(
                 AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(model = newValue))

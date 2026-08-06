@@ -101,6 +101,10 @@ class SummaryViewModel @Inject constructor(
 
             val appLanguage = application.resources.configuration.locales[0]
 
+            if (settings.aiProvider == null) {
+                throw SummaryException.NoKeyException()
+            }
+
             val agent = llmHandler.getSummarizationAgent(
                 provider = settings.aiProvider,
                 apiKey = currentApiKey,
@@ -116,7 +120,7 @@ class SummaryViewModel @Inject constructor(
             }
 
             _summarizationState.update { it.copy(summaryResult = summaryOutput) }
-            saveSummaryToHistory(summaryOutput, settings.summaryLength, source, settings.aiProvider, settings.model)
+            saveSummaryToHistory(summaryOutput, settings.summaryLength, source, settings.aiProvider.name, settings.model)
 
         } catch (e: Exception) {
             Log.e("LLMViewModel", "Failed to summarize", e)
@@ -135,7 +139,7 @@ class SummaryViewModel @Inject constructor(
         summaryOutput: SummaryOutput,
         summaryLength: SummaryLength,
         source: SummarySource,
-        provider: AIProvider,
+        provider: String,
         model: String?
     ) {
         if (source is SummarySource.None) return
@@ -183,7 +187,7 @@ class SummaryViewModel @Inject constructor(
             subtype = subtype,
             sourceLink = sourceLink,
             sourceText = sourceText,
-            provider = provider.name,
+            provider = provider,
             model = model
         )
         if (summary.summary.isNotBlank() && summary.summary != "invalid link") {

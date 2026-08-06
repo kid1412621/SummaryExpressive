@@ -231,7 +231,7 @@ fun SettingsScreen(
 
             DialogState.AI_PROVIDER -> {
                 AIProviderSettingsDialog(
-                    initialProvider = state.aiProvider,
+                    initialProvider = state.aiProvider ?: AIProvider.OPENAI,
                     providerConfigs = state.providerConfigs,
                     onDismissRequest = { dialogState = DialogState.NONE },
                     onConfirm = { provider, baseUrl, apiKey ->
@@ -247,7 +247,7 @@ fun SettingsScreen(
             DialogState.MODEL -> {
                 ModelSettingsDialog(
                     onDismissRequest = { dialogState = DialogState.NONE },
-                    provider = state.aiProvider,
+                    provider = state.aiProvider ?: AIProvider.OPENAI,
                     initialModelId = state.model,
                     onConfirm = { modelId ->
                         actions.onModelChange(modelId)

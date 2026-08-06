@@ -437,19 +437,20 @@ private fun HomeTopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(),
         title = { },
         navigationIcon = {
-            IconButton(
-                onClick = { onNav(Nav.Settings) }
-            ) {
-                Icon(Icons.Outlined.Settings, contentDescription = "Settings")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = { onNav(Nav.Settings) }
+                ) {
+                    Icon(Icons.Outlined.Settings, contentDescription = "Settings")
+                }
+                ProviderIndicator(
+                    provider = settings.aiProvider,
+                    model = settings.model,
+                    onClick = onIndicatorClick
+                )
             }
         },
         actions = {
-            ProviderIndicator(
-                provider = settings.aiProvider,
-                model = settings.model,
-                onClick = onIndicatorClick
-            )
-
             IconButton(
                 onClick = { onNav(Nav.History) }
             ) {
@@ -482,7 +483,12 @@ fun ProviderModelSheetContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            items(AIProvider.entries.toTypedArray()) { provider ->
+            val sortedProviders = AIProvider.entries.sortedByDescending { provider ->
+                settings.providerConfigs[provider.name]?.let { 
+                    it.apiKey.isNotBlank() || it.baseUrl.isNotBlank() 
+                } ?: false
+            }
+            items(sortedProviders) { provider ->
                 val isConfigured = settings.providerConfigs[provider.name]?.let { 
                     it.apiKey.isNotBlank() || it.baseUrl.isNotBlank() 
                 } ?: false
@@ -526,12 +532,38 @@ fun ProviderModelSheetContent(
         Spacer(modifier = Modifier.height(16.dp))
         Text("Select Model", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
         
-        val models = settings.aiProvider.models
-        if (models.isNotEmpty()) {
+        val predefinedModels = settings.aiProvider?.models ?: emptyList()
+        val customModel = settings.model?.takeIf { modelId -> 
+            modelId.isNotBlank() && predefinedModels.none { it.id == modelId } 
+        }
+
+        if (predefinedModels.isNotEmpty() || customModel != null) {
             LazyColumn(
                 modifier = Modifier.heightIn(max = 300.dp)
             ) {
-                items(models) { model ->
+                if (customModel != null) {
+                    item {
+                        ListItem(
+                            modifier = Modifier.clickable {
+                                onModelSelect(customModel)
+                                onDismiss()
+                            },
+                            leadingContent = null,
+                            trailingContent = {
+                                if (settings.model == customModel) {
+                                    Icon(Icons.Rounded.Check, contentDescription = "Selected")
+                                }
+                            },
+                            overlineContent = null,
+                            supportingContent = null,
+                            colors = ListItemDefaults.colors(),
+                            elevation = ListItemDefaults.elevation(),
+                            content = { Text("$customModel (Custom)") },
+                        )
+                    }
+                }
+
+                items(predefinedModels) { model ->
                     ListItem(
                         modifier = Modifier.clickable {
                             onModelSelect(model.id)

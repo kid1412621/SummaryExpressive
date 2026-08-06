@@ -13,7 +13,7 @@ data class SettingsUiState(
     val theme: Int = 0,
     val apiKey: String? = null,
     val baseUrl: String? = null,
-    val aiProvider: AIProvider = AIProvider.OPENAI,
+    val aiProvider: AIProvider? = null,
     val providerConfigs: Map<String, ProviderConfig> = emptyMap(),
     val model: String? = null,
     val autoExtractUrl: Boolean = true,
