@@ -14,6 +14,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.SummaryLength
+import me.nanova.summaryexpressive.model.CustomPrompt
 import java.io.IOException
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -35,6 +36,8 @@ data class UserPreferences(
     val autoExtractUrl: Boolean = true,
     val sessData: String = "",
     val sessDataExpires: Long = 0L,
+    val savedPrompts: List<CustomPrompt> = emptyList(),
+    val selectedPromptId: String? = null
 )
 
 class UserPreferencesRepository(private val context: Context) {
@@ -96,4 +99,18 @@ class UserPreferencesRepository(private val context: Context) {
 
     suspend fun clearSessData() =
         updatePreferences { it.copy(sessData = "", sessDataExpires = 0L) }
+
+    suspend fun savePrompt(prompt: CustomPrompt) = updatePreferences { prefs ->
+        val updatedPrompts = prefs.savedPrompts.filter { it.id != prompt.id } + prompt
+        prefs.copy(savedPrompts = updatedPrompts)
+    }
+
+    suspend fun deletePrompt(promptId: String) = updatePreferences { prefs ->
+        val updatedPrompts = prefs.savedPrompts.filter { it.id != promptId }
+        val newSelectedId = if (prefs.selectedPromptId == promptId) null else prefs.selectedPromptId
+        prefs.copy(savedPrompts = updatedPrompts, selectedPromptId = newSelectedId)
+    }
+
+    suspend fun selectPrompt(promptId: String?) =
+        updatePreferences { it.copy(selectedPromptId = promptId) }
 }

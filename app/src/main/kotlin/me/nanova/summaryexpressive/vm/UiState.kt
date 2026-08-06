@@ -19,6 +19,8 @@ data class SettingsUiState(
     val summaryLength: SummaryLength = SummaryLength.MEDIUM,
     val sessData: String = "",
     val sessDataExpires: Long = 0L,
+    val savedPrompts: List<CustomPrompt> = emptyList(),
+    val selectedPromptId: String? = null,
 )
 
 data class SummarizationState(

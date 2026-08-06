@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.UserPreferencesRepository
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.SummaryLength
+import me.nanova.summaryexpressive.model.CustomPrompt
 import me.nanova.summaryexpressive.ui.Nav
 import javax.inject.Inject
 
@@ -53,6 +54,8 @@ class AppViewModel @Inject constructor(
                 autoExtractUrl = prefs.autoExtractUrl,
                 sessData = prefs.sessData,
                 sessDataExpires = prefs.sessDataExpires,
+                savedPrompts = prefs.savedPrompts,
+                selectedPromptId = prefs.selectedPromptId
             )
         }.stateIn(
             scope = viewModelScope,
@@ -136,6 +139,25 @@ class AppViewModel @Inject constructor(
     private fun <T> savePreference(setter: suspend (T) -> Unit, value: T) {
         viewModelScope.launch {
             setter(value)
+        }
+    }
+
+    // Custom Prompts
+    fun savePrompt(prompt: CustomPrompt) {
+        viewModelScope.launch {
+            userPreferencesRepository.savePrompt(prompt)
+        }
+    }
+
+    fun deletePrompt(promptId: String) {
+        viewModelScope.launch {
+            userPreferencesRepository.deletePrompt(promptId)
+        }
+    }
+
+    fun selectPrompt(promptId: String?) {
+        viewModelScope.launch {
+            userPreferencesRepository.selectPrompt(promptId)
         }
     }
 }
