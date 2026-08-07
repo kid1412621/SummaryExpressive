@@ -89,6 +89,12 @@ android {
     lint {
         disable.add("MissingTranslation")
     }
+
+    testOptions {
+        unitTests.all {
+            it.useJUnitPlatform()
+        }
+    }
 }
 
 java {
@@ -187,9 +193,10 @@ dependencies {
     // debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     // Testing
-    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.3")
+    androidTestImplementation(platform("androidx.compose:compose-bom:$composeBomVersion"))
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
-    androidTestImplementation(platform("androidx.compose:compose-bom:$composeBomVersion"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 }
