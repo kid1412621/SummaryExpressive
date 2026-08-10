@@ -5,6 +5,7 @@ import android.content.ContentValues
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -521,7 +522,11 @@ fun ProviderModelSheetContent(
                             modifier = Modifier
                                 .matchParentSize()
                                 .clickable {
-                                    android.widget.Toast.makeText(context, "Please go to settings page to configure before use", android.widget.Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Please go to settings page to configure before use",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                         )
                     }

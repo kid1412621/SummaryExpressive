@@ -104,6 +104,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.BuildConfig
+import me.nanova.summaryexpressive.ProviderConfig
 import me.nanova.summaryexpressive.R
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.ui.Nav
@@ -762,7 +763,7 @@ private fun ThemeSettingsDialog(
 private fun AIProviderSettingsDialog(
     onDismissRequest: () -> Unit,
     initialProvider: AIProvider,
-    providerConfigs: Map<String, me.nanova.summaryexpressive.ProviderConfig>,
+    providerConfigs: Map<String, ProviderConfig>,
     onConfirm: (provider: AIProvider, baseUrl: String, apiKey: String) -> Unit,
     onNext: (provider: AIProvider, baseUrl: String, apiKey: String) -> Unit,
 ) {

@@ -14,6 +14,7 @@ import io.ktor.client.plugins.cookies.AcceptAllCookiesStorage
 import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.serialization.kotlinx.json.json
 import me.nanova.summaryexpressive.UserPreferencesRepository
+import me.nanova.summaryexpressive.data.AIProviderConfigDao
 import me.nanova.summaryexpressive.data.AppDatabase
 import me.nanova.summaryexpressive.data.HistoryDao
 import me.nanova.summaryexpressive.data.HistoryRepository
@@ -58,7 +59,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAIProviderConfigDao(appDatabase: AppDatabase): me.nanova.summaryexpressive.data.AIProviderConfigDao {
+    fun provideAIProviderConfigDao(appDatabase: AppDatabase): AIProviderConfigDao {
         return appDatabase.aiProviderConfigDao()
     }
 
