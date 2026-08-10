@@ -121,7 +121,7 @@ import me.nanova.summaryexpressive.llm.SummaryLength
 import me.nanova.summaryexpressive.llm.tools.getFileName
 import me.nanova.summaryexpressive.model.SummaryException
 import me.nanova.summaryexpressive.ui.Nav
-import me.nanova.summaryexpressive.ui.component.ProviderIndicator
+import me.nanova.summaryexpressive.ui.component.LlmSwitcher
 import me.nanova.summaryexpressive.ui.component.SummaryCard
 import me.nanova.summaryexpressive.vm.AppViewModel
 import me.nanova.summaryexpressive.vm.SettingsUiState
@@ -444,7 +444,7 @@ private fun HomeTopAppBar(
                 ) {
                     Icon(Icons.Outlined.Settings, contentDescription = "Settings")
                 }
-                ProviderIndicator(
+                LlmSwitcher(
                     provider = settings.aiProvider,
                     model = settings.model,
                     onClick = onIndicatorClick

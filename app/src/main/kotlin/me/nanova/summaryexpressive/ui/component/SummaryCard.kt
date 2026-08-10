@@ -153,7 +153,7 @@ fun SummaryCard(
                         AIProvider.entries.find { it.name == providerName }
                     }
                     if (aiProvider != null) {
-                        ProviderIndicator(
+                        LlmIndicator(
                             provider = aiProvider,
                             model = summary.model,
                             boxSize = 18.dp,
