@@ -71,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- History saving implementation (BREAKING CHANGE: Previous saves will gone)
+- History saving implementation (BREAKING CHANGE: Previous saves will be gone)
 - improved LLM interaction
 
 ## [0.9.0] - 2025-09-25
@@ -132,7 +132,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Google play link in setting page
+- Google Play link in setting page
 
 ## [0.6.1] - 2025-09-08
 
@@ -188,7 +188,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- no markdown output(will update in future)
+- no Markdown output(will update in future)
 - remove unused multiline setting
 - align to baseline purple color schema
 

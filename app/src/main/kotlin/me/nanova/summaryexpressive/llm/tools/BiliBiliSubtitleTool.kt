@@ -49,7 +49,7 @@ private data class BiliSubtitleInfo(val subtitles: List<BiliSubtitleItem>?)
 private data class BiliSubtitleItem(
     // zh-CN, ai-zh
     val lan: String,
-    // 0: user upload, 1: ai generated
+    // 0: user upload, 1: AI generated
     val type: Int,
     @SerialName("subtitle_url") val subtitleUrl: String,
 //    @SerialName("subtitle_url_v2") val subtitleUrlV2: String,
@@ -240,7 +240,7 @@ class BiliBiliSubtitleTool(
         val subtitlesUrl = subtitles
             .filter { it.subtitleUrl.isNotBlank() }
             .map { it.copy(subtitleUrl = prependHttps(it.subtitleUrl)) }
-            // try user uploaded subtitle or chinese subtitle first
+            // try user uploaded subtitle or Chinese subtitle first
             .sortedByDescending { it.type == 0 || it.lan.contains("zh", ignoreCase = true) }
 
         if (subtitlesUrl.isEmpty()) {

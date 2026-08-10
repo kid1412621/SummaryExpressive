@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.nanova.summaryexpressive.data.HistoryRepository
-import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.LLMHandler
 import me.nanova.summaryexpressive.llm.SummaryLength
 import me.nanova.summaryexpressive.llm.SummaryOutput
@@ -52,7 +51,7 @@ class SummaryViewModel @Inject constructor(
     private fun extractHttpUrl(text: String): String {
         val urlRegex = Regex(
             "(?:^|\\W)((http|https)://)" + // Protocol
-                    "([\\w\\-]+\\.){1,}" + // Domain name
+                    "([\\w\\-]+\\.)+" + // Domain name
                     "([\\w\\-]+)" + // Top-level domain
                     "([^\\s<>\"#%{}|\\\\^`]*)" // Path, query, and fragment
         )
