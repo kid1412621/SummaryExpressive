@@ -42,7 +42,7 @@ class YouTubeTranscriptTool(client: HttpClient) : Tool<YouTubeTranscript, Extrac
     private val youtubeExtractor = YouTubeExtractor(client)
 
 
-    public override suspend fun execute(args: YouTubeTranscript): ExtractedContent {
+    override suspend fun execute(args: YouTubeTranscript): ExtractedContent {
         val videoId = YouTubeExtractor.extractVideoId(args.url)
             ?: throw Exception("Could not extract video ID from URL: ${args.url}")
         val detailsResult = youtubeExtractor.getVideoDetails(videoId)
@@ -271,7 +271,7 @@ private class YouTubeExtractor(private val client: HttpClient) {
                 return@withContext null
             }
 
-            // Select the best track (prefer manual over auto, prefer specified language over english)
+            // Select the best track (prefer manual to auto, prefer specified language over English)
             val track =
                 tracks.firstOrNull { it.languageCode == preferredLanguage && it.kind != "asr" } // Manual, preferred lang
                     ?: tracks.firstOrNull { it.languageCode == "en" && it.kind != "asr" } // Manual, English

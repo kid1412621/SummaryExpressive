@@ -2,21 +2,23 @@ package me.nanova.summaryexpressive
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.emptyPreferences
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
+import androidx.datastore.dataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.SummaryLength
 import java.io.IOException
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+val Context.dataStore: DataStore<UserPreferences> by dataStore(
+    fileName = "user_prefs.pb",
+    serializer = UserPreferencesSerializer
+)
+
+data class ProviderConfig(
+    val apiKey: String = "",
+    val baseUrl: String = "",
+    val model: String = ""
+)
 
 @Serializable
 data class UserPreferences(
@@ -26,42 +28,26 @@ data class UserPreferences(
     val useOriginalLanguage: Boolean = true,
     val dynamicColor: Boolean = true,
     val theme: Int = 0,
-    val baseUrl: String = "",
-    val apiKey: String = "",
-    val aiProvider: String = AIProvider.OPENAI.name,
-    val model: String = "",
+    val aiProvider: String? = null,
     val showLength: Boolean = true,
     val summaryLength: String = SummaryLength.MEDIUM.name,
     val autoExtractUrl: Boolean = true,
     val sessData: String = "",
-    val sessDataExpires: Long = 0L,
+    val sessDataExpires: Long = 0L
 )
 
 class UserPreferencesRepository(private val context: Context) {
-    private val userPreferencesKey = stringPreferencesKey("user_preferences")
-
     val preferencesFlow: Flow<UserPreferences> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
-                emit(emptyPreferences())
+                emit(UserPreferences())
             } else {
                 throw exception
             }
-        }.map { preferences ->
-            preferences[userPreferencesKey]?.let { jsonString ->
-                runCatching { Json.decodeFromString<UserPreferences>(jsonString) }.getOrNull()
-            } ?: UserPreferences()
         }
 
-    private suspend fun updatePreferences(transform: (UserPreferences) -> UserPreferences) {
-        context.dataStore.edit { preferences ->
-            val currentPreferencesJson = preferences[userPreferencesKey]
-            val currentPreferences = currentPreferencesJson?.let {
-                runCatching { Json.decodeFromString<UserPreferences>(it) }.getOrNull()
-            } ?: UserPreferences()
-            val newPreferences = transform(currentPreferences)
-            preferences[userPreferencesKey] = Json.encodeToString(newPreferences)
-        }
+    private suspend fun updatePreferences(transform: suspend (UserPreferences) -> UserPreferences) {
+        context.dataStore.updateData { transform(it) }
     }
 
     suspend fun setUseOriginalLanguage(value: Boolean) =
@@ -72,13 +58,7 @@ class UserPreferencesRepository(private val context: Context) {
 
     suspend fun setTheme(value: Int) = updatePreferences { it.copy(theme = value) }
 
-    suspend fun setBaseUrl(value: String) = updatePreferences { it.copy(baseUrl = value) }
-
-    suspend fun setApiKey(value: String) = updatePreferences { it.copy(apiKey = value) }
-
-    suspend fun setAIProvider(value: String) = updatePreferences { it.copy(aiProvider = value) }
-
-    suspend fun setModel(value: String) = updatePreferences { it.copy(model = value) }
+    suspend fun setAIProvider(value: String?) = updatePreferences { it.copy(aiProvider = value) }
 
     suspend fun setIsOnboarded(value: Boolean) =
         updatePreferences { it.copy(isOnboarded = value) }

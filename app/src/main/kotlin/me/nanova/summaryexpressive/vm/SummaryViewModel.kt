@@ -51,7 +51,7 @@ class SummaryViewModel @Inject constructor(
     private fun extractHttpUrl(text: String): String {
         val urlRegex = Regex(
             "(?:^|\\W)((http|https)://)" + // Protocol
-                    "([\\w\\-]+\\.){1,}" + // Domain name
+                    "([\\w\\-]+\\.)+" + // Domain name
                     "([\\w\\-]+)" + // Top-level domain
                     "([^\\s<>\"#%{}|\\\\^`]*)" // Path, query, and fragment
         )
@@ -100,6 +100,10 @@ class SummaryViewModel @Inject constructor(
 
             val appLanguage = application.resources.configuration.locales[0]
 
+            if (settings.aiProvider == null) {
+                throw SummaryException.NoKeyException()
+            }
+
             val agent = llmHandler.getSummarizationAgent(
                 provider = settings.aiProvider,
                 apiKey = currentApiKey,
@@ -115,7 +119,7 @@ class SummaryViewModel @Inject constructor(
             }
 
             _summarizationState.update { it.copy(summaryResult = summaryOutput) }
-            saveSummaryToHistory(summaryOutput, settings.summaryLength, source)
+            saveSummaryToHistory(summaryOutput, settings.summaryLength, source, settings.aiProvider.name, settings.model)
 
         } catch (e: Exception) {
             Log.e("LLMViewModel", "Failed to summarize", e)
@@ -134,6 +138,8 @@ class SummaryViewModel @Inject constructor(
         summaryOutput: SummaryOutput,
         summaryLength: SummaryLength,
         source: SummarySource,
+        provider: String,
+        model: String?
     ) {
         if (source is SummarySource.None) return
 
@@ -179,7 +185,9 @@ class SummaryViewModel @Inject constructor(
             type = type,
             subtype = subtype,
             sourceLink = sourceLink,
-            sourceText = sourceText
+            sourceText = sourceText,
+            provider = provider,
+            model = model
         )
         if (summary.summary.isNotBlank() && summary.summary != "invalid link") {
             historyRepository.addSummary(summary)

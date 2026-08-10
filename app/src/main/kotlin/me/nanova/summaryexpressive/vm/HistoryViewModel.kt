@@ -18,6 +18,9 @@ import me.nanova.summaryexpressive.data.HistoryRepository
 import me.nanova.summaryexpressive.model.HistorySummary
 import me.nanova.summaryexpressive.model.SummaryType
 import javax.inject.Inject
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.snapshotFlow
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val SEARCH_DEBOUNCE_MILLIS = 300L
 
@@ -26,26 +29,28 @@ class HistoryViewModel @Inject constructor(
     private val historyRepository: HistoryRepository,
 ) : ViewModel() {
 
-    private val _searchText = MutableStateFlow("")
-    val searchText: StateFlow<String> = _searchText.asStateFlow()
+    val searchState = TextFieldState()
 
     private val _filterType = MutableStateFlow<SummaryType?>(null)
     val filterType: StateFlow<SummaryType?> = _filterType.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-    private val debouncedSearchText = _searchText.debounce(SEARCH_DEBOUNCE_MILLIS)
+    private val debouncedSearchText = snapshotFlow { searchState.text }
+        .debounce(SEARCH_DEBOUNCE_MILLIS.milliseconds)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val historySummaries: Flow<PagingData<HistorySummary>> =
         combine(debouncedSearchText, _filterType) { text, type ->
-            Pair(text, type)
+            Pair(text.toString(), type)
         }.flatMapLatest { (text, type) ->
             historyRepository.getSummaries(text, type)
         }.cachedIn(viewModelScope)
 
 
     fun onSearchTextChanged(text: String) {
-        _searchText.value = text
+        searchState.edit {
+            replace(0, length, text)
+        }
     }
 
     fun onFilterChanged(type: SummaryType) {

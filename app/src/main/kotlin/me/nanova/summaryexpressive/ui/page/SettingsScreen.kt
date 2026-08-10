@@ -6,7 +6,7 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.compose.animation.Animatable
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Animatable as CoreAnimatable
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
@@ -66,7 +66,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -88,6 +88,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.painterResource
@@ -103,6 +104,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.BuildConfig
+import me.nanova.summaryexpressive.ProviderConfig
 import me.nanova.summaryexpressive.R
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.ui.Nav
@@ -112,8 +114,6 @@ import me.nanova.summaryexpressive.vm.AppViewModel
 import me.nanova.summaryexpressive.vm.SettingsUiState
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
-import androidx.compose.ui.platform.LocalLocale
 
 private enum class DialogState {
     NONE, THEME, AI_PROVIDER, MODEL
@@ -124,7 +124,7 @@ data class SettingsActions(
     val onApiKeyChange: (String) -> Unit,
     val onProviderChange: (String) -> Unit,
     val onModelChange: (String) -> Unit,
-    val onBaseUrlChange: (String) -> Unit,
+    val onProviderConfigChange: (String, String, String) -> Unit,
     val onUseOriginalLanguageChange: (Boolean) -> Unit,
     val onDynamicColorChange: (Boolean) -> Unit,
     val onShowLengthChange: (Boolean) -> Unit,
@@ -150,7 +150,7 @@ fun SettingsScreen(
         onApiKeyChange = appViewModel::setApiKeyValue,
         onProviderChange = appViewModel::setAIProviderValue,
         onModelChange = appViewModel::setModel,
-        onBaseUrlChange = appViewModel::setBaseUrlValue,
+        onProviderConfigChange = appViewModel::setProviderConfig,
         onUseOriginalLanguageChange = appViewModel::setUseOriginalLanguageValue,
         onDynamicColorChange = appViewModel::setDynamicColorValue,
         onShowLengthChange = appViewModel::setShowLengthValue,
@@ -160,10 +160,13 @@ fun SettingsScreen(
     )
 
     var dialogState by remember { mutableStateOf(DialogState.NONE) }
-    var showBiliBiliLoginSheet by remember { mutableStateOf(false) }
-    var showClearSessDataDialog by remember { mutableStateOf(false) }
+    var showBiliBiliLoginSheet by remember { mutableStateOf(value = false) }
+    var showClearSessDataDialog by remember { mutableStateOf(value = false) }
 
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
     val scope = rememberCoroutineScope()
 
     if (showClearSessDataDialog) {
@@ -172,10 +175,12 @@ fun SettingsScreen(
             title = { Text("Clear BiliBili Login") },
             text = { Text("Are you sure you want to clear your BiliBili login information?") },
             confirmButton = {
-                TextButton(onClick = {
-                    actions.onSessDataClear()
-                    showClearSessDataDialog = false
-                }) { Text("Clear") }
+                TextButton(
+                    onClick = {
+                        actions.onSessDataClear()
+                        showClearSessDataDialog = false
+                    }
+                ) { Text("Clear") }
             },
             dismissButton = {
                 TextButton(onClick = { showClearSessDataDialog = false }) { Text("Cancel") }
@@ -190,18 +195,17 @@ fun SettingsScreen(
         ) {
             fun hide() {
                 scope.launch { sheetState.hide() }.invokeOnCompletion {
-                    if (sheetState.currentValue == SheetValue.Hidden) {
+                    if (!sheetState.isVisible) {
                         showBiliBiliLoginSheet = false
                     }
                 }
             }
             BiliBiliLoginSheetContent(
-                onDismiss = { hide() },
-                onSessDataFound = { sessData, expires ->
-                    actions.onSessDataChange(sessData, expires)
-                    hide()
-                }
-            )
+                onDismiss = { hide() }
+            ) { sessData, expires ->
+                actions.onSessDataChange(sessData, expires)
+                hide()
+            }
         }
     }
 
@@ -228,19 +232,14 @@ fun SettingsScreen(
 
             DialogState.AI_PROVIDER -> {
                 AIProviderSettingsDialog(
-                    initialProvider = state.aiProvider,
-                    initialBaseUrl = state.baseUrl,
-                    initialApiKey = state.apiKey,
+                    initialProvider = state.aiProvider ?: AIProvider.OPENAI,
+                    providerConfigs = state.providerConfigs,
                     onDismissRequest = { dialogState = DialogState.NONE },
                     onConfirm = { provider, baseUrl, apiKey ->
-                        actions.onProviderChange(provider.name)
-                        actions.onBaseUrlChange(baseUrl)
-                        actions.onApiKeyChange(apiKey)
+                        actions.onProviderConfigChange(provider.name, baseUrl, apiKey)
                     },
                     onNext = { provider, baseUrl, apiKey ->
-                        actions.onProviderChange(provider.name)
-                        actions.onBaseUrlChange(baseUrl)
-                        actions.onApiKeyChange(apiKey)
+                        actions.onProviderConfigChange(provider.name, baseUrl, apiKey)
                         dialogState = DialogState.MODEL
                     }
                 )
@@ -249,7 +248,7 @@ fun SettingsScreen(
             DialogState.MODEL -> {
                 ModelSettingsDialog(
                     onDismissRequest = { dialogState = DialogState.NONE },
-                    provider = state.aiProvider,
+                    provider = state.aiProvider ?: AIProvider.OPENAI,
                     initialModelId = state.model,
                     onConfirm = { modelId ->
                         actions.onModelChange(modelId)
@@ -345,7 +344,6 @@ private fun SettingsContent(
                         }
                         .fillMaxWidth(),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = { Text(stringResource(id = R.string.chooseLanguage)) },
                     leadingContent = {
                         Icon(
                             Icons.Rounded.Language,
@@ -354,14 +352,13 @@ private fun SettingsContent(
                         )
                     },
                     supportingContent = { Text(stringResource(id = R.string.chooseLanguageDescription)) },
-                )
+                ) { Text(stringResource(id = R.string.chooseLanguage)) }
 
                 ListItem(
                     modifier = Modifier
                         .clickable(onClick = onShowThemeDialog)
                         .fillMaxWidth(),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = { Text(stringResource(id = R.string.theme)) },
                     leadingContent = {
                         Icon(
                             Icons.Rounded.DarkMode,
@@ -378,12 +375,11 @@ private fun SettingsContent(
                             }
                         )
                     }
-                )
+                ) { Text(stringResource(id = R.string.theme)) }
 
                 ListItem(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = { Text(stringResource(id = R.string.useDynamicColor)) },
                     supportingContent = { Text(stringResource(id = R.string.useDynamicColorDescription)) },
                     leadingContent = {
                         Icon(
@@ -400,7 +396,7 @@ private fun SettingsContent(
                             }
                         )
                     }
-                )
+                ) { Text(stringResource(id = R.string.useDynamicColor)) }
             }
         }
 
@@ -411,7 +407,6 @@ private fun SettingsContent(
                         .clickable(onClick = onShowAIProviderDialog)
                         .fillMaxWidth(),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = { Text(stringResource(id = R.string.setAIProvider)) },
                     supportingContent = { Text(stringResource(id = R.string.setAIProviderDescription)) },
                     leadingContent = {
                         Icon(
@@ -420,14 +415,13 @@ private fun SettingsContent(
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                )
+                ) { Text(stringResource(id = R.string.setAIProvider)) }
 
                 ListItem(
                     modifier = Modifier
                         .clickable(onClick = onShowModelDialog)
                         .fillMaxWidth(),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = { Text(stringResource(id = R.string.setModel)) },
                     supportingContent = { Text(stringResource(id = R.string.setModelDescription)) },
                     leadingContent = {
                         Icon(
@@ -436,14 +430,14 @@ private fun SettingsContent(
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                )
+                ) { Text(stringResource(id = R.string.setModel)) }
             }
         }
 
         item {
             SettingsGroup(highlighted = highlightSection == "3rd-party-service") {
                 val sessDataValid =
-                    state.sessData.isNotBlank() && state.sessDataExpires > System.currentTimeMillis()
+                    (state.sessData.isNotBlank() && state.sessDataExpires > System.currentTimeMillis())
                 val itemColor =
                     if (sessDataValid) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else LocalContentColor.current
 
@@ -461,7 +455,6 @@ private fun SettingsContent(
                         }
                     ),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = { Text("BiliBili Account", color = itemColor) },
                     supportingContent = {
                         if (sessDataValid) {
                             val expiryDate = SimpleDateFormat("yyyy-MM-dd", LocalLocale.current.platformLocale)
@@ -482,7 +475,7 @@ private fun SettingsContent(
                             tint = itemColor
                         )
                     }
-                )
+                ) { Text("BiliBili Account", color = itemColor) }
             }
         }
 
@@ -508,14 +501,12 @@ private fun SettingsContent(
                     overlineContent = null,
                     supportingContent = { Text(stringResource(id = R.string.useOriginalLanguageDescription)) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    elevation = ListItemDefaults.elevation(ListItemDefaults.Elevation),
-                    content = { Text(stringResource(id = R.string.useOriginalLanguage)) },
-                )
+                    elevation = ListItemDefaults.elevation(),
+                ) { Text(stringResource(id = R.string.useOriginalLanguage)) }
 
                 ListItem(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = { Text(stringResource(id = R.string.useLengthOptions)) },
                     supportingContent = { Text(stringResource(id = R.string.useLengthOptionsDescription)) },
                     leadingContent = {
                         Icon(
@@ -530,17 +521,16 @@ private fun SettingsContent(
                             onCheckedChange = { actions.onShowLengthChange(it) }
                         )
                     }
-                )
+                ) { Text(stringResource(id = R.string.useLengthOptions)) }
 
                 ListItem(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = { Text(stringResource(R.string.useAutoExtractLink)) },
                     supportingContent = { Text(stringResource(R.string.useAutoExtractLinkDescription)) },
                     leadingContent = {
                         Icon(
                             Icons.Rounded.Link,
-                            contentDescription = "Auto Extract URL", // TODO: Use stringResource
+                            contentDescription = stringResource(R.string.useAutoExtractLink),
                             modifier = Modifier.size(24.dp)
                         )
                     },
@@ -550,7 +540,7 @@ private fun SettingsContent(
                             onCheckedChange = { actions.onAutoExtractUrlChange(it) }
                         )
                     }
-                )
+                ) { Text(stringResource(R.string.useAutoExtractLink)) }
             }
         }
 
@@ -561,7 +551,6 @@ private fun SettingsContent(
                         .clickable(onClick = { onNav(Nav.Onboarding) })
                         .fillMaxWidth(),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = { Text(stringResource(id = R.string.tutorial)) },
                     leadingContent = {
                         Icon(
                             Icons.AutoMirrored.Rounded.HelpCenter,
@@ -570,7 +559,7 @@ private fun SettingsContent(
                         )
                     },
                     supportingContent = { Text(stringResource(id = R.string.tutorialDescription)) },
-                )
+                ) { Text(stringResource(id = R.string.tutorial)) }
 
                 ListItem(
                     modifier = Modifier
@@ -582,7 +571,6 @@ private fun SettingsContent(
                         }
                         .fillMaxWidth(),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = { Text(stringResource(id = R.string.googlePlay)) },
                     leadingContent = {
                         Icon(
                             Icons.Rounded.StarRate,
@@ -591,7 +579,7 @@ private fun SettingsContent(
                         )
                     },
                     supportingContent = { Text(stringResource(id = R.string.googlePlayDescription)) },
-                )
+                ) { Text(stringResource(id = R.string.googlePlay)) }
 
                 ListItem(
                     modifier = Modifier
@@ -602,7 +590,6 @@ private fun SettingsContent(
                         }
                         .fillMaxWidth(),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = { Text(stringResource(id = R.string.discord)) },
                     leadingContent = {
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.discord),
@@ -611,7 +598,7 @@ private fun SettingsContent(
                         )
                     },
                     supportingContent = { Text(stringResource(id = R.string.discordDescription)) },
-                )
+                ) { Text(stringResource(id = R.string.discord)) }
 
                 ListItem(
                     modifier = Modifier
@@ -622,7 +609,6 @@ private fun SettingsContent(
                         }
                         .fillMaxWidth(),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = { Text(stringResource(id = R.string.repository)) },
                     leadingContent = {
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.github),
@@ -631,7 +617,7 @@ private fun SettingsContent(
                         )
                     },
                     supportingContent = { Text(stringResource(id = R.string.githubDescription)) },
-                )
+                ) { Text(stringResource(id = R.string.repository)) }
             }
         }
 
@@ -681,7 +667,7 @@ private fun SettingsGroup(
     val secondaryContainerColor = MaterialTheme.colorScheme.secondaryContainer
 
     val animatedColor = remember(surfaceVariantColor) { Animatable(surfaceVariantColor) }
-    val animatedBorderWidth = remember { Animatable(0f) }
+    val animatedBorderWidth = remember { CoreAnimatable(0f) }
 
     LaunchedEffect(highlighted, surfaceVariantColor, secondaryContainerColor) {
         if (highlighted) {
@@ -728,7 +714,7 @@ private fun ThemeSettingsDialog(
             Column {
                 RadioButtonItem(
                     selected = theme == 0,
-                    onSelectionChange = { theme = 0 }
+                    onSelectionChange = { theme = 0 },
                 ) {
                     Text(
                         text = stringResource(id = R.string.systemTheme),
@@ -756,10 +742,12 @@ private fun ThemeSettingsDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                onThemeChange(theme)
-                onDismissRequest()
-            }) {
+            TextButton(
+                onClick = {
+                    onThemeChange(theme)
+                    onDismissRequest()
+                }
+            ) {
                 Text(stringResource(id = R.string.ok))
             }
         },
@@ -775,8 +763,7 @@ private fun ThemeSettingsDialog(
 private fun AIProviderSettingsDialog(
     onDismissRequest: () -> Unit,
     initialProvider: AIProvider,
-    initialBaseUrl: String?,
-    initialApiKey: String?,
+    providerConfigs: Map<String, ProviderConfig>,
     onConfirm: (provider: AIProvider, baseUrl: String, apiKey: String) -> Unit,
     onNext: (provider: AIProvider, baseUrl: String, apiKey: String) -> Unit,
 ) {
@@ -785,8 +772,13 @@ private fun AIProviderSettingsDialog(
 
     val apiKeyFocusRequester = remember { FocusRequester() }
     var selectedProvider by remember { mutableStateOf(initialProvider) }
-    var baseUrlTextFieldValue by remember { mutableStateOf(initialBaseUrl ?: "") }
-    var apiKeyTextFieldValue by remember { mutableStateOf(initialApiKey ?: "") }
+    
+    var baseUrlTextFieldValue by remember(selectedProvider) { 
+        mutableStateOf(providerConfigs[selectedProvider.name]?.baseUrl ?: "") 
+    }
+    var apiKeyTextFieldValue by remember(selectedProvider) { 
+        mutableStateOf(providerConfigs[selectedProvider.name]?.apiKey ?: "") 
+    }
 
     val formValid = (selectedProvider.isMandatoryBaseUrl && baseUrlTextFieldValue.isNotBlank())
             || (selectedProvider.isRequiredApiKey && apiKeyTextFieldValue.isNotBlank())
@@ -808,7 +800,7 @@ private fun AIProviderSettingsDialog(
         title = { Text(stringResource(id = R.string.setAIProvider)) },
         text = {
             Column {
-                AIProvider.entries.map {
+                AIProvider.entries.forEach {
                     AIProviderItem(it, selected = (selectedProvider == it)) {
                         selectedProvider = it
                     }
@@ -969,7 +961,7 @@ private fun ModelSettingsDialog(
                     onConfirm(resultModelId)
                     onDismissRequest()
                 },
-                enabled = (selectedKey != customModelKey && selectedKey != null) || (selectedKey == customModelKey && customModelName.isNotBlank())
+                enabled = ((selectedKey != customModelKey && selectedKey != null) || (selectedKey == customModelKey && customModelName.isNotBlank()))
             ) {
                 Text(stringResource(id = R.string.ok))
             }
@@ -1037,8 +1029,7 @@ private fun AIProviderSettingsDialogPreview() {
         AIProviderSettingsDialog(
             onDismissRequest = {},
             initialProvider = AIProvider.OPENAI,
-            initialBaseUrl = "https://example.com",
-            initialApiKey = "test_api_key",
+            providerConfigs = emptyMap(),
             onConfirm = { _, _, _ -> },
             onNext = { _, _, _ -> },
         )
@@ -1079,7 +1070,7 @@ private fun AIProviderItemPreview() {
     SummaryExpressiveTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             AIProvider.entries
-                .map { AIProviderItem(it, selected = it == AIProvider.OPENAI) {} }
+                .forEach { AIProviderItem(it, selected = it == AIProvider.OPENAI) {} }
         }
     }
 }
@@ -1103,7 +1094,7 @@ private fun ScrollContentPreview() {
             onApiKeyChange = {},
             onProviderChange = {},
             onModelChange = {},
-            onBaseUrlChange = {},
+            onProviderConfigChange = { _, _, _ -> },
             onUseOriginalLanguageChange = {},
             onDynamicColorChange = {},
             onShowLengthChange = {},

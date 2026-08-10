@@ -89,6 +89,12 @@ android {
     lint {
         disable.add("MissingTranslation")
     }
+
+    testOptions {
+        unitTests.all {
+            it.useJUnitPlatform()
+        }
+    }
 }
 
 java {
@@ -99,7 +105,7 @@ java {
 
 kotlin {
     compilerOptions {
-        languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_3
+        languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_4
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25
     }
 }
@@ -133,7 +139,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     // Keep alpha override for material expressive features, as intended
     // https://developer.android.com/jetpack/androidx/releases/compose-material3#compose_material3_version_15_2
-    implementation("androidx.compose.material3:material3:1.5.0-alpha24")
+    implementation("androidx.compose.material3:material3:1.5.0-alpha25")
 
     // Paging
     implementation("androidx.paging:paging-compose:3.5.0")
@@ -141,6 +147,7 @@ dependencies {
 
     // Data Persistence
     implementation("androidx.datastore:datastore-preferences:1.2.1")
+    implementation("androidx.datastore:datastore:1.2.1")
     implementation("androidx.room:room-runtime:${roomVersion}")
     implementation("androidx.room:room-paging:${roomVersion}")
     implementation("androidx.room:room-ktx:${roomVersion}")
@@ -172,11 +179,12 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
 
     // Networking
-    implementation("io.ktor:ktor-client-android:3.5.1")
+    implementation("io.ktor:ktor-client-android:3.5.2")
 
     // Serialization & Utilities
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
-    implementation("org.jsoup:jsoup:1.22.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.11.0")
+    implementation("org.jsoup:jsoup:1.23.1")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("io.coil-kt:coil-gif:2.7.0")
 
@@ -185,9 +193,10 @@ dependencies {
     // debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     // Testing
-    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.3")
+    androidTestImplementation(platform("androidx.compose:compose-bom:$composeBomVersion"))
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
-    androidTestImplementation(platform("androidx.compose:compose-bom:$composeBomVersion"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 }

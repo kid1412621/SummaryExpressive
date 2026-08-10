@@ -22,7 +22,7 @@
     <string name="chooseLanguage">Sprache</string>
     <string name="chooseLanguageDescription">Wähle eine Sprache</string>
     <string name="repository">Open Source Code</string>
-    <string name="githubDescription">Unser Github repository</string>
+    <string name="githubDescription">Unser GitHub repository</string>
     <string name="madeBy">Made with ❤ by NanoNova</string>
     <string name="useDynamicColor">Dynamische Farben</string>
     <string name="useDynamicColorDescription">Benutze Farben von deinem Hintergrundbild</string>

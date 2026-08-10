@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.R
+import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.SummaryLength
 import me.nanova.summaryexpressive.llm.SummaryOutput
 import me.nanova.summaryexpressive.util.getLanguageCode
@@ -120,7 +121,10 @@ fun SummaryCard(
                     modifier = Modifier
                         .padding(top = 12.dp, start = 12.dp, end = 12.dp)
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     if (summary.author.isNotBlank()) {
                         Text(
                             text = summary.author,
@@ -140,6 +144,20 @@ fun SummaryCard(
                             painter = painterResource(id = R.drawable.bilibili),
                             contentDescription = "BiliBili Icon",
                             modifier = Modifier.padding(top = 1.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.weight(1f))
+                    
+                    val aiProvider = summary.provider?.let { providerName ->
+                        AIProvider.entries.find { it.name == providerName }
+                    }
+                    if (aiProvider != null) {
+                        LlmIndicator(
+                            provider = aiProvider,
+                            model = summary.model,
+                            boxSize = 18.dp,
+                            modifier = Modifier.padding(end = 12.dp)
                         )
                     }
                 }
@@ -241,6 +259,7 @@ private fun SummaryActionButtons(
                     }
                 }
 
+                @Deprecated("Deprecated in Java")
                 override fun onError(utteranceId: String) {
                     onShowSnackbar("Failed to play")
                 }

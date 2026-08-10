@@ -5,6 +5,7 @@ import android.content.ContentValues
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,7 +15,9 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
@@ -22,9 +25,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -45,6 +51,7 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
@@ -52,9 +59,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumFlexibleTopAppBar
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -82,6 +93,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -90,6 +102,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.toClipEntry
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -100,15 +113,18 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.R
+import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.SummaryLength
 import me.nanova.summaryexpressive.llm.tools.getFileName
 import me.nanova.summaryexpressive.model.SummaryException
 import me.nanova.summaryexpressive.ui.Nav
+import me.nanova.summaryexpressive.ui.component.LlmSwitcher
 import me.nanova.summaryexpressive.ui.component.SummaryCard
 import me.nanova.summaryexpressive.vm.AppViewModel
+import me.nanova.summaryexpressive.vm.SettingsUiState
 import me.nanova.summaryexpressive.vm.SummaryViewModel
 
 
@@ -132,7 +148,7 @@ private object MimeTypes {
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    onNav: (dest: Nav, args: Map<String, String>?) -> Unit =  {dest, args-> {}},
+    onNav: (dest: Nav, args: Map<String, String>?) -> Unit = { _, _ -> run {} },
     appViewModel: AppViewModel,
     summaryViewModel: SummaryViewModel = hiltViewModel<SummaryViewModel>(),
 ) {
@@ -252,11 +268,33 @@ fun HomeScreen(
     val listState = rememberLazyListState()
     val fabVisible by remember { derivedStateOf { !listState.canScrollBackward } }
 
+    var showProviderModelSheet by rememberSaveable { mutableStateOf(false) }
+
+    if (showProviderModelSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showProviderModelSheet = false }
+        ) {
+            ProviderModelSheetContent(
+                settings = settings,
+                onProviderSelect = { appViewModel.setAIProviderValue(it.name) },
+                onModelSelect = { appViewModel.setModel(it) },
+                onDismiss = { showProviderModelSheet = false }
+            )
+        }
+    }
+
     Scaffold(
         modifier = modifier
             .fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = { HomeTopAppBar(onNav = {onNav(it, mapOf())}, scrollBehavior) },
+        topBar = { 
+            HomeTopAppBar(
+                onNav = {onNav(it, mapOf())}, 
+                scrollBehavior = scrollBehavior,
+                settings = settings,
+                onIndicatorClick = { showProviderModelSheet = true }
+            ) 
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButtons(
@@ -392,16 +430,25 @@ fun HomeScreen(
 private fun HomeTopAppBar(
     onNav: (dest: Nav) -> Unit = {},
     scrollBehavior: TopAppBarScrollBehavior,
+    settings: SettingsUiState,
+    onIndicatorClick: () -> Unit,
 ) {
     MediumFlexibleTopAppBar(
         modifier = Modifier.height(100.dp),
         colors = TopAppBarDefaults.topAppBarColors(),
         title = { },
         navigationIcon = {
-            IconButton(
-                onClick = { onNav(Nav.Settings) }
-            ) {
-                Icon(Icons.Outlined.Settings, contentDescription = "Settings")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = { onNav(Nav.Settings) }
+                ) {
+                    Icon(Icons.Outlined.Settings, contentDescription = "Settings")
+                }
+                LlmSwitcher(
+                    provider = settings.aiProvider,
+                    model = settings.model,
+                    onClick = onIndicatorClick
+                )
             }
         },
         actions = {
@@ -417,6 +464,135 @@ private fun HomeTopAppBar(
         },
         scrollBehavior = scrollBehavior
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProviderModelSheetContent(
+    settings: SettingsUiState,
+    onProviderSelect: (AIProvider) -> Unit,
+    onModelSelect: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Text("Select AI Provider", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            val sortedProviders = AIProvider.entries.sortedByDescending { provider ->
+                settings.providerConfigs[provider.name]?.let { 
+                    it.apiKey.isNotBlank() || it.baseUrl.isNotBlank() 
+                } ?: false
+            }
+            items(sortedProviders) { provider ->
+                val isConfigured = settings.providerConfigs[provider.name]?.let { 
+                    it.apiKey.isNotBlank() || it.baseUrl.isNotBlank() 
+                } ?: false
+
+                val context = LocalContext.current
+                Box {
+                    FilterChip(
+                        selected = settings.aiProvider == provider,
+                        enabled = isConfigured,
+                        onClick = { if (isConfigured) onProviderSelect(provider) },
+                        label = { Text(provider.name) },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(id = provider.icon),
+                                contentDescription = provider.name,
+                                modifier = Modifier.size(18.dp),
+                                tint = if (!isConfigured) {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                } else if (provider.isMonochromeIcon) {
+                                    LocalContentColor.current
+                                } else {
+                                    Color.Unspecified
+                                }
+                            )
+                        }
+                    )
+                    
+                    if (!isConfigured) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable {
+                                    Toast.makeText(
+                                        context,
+                                        "Please go to settings page to configure before use",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                        )
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Select Model", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+        
+        val predefinedModels = settings.aiProvider?.models ?: emptyList()
+        val customModel = settings.model?.takeIf { modelId -> 
+            modelId.isNotBlank() && predefinedModels.none { it.id == modelId } 
+        }
+
+        if (predefinedModels.isNotEmpty() || customModel != null) {
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 300.dp)
+            ) {
+                if (customModel != null) {
+                    item {
+                        ListItem(
+                            modifier = Modifier.clickable {
+                                onModelSelect(customModel)
+                                onDismiss()
+                            },
+                            leadingContent = null,
+                            trailingContent = {
+                                if (settings.model == customModel) {
+                                    Icon(Icons.Rounded.Check, contentDescription = "Selected")
+                                }
+                            },
+                            overlineContent = null,
+                            supportingContent = null,
+                            colors = ListItemDefaults.colors(),
+                            elevation = ListItemDefaults.elevation(),
+                            content = { Text("$customModel (Custom)") },
+                        )
+                    }
+                }
+
+                items(predefinedModels) { model ->
+                    ListItem(
+                        modifier = Modifier.clickable {
+                            onModelSelect(model.id)
+                            onDismiss()
+                        },
+                        leadingContent = null,
+                        trailingContent = {
+                            if (settings.model == model.id) {
+                                Icon(Icons.Rounded.Check, contentDescription = "Selected")
+                            }
+                        },
+                        overlineContent = null,
+                        supportingContent = null,
+                        colors = ListItemDefaults.colors(),
+                        elevation = ListItemDefaults.elevation(),
+                        content = { Text(model.id) },
+                    )
+                }
+            }
+        } else {
+            Text("No predefined models. Please configure in Settings.", modifier = Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+    }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

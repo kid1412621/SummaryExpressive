@@ -7,11 +7,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import me.nanova.summaryexpressive.ProviderConfig
 import me.nanova.summaryexpressive.UserPreferencesRepository
+import me.nanova.summaryexpressive.data.AIProviderConfigDao
+import me.nanova.summaryexpressive.data.AIProviderConfigEntity
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.SummaryLength
 import me.nanova.summaryexpressive.ui.Nav
@@ -21,6 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AppViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
+    private val aiProviderConfigDao: AIProviderConfigDao
 ) : ViewModel() {
 
     private val _startDestination = MutableStateFlow<Nav?>(null)
@@ -28,8 +33,7 @@ class AppViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val isOnboardingCompleted = userPreferencesRepository.preferencesFlow.map { it.isOnboarded}.first()
-
+            val isOnboardingCompleted = userPreferencesRepository.preferencesFlow.map { it.isOnboarded }.first()
             if (isOnboardingCompleted) {
                 _startDestination.value = Nav.Home
             } else {
@@ -38,27 +42,34 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    val settingsUiState: StateFlow<SettingsUiState> =
-        userPreferencesRepository.preferencesFlow.map { prefs ->
-            SettingsUiState(
-                useOriginalLanguage = prefs.useOriginalLanguage,
-                dynamicColor = prefs.dynamicColor,
-                theme = prefs.theme,
-                apiKey = prefs.apiKey.takeIf { it.isNotBlank() },
-                baseUrl = prefs.baseUrl.takeIf { it.isNotBlank() },
-                aiProvider = AIProvider.valueOf(prefs.aiProvider),
-                model = prefs.model.takeIf { it.isNotBlank() },
-                showLength = prefs.showLength,
-                summaryLength = SummaryLength.valueOf(prefs.summaryLength),
-                autoExtractUrl = prefs.autoExtractUrl,
-                sessData = prefs.sessData,
-                sessDataExpires = prefs.sessDataExpires,
-            )
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.Eagerly,
-            initialValue = SettingsUiState()
+    val settingsUiState: StateFlow<SettingsUiState> = combine(
+        userPreferencesRepository.preferencesFlow,
+        aiProviderConfigDao.getAllConfigsFlow()
+    ) { prefs, configEntities ->
+        val providerConfigs = configEntities.associate { 
+            it.provider to it.toProviderConfig() 
+        }
+        val providerConfig = prefs.aiProvider?.let { providerConfigs[it] }
+        SettingsUiState(
+            useOriginalLanguage = prefs.useOriginalLanguage,
+            dynamicColor = prefs.dynamicColor,
+            theme = prefs.theme,
+            apiKey = providerConfig?.apiKey?.takeIf { it.isNotBlank() },
+            baseUrl = providerConfig?.baseUrl?.takeIf { it.isNotBlank() },
+            aiProvider = prefs.aiProvider?.let { runCatching { AIProvider.valueOf(it) }.getOrNull() },
+            providerConfigs = providerConfigs,
+            model = providerConfig?.model?.takeIf { it.isNotBlank() },
+            showLength = prefs.showLength,
+            summaryLength = SummaryLength.valueOf(prefs.summaryLength),
+            autoExtractUrl = prefs.autoExtractUrl,
+            sessData = prefs.sessData,
+            sessDataExpires = prefs.sessDataExpires
         )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = SettingsUiState()
+    )
 
     // Original Language in summary
     fun setUseOriginalLanguageValue(newValue: Boolean) =
@@ -73,23 +84,53 @@ class AppViewModel @Inject constructor(
         savePreference(userPreferencesRepository::setTheme, newValue)
 
     // API Key
-    fun setApiKeyValue(newValue: String) =
-        savePreference(userPreferencesRepository::setApiKey, newValue)
+    fun setApiKeyValue(newValue: String) {
+        viewModelScope.launch {
+            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
+            val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
+            aiProviderConfigDao.insertConfig(
+                AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(apiKey = newValue))
+            )
+        }
+    }
 
     // API base url
     fun setBaseUrlValue(newValue: String) {
-        val baseUrlWithProtocol = if (newValue.isBlank() || newValue.startsWith("http")) newValue
-        else "https://$newValue"
-        savePreference(userPreferencesRepository::setBaseUrl, baseUrlWithProtocol)
+        val baseUrlWithProtocol = if (newValue.isBlank() || newValue.startsWith("http")) newValue else "https://$newValue"
+        viewModelScope.launch {
+            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
+            val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
+            aiProviderConfigDao.insertConfig(
+                AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(baseUrl = baseUrlWithProtocol))
+            )
+        }
     }
 
     // AI provider
     fun setAIProviderValue(newValue: String) =
         savePreference(userPreferencesRepository::setAIProvider, newValue)
 
+    fun setProviderConfig(provider: String, baseUrl: String, apiKey: String) {
+        val baseUrlWithProtocol = if (baseUrl.isBlank() || baseUrl.startsWith("http")) baseUrl else "https://$baseUrl"
+        viewModelScope.launch {
+            val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
+            aiProviderConfigDao.insertConfig(
+                AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(baseUrl = baseUrlWithProtocol, apiKey = apiKey))
+            )
+            userPreferencesRepository.setAIProvider(provider)
+        }
+    }
+
     // Model
-    fun setModel(newValue: String) =
-        savePreference(userPreferencesRepository::setModel, newValue)
+    fun setModel(newValue: String) {
+        viewModelScope.launch {
+            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
+            val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
+            aiProviderConfigDao.insertConfig(
+                AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(model = newValue))
+            )
+        }
+    }
 
     // Show length
     fun setShowLengthValue(newValue: Boolean) =

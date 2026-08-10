@@ -43,7 +43,7 @@ fun createSummarizationPrompt(
             Highlight the main concepts or viewpoints with bulleted or numbered list.
             If you receive an error message as input, do not try to summarize it. Instead, repeat the error message back to the user verbatim.
             """.trimIndent()
-            // TODO: Structure the output in well-structured markdown for readability.
+            // TODO: Structure the output in well-structured Markdown for readability.
         )
     }
 }

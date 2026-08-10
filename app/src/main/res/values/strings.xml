@@ -22,7 +22,7 @@
     <string name="chooseLanguage">Language</string>
     <string name="chooseLanguageDescription">Choose a language</string>
     <string name="repository">Open Source Code</string>
-    <string name="githubDescription">Our Github repository</string>
+    <string name="githubDescription">Our GitHub repository</string>
     <string name="madeBy">Made with ❤ by NanoNova</string>
     <string name="useDynamicColor">Dynamic Color</string>
     <string name="useDynamicColorDescription">Use colors from your wallpaper</string>
