@@ -110,8 +110,12 @@ class SummaryViewModel @Inject constructor(
                 baseUrl = settings.baseUrl,
                 model = settings.model,
                 summaryLength = settings.summaryLength,
+                showLength = settings.showLength,
                 useContentLanguage = settings.useOriginalLanguage,
-                appLanguage = appLanguage
+                appLanguage = appLanguage,
+                isAppendMode = settings.isAppendMode,
+                customBasePrompt = settings.customBasePrompt,
+                additionalSystemPrompt = settings.additionalSystemPrompt
             )
 
             val summaryOutput = withContext(Dispatchers.IO) {

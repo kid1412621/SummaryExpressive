@@ -130,7 +130,7 @@ data class SettingsActions(
     val onShowLengthChange: (Boolean) -> Unit,
     val onAutoExtractUrlChange: (Boolean) -> Unit,
     val onSessDataChange: (String, Long) -> Unit,
-    val onSessDataClear: () -> Unit,
+    val onSessDataClear: () -> Unit
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -255,6 +255,7 @@ fun SettingsScreen(
                     },
                 )
             }
+
         }
     }
 
@@ -431,6 +432,21 @@ private fun SettingsContent(
                         )
                     }
                 ) { Text(stringResource(id = R.string.setModel)) }
+
+                ListItem(
+                    modifier = Modifier
+                        .clickable { onNav(Nav.AdvancedSetup) }
+                        .fillMaxWidth(),
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    supportingContent = { Text(stringResource(id = R.string.advancedSummarySetupDescription)) },
+                    leadingContent = {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ShortText,
+                            contentDescription = "Advanced Summary Setup",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                ) { Text(stringResource(id = R.string.advancedSummarySetup)) }
             }
         }
 
@@ -481,48 +497,6 @@ private fun SettingsContent(
 
         item {
             SettingsGroup {
-                ListItem(
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingContent = {
-                        Icon(
-                            Icons.Rounded.Translate,
-                            contentDescription = "Language Settings",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    trailingContent = {
-                        Switch(
-                            checked = state.useOriginalLanguage,
-                            onCheckedChange = { newValue ->
-                                actions.onUseOriginalLanguageChange(newValue)
-                            }
-                        )
-                    },
-                    overlineContent = null,
-                    supportingContent = { Text(stringResource(id = R.string.useOriginalLanguageDescription)) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    elevation = ListItemDefaults.elevation(),
-                ) { Text(stringResource(id = R.string.useOriginalLanguage)) }
-
-                ListItem(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    supportingContent = { Text(stringResource(id = R.string.useLengthOptionsDescription)) },
-                    leadingContent = {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ShortText,
-                            contentDescription = "Length Options",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    trailingContent = {
-                        Switch(
-                            checked = state.showLength,
-                            onCheckedChange = { actions.onShowLengthChange(it) }
-                        )
-                    }
-                ) { Text(stringResource(id = R.string.useLengthOptions)) }
-
                 ListItem(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),

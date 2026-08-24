@@ -200,7 +200,7 @@ Release signing keys (not tracked in git)
 - Type converters in `converters/` package
 
 ### Material 3 Expressive
-The app uses Material 3 Expressive alpha features for enhanced UI. Material version: `1.5.0-alpha22`
+The app uses Material 3 Expressive alpha features for enhanced UI. Material version: `1.5.0-alpha26`
 
 ## Testing
 - Unit tests in `src/test/kotlin/`
@@ -233,10 +233,10 @@ The app likely requires:
 - Overlay permission (for instant summary overlay)
 
 ## Known Dependencies
-- `ai.koog:koog-agents:1.0.0` - Kotlin-based LLM interactions
-- `io.ktor:ktor-client-android:3.3.3` - HTTP client
-- `org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0` - JSON serialization
-- `org.jsoup:jsoup:1.22.1` - HTML parsing
+- `ai.koog:koog-agents:1.1.1` - Kotlin-based LLM interactions
+- `io.ktor:ktor-client-android:3.5.2` - HTTP client
+- `org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0` - JSON serialization
+- `org.jsoup:jsoup:1.23.1` - HTML parsing
 - `io.coil-kt:coil-compose:2.7.0` - Image loading
 
 ## Build Warnings & Notes

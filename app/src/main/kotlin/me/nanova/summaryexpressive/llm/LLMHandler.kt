@@ -72,6 +72,9 @@ data class SummaryOutput(
 class LLMHandler(context: Context, private val httpClient: HttpClient) {
     private val userPreferencesRepository = UserPreferencesRepository(context)
     private val koogHttpClientFactory = KtorKoogHttpClient.Factory(httpClient)
+    private val geminiKoogHttpClientFactory = KtorKoogHttpClient.Factory(
+        HttpClient(GeminiSanitizingHttpClientEngine(httpClient.engine))
+    )
     private val fileExtractorTool: FileExtractorTool = FileExtractorTool(context)
     private val articleExtractorTool = ArticleExtractorTool(httpClient)
     private val youTubeTranscriptTool = YouTubeTranscriptTool(httpClient)
@@ -83,8 +86,12 @@ class LLMHandler(context: Context, private val httpClient: HttpClient) {
         baseUrl: String? = null,
         model: String? = null,
         summaryLength: SummaryLength = SummaryLength.MEDIUM,
+        showLength: Boolean = true,
         useContentLanguage: Boolean,
         appLanguage: Locale,
+        isAppendMode: Boolean = true,
+        customBasePrompt: String = "",
+        additionalSystemPrompt: String = "",
     ): AIAgent<SummarySource, SummaryOutput> {
         val executor = createExecutor(provider, apiKey, baseUrl, appLanguage)
 
@@ -96,7 +103,7 @@ class LLMHandler(context: Context, private val httpClient: HttpClient) {
             articleToolRegistry + youtubeToolRegistry + bilibiliToolRegistry + fileToolRegistry
 
         val agentConfig =
-            createAgentConfig(provider, model, summaryLength, useContentLanguage, appLanguage)
+            createAgentConfig(provider, model, summaryLength, showLength, useContentLanguage, appLanguage, isAppendMode, customBasePrompt, additionalSystemPrompt)
 
         return AIAgent(
             promptExecutor = executor,
@@ -133,8 +140,12 @@ class LLMHandler(context: Context, private val httpClient: HttpClient) {
         provider: AIProvider,
         modelName: String?,
         summaryLength: SummaryLength,
+        showLength: Boolean,
         useContentLanguage: Boolean,
         appLanguage: Locale,
+        isAppendMode: Boolean,
+        customBasePrompt: String,
+        additionalSystemPrompt: String,
     ): AIAgentConfig {
         val llmModel = modelName?.takeIf { it.isNotBlank() }?.let { name ->
             provider.models.find { it.id == name } ?: CustomLLModel(provider, name).toLLModel()
@@ -151,7 +162,7 @@ class LLMHandler(context: Context, private val httpClient: HttpClient) {
 
         val lang = appLanguage.getDisplayLanguage(Locale.ENGLISH)
         return AIAgentConfig(
-            prompt = createSummarizationPrompt(summaryLength, useContentLanguage, lang),
+            prompt = createSummarizationPrompt(summaryLength, showLength, useContentLanguage, lang, isAppendMode, customBasePrompt, additionalSystemPrompt),
             model = llmModel,
             maxAgentIterations = 10,
         )
@@ -167,8 +178,8 @@ class LLMHandler(context: Context, private val httpClient: HttpClient) {
 
     private fun createGeminiExecutor(apiKey: String, baseUrl: String?): PromptExecutor {
         val client = baseUrl?.takeIf { it.isNotBlank() }
-            ?.let { GoogleLLMClient(apiKey, settings = GoogleClientSettings(baseUrl = it), httpClientFactory = koogHttpClientFactory) }
-            ?: GoogleLLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
+            ?.let { GoogleLLMClient(apiKey, settings = GoogleClientSettings(baseUrl = it), httpClientFactory = geminiKoogHttpClientFactory) }
+            ?: GoogleLLMClient(apiKey, httpClientFactory = geminiKoogHttpClientFactory)
 
         return MultiLLMPromptExecutor(client)
     }
@@ -202,7 +213,7 @@ class LLMHandler(context: Context, private val httpClient: HttpClient) {
         baseUrl: String?,
         appLanguage: Locale,
     ): PromptExecutor {
-        // assume mainland china user if using simple chinese
+        // assume mainland china user if using simple Chinese
         val isSimplifiedChinese = appLanguage.language == "zh" && appLanguage.script == "Hans"
 
         val finalBaseUrl = if (isSimplifiedChinese) {

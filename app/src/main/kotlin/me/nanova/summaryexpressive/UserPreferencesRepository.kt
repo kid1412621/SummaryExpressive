@@ -33,7 +33,10 @@ data class UserPreferences(
     val summaryLength: String = SummaryLength.MEDIUM.name,
     val autoExtractUrl: Boolean = true,
     val sessData: String = "",
-    val sessDataExpires: Long = 0L
+    val sessDataExpires: Long = 0L,
+    val isAppendMode: Boolean = true,
+    val customBasePrompt: String = "",
+    val additionalSystemPrompt: String = ""
 )
 
 class UserPreferencesRepository(private val context: Context) {
@@ -76,4 +79,13 @@ class UserPreferencesRepository(private val context: Context) {
 
     suspend fun clearSessData() =
         updatePreferences { it.copy(sessData = "", sessDataExpires = 0L) }
+
+    suspend fun setIsAppendMode(value: Boolean) =
+        updatePreferences { it.copy(isAppendMode = value) }
+
+    suspend fun setCustomBasePrompt(value: String) =
+        updatePreferences { it.copy(customBasePrompt = value) }
+
+    suspend fun setAdditionalSystemPrompt(value: String) =
+        updatePreferences { it.copy(additionalSystemPrompt = value) }
 }

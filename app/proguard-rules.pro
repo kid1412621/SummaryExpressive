@@ -25,11 +25,12 @@
 -keep class ai.koog.agents.core.tools.Tool { *; }
 -keep class ai.koog.prompt.executor.model.PromptExecutor { *; }
 -keep class ai.koog.prompt.llm.LLMProvider { *; }
--keep class ai.koog.** {
-    <fields>;
-    <methods>;
-}
--keep interface ai.koog.** { *; }
+-keep class * extends ai.koog.agents.core.tools.Tool { *; }
+-keep class * implements ai.koog.agents.core.tools.Tool { *; }
+-keep class * extends ai.koog.prompt.executor.model.PromptExecutor { *; }
+-keep class * implements ai.koog.prompt.executor.model.PromptExecutor { *; }
+-keep class * extends ai.koog.prompt.llm.LLMProvider { *; }
+-keep class * implements ai.koog.prompt.llm.LLMProvider { *; }
 
 # Preserve ServiceLoader implementations for KoogHttpClient
 -keep class * implements ai.koog.http.client.KoogHttpClient$Factory
@@ -40,7 +41,6 @@
 
 # 2. Kotlin Reflection
 # Narrowed keep for kotlin-reflect to reduce impact on binary size.
--keep class kotlin.reflect.jvm.internal.** { *; }
 -keep class kotlin.reflect.KClass { *; }
 -keep class kotlin.reflect.KType { *; }
 -keep class kotlin.reflect.KProperty* { *; }
@@ -71,18 +71,6 @@
 -dontwarn java.lang.management.**
 -dontwarn com.fasterxml.jackson.core.JsonFactory
 -dontwarn com.fasterxml.jackson.core.JsonGenerator
-
-# 4. KotlinX Serialization
--keepclassmembers class ** {
-    @kotlinx.serialization.Serializable *;
-}
--keep class **$$serializer { *; }
--keepclassmembers class ** {
-    @kotlinx.serialization.SerialName <fields>;
-}
--keepclassmembers class * {
-    *** Companion;
-}
 
 # 5. jsoup
 -dontwarn com.google.re2j.**

@@ -63,7 +63,10 @@ class AppViewModel @Inject constructor(
             summaryLength = SummaryLength.valueOf(prefs.summaryLength),
             autoExtractUrl = prefs.autoExtractUrl,
             sessData = prefs.sessData,
-            sessDataExpires = prefs.sessDataExpires
+            sessDataExpires = prefs.sessDataExpires,
+            isAppendMode = prefs.isAppendMode,
+            customBasePrompt = prefs.customBasePrompt,
+            additionalSystemPrompt = prefs.additionalSystemPrompt
         )
     }.stateIn(
         scope = viewModelScope,
@@ -160,6 +163,20 @@ class AppViewModel @Inject constructor(
             userPreferencesRepository.clearSessData()
         }
     }
+
+    // Advanced Setup
+    fun setIsAppendMode(newValue: Boolean) {
+        savePreference(userPreferencesRepository::setIsAppendMode, newValue)
+        if (!newValue && settingsUiState.value.customBasePrompt.isEmpty()) {
+            setCustomBasePrompt(me.nanova.summaryexpressive.llm.defaultSystemPromptPlaceholder)
+        }
+    }
+
+    fun setCustomBasePrompt(newValue: String) =
+        savePreference(userPreferencesRepository::setCustomBasePrompt, newValue)
+
+    fun setAdditionalSystemPrompt(newValue: String) =
+        savePreference(userPreferencesRepository::setAdditionalSystemPrompt, newValue)
 
     // --- App Start Action ---
     private val _appStartAction = MutableStateFlow(AppStartAction())

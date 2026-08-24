@@ -5,4 +5,5 @@ enum class Nav {
     Onboarding,
     History,
     Settings,
+    AdvancedSetup,
 }

@@ -68,4 +68,13 @@
     <string name="discordDescription">Join our community</string>
     <string name="next">Next</string>
     <string name="undo">Undo</string>
+    <string name="advancedSummarySetup">Advanced Summary Setup</string>
+    <string name="advancedSummarySetupDescription">Configure base prompt and language constraints</string>
+    <string name="appendCustomPrompt">Append Custom Prompt</string>
+    <string name="appendCustomPromptDescription">Append additional instructions to the base prompt</string>
+    <string name="basePrompt">Base Prompt</string>
+    <string name="additionalConfigurations">Additional Configurations</string>
+    <string name="additionalPrompt">Additional Prompt</string>
+    <string name="finalPromptPreview">Final Prompt Preview</string>
+    <string name="dynamicConstraints">Dynamic Constraints (Read-only)</string>
 </resources>

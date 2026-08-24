@@ -18,6 +18,7 @@ import me.nanova.summaryexpressive.ui.page.HistoryScreen
 import me.nanova.summaryexpressive.ui.page.HomeScreen
 import me.nanova.summaryexpressive.ui.page.OnboardingScreen
 import me.nanova.summaryexpressive.ui.page.SettingsScreen
+import me.nanova.summaryexpressive.ui.page.AdvancedSetupScreen
 import me.nanova.summaryexpressive.vm.AppViewModel
 
 private fun slideIn(dir: SlideDirection): AnimatedContentTransitionScope<*>.() -> EnterTransition = {
@@ -103,6 +104,17 @@ fun AppNavigation(
             exitTransition = slideOut(SlideDirection.End)
         ) {
             HistoryScreen()
+        }
+
+        composable(
+            Nav.AdvancedSetup.name,
+            enterTransition = slideIn(SlideDirection.Start),
+            exitTransition = slideOut(SlideDirection.End)
+        ) {
+            AdvancedSetupScreen(
+                onBack = { navController.popBackStack() },
+                appViewModel = appViewModel
+            )
         }
     }
 }
