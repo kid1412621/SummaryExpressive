@@ -148,7 +148,7 @@ private object MimeTypes {
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    onNav: (dest: Nav, args: Map<String, String>?) -> Unit = { _, _ -> run {} },
+    onNav: (dest: Nav) -> Unit = { run {} },
     appViewModel: AppViewModel,
     summaryViewModel: SummaryViewModel = hiltViewModel<SummaryViewModel>(),
 ) {
@@ -203,7 +203,7 @@ fun HomeScreen(
     LaunchedEffect(error) {
         error?.let { when(it){
             is SummaryException.BiliBiliLoginRequiredException -> {
-                onNav(Nav.Settings, mapOf("highlight" to "3rd-party-service"))
+                onNav(Nav.Settings(highlight = "3rd-party-service"))
                 summaryViewModel.clearCurrentSummary()
             }
         } }
@@ -289,7 +289,7 @@ fun HomeScreen(
             .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = { 
             HomeTopAppBar(
-                onNav = {onNav(it, mapOf())}, 
+                onNav = { onNav(it) }, 
                 scrollBehavior = scrollBehavior,
                 settings = settings,
                 onIndicatorClick = { showProviderModelSheet = true }
@@ -440,7 +440,7 @@ private fun HomeTopAppBar(
         navigationIcon = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
-                    onClick = { onNav(Nav.Settings) }
+                    onClick = { onNav(Nav.Settings()) }
                 ) {
                     Icon(Icons.Outlined.Settings, contentDescription = "Settings")
                 }

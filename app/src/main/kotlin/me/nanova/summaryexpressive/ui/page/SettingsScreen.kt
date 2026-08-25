@@ -6,7 +6,6 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.compose.animation.Animatable
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.Animatable as CoreAnimatable
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
@@ -44,7 +43,6 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.StarRate
-import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.VpnKey
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -114,6 +112,7 @@ import me.nanova.summaryexpressive.vm.AppViewModel
 import me.nanova.summaryexpressive.vm.SettingsUiState
 import java.text.SimpleDateFormat
 import java.util.Date
+import androidx.compose.animation.core.Animatable as CoreAnimatable
 
 private enum class DialogState {
     NONE, THEME, AI_PROVIDER, MODEL
@@ -435,7 +434,7 @@ private fun SettingsContent(
 
                 ListItem(
                     modifier = Modifier
-                        .clickable { onNav(Nav.AdvancedSetup) }
+                        .clickable { onNav(Nav.AdvancedSummarySetup) }
                         .fillMaxWidth(),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     supportingContent = { Text(stringResource(id = R.string.advancedSummarySetupDescription)) },

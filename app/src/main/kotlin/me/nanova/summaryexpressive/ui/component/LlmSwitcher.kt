@@ -20,13 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import me.nanova.summaryexpressive.llm.AIProvider
-
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import me.nanova.summaryexpressive.llm.AIProvider
 
 @Composable
 fun LlmSwitcher(
@@ -35,6 +35,7 @@ fun LlmSwitcher(
     modifier: Modifier = Modifier,
     iconSize: Dp = 24.dp,
     boxSize: Dp = 48.dp,
+    fontSize: TextUnit = 8.sp,
     onClick: (() -> Unit)? = null,
 ) {
     Box(
@@ -53,6 +54,7 @@ fun LlmSwitcher(
             ModelLabel(
                 model = model,
                 boxSize = boxSize,
+                fontSize = fontSize,
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
@@ -79,7 +81,12 @@ private fun ProviderIcon(provider: AIProvider?, iconSize: Dp) {
 }
 
 @Composable
-private fun ModelLabel(model: String, boxSize: Dp, modifier: Modifier = Modifier) {
+private fun ModelLabel(
+    model: String,
+    boxSize: Dp,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 8.sp,
+) {
     val shortName = model.replaceFirst(
         Regex("^(gpt|gemini|claude|deepseek|mistral)-", RegexOption.IGNORE_CASE),
         ""
@@ -87,8 +94,8 @@ private fun ModelLabel(model: String, boxSize: Dp, modifier: Modifier = Modifier
 
     Text(
         text = shortName,
-        fontSize = 8.sp,
-        lineHeight = 8.sp,
+        fontSize = fontSize,
+        lineHeight = fontSize,
         fontWeight = FontWeight.Bold,
         letterSpacing = (-0.5).sp,
         color = MaterialTheme.colorScheme.onPrimaryContainer,

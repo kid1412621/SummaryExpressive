@@ -49,7 +49,7 @@ import me.nanova.summaryexpressive.ui.component.LogoIcon
 @Composable
 fun OnboardingScreen(
     onDone: () -> Unit,
-    onDoneAndNavigate: (destinationRoute: String) -> Unit,
+    onDoneAndNavigate: (destinationRoute: Nav) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val pagerState = rememberPagerState(pageCount = { 4 })
@@ -96,7 +96,7 @@ fun OnboardingScreen(
 
             if (isLast) {
                 Button(onClick = {
-                    onDoneAndNavigate("${Nav.Settings.name}?highlight=ai")
+                    onDoneAndNavigate(Nav.Settings(highlight = "ai"))
                 }) {
                     Text("Setup AI")
                 }

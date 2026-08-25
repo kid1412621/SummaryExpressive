@@ -124,8 +124,10 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
 
-    // Navigation
-    implementation(libs.androidx.navigation.compose)
+    // Navigation 3
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.hilt.navigation.compose)
 
     // Jetpack Compose
@@ -134,8 +136,6 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material.icons.extended)
-    // Keep alpha override for material expressive features, as intended
-    // https://developer.android.com/jetpack/androidx/releases/compose-material3#compose_material3_version_15_2
     implementation(libs.androidx.compose.material3)
 
     // Paging
@@ -165,8 +165,6 @@ dependencies {
     implementation(libs.prompt.executor.ollama.client.android)
     implementation(libs.prompt.executor.openrouter.client.android)
     implementation(libs.prompt.executor.bedrock.client.android)
-
-    // Koog only provided the beta version
     implementation(libs.koog.agents.additions)
     implementation(libs.prompt.executor.google.client.android)
     implementation(libs.prompt.executor.deepseek.client.android)

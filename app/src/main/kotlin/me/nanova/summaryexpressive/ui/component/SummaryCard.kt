@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.R
@@ -156,7 +157,8 @@ fun SummaryCard(
                         LlmIndicator(
                             provider = aiProvider,
                             model = summary.model,
-                            boxSize = 18.dp,
+                            boxSize = 22.dp,
+                            fontSize = 6.sp,
                             modifier = Modifier.padding(end = 12.dp)
                         )
                     }

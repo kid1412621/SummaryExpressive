@@ -3,7 +3,9 @@ package me.nanova.summaryexpressive.ui.component
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import me.nanova.summaryexpressive.llm.AIProvider
 
 @Composable
@@ -13,6 +15,7 @@ fun LlmIndicator(
     modifier: Modifier = Modifier,
     iconSize: Dp = 24.dp,
     boxSize: Dp = 48.dp,
+    fontSize: TextUnit = 8.sp,
 ) {
     LlmSwitcher(
         provider = provider,
@@ -20,6 +23,7 @@ fun LlmIndicator(
         modifier = modifier,
         iconSize = iconSize,
         boxSize = boxSize,
+        fontSize = fontSize,
         onClick = null
     )
 }

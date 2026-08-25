@@ -13,7 +13,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.rememberNavBackStack
 import dagger.hilt.android.AndroidEntryPoint
 import me.nanova.summaryexpressive.ui.AppNavigation
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme
@@ -34,7 +34,6 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
 
         setContent {
-            val navController = rememberNavController()
             val settingsState by viewModel.settingsUiState.collectAsState()
             val startDestination by viewModel.startDestination.collectAsState()
 
@@ -49,9 +48,9 @@ class MainActivity : ComponentActivity() {
                 if (startDestination == null) {
                     return@SummaryExpressiveTheme
                 }
+                val backStack = rememberNavBackStack(startDestination!!)
                 AppNavigation(
-                    navController = navController,
-                    startDestination = startDestination!!,
+                    backStack = backStack,
                     appViewModel = viewModel
                 )
             }

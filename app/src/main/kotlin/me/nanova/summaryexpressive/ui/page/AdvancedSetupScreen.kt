@@ -51,7 +51,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdvancedSetupScreen(
+fun AdvancedSummarySetupScreen(
     onBack: () -> Unit,
     appViewModel: AppViewModel,
 ) {
