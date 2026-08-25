@@ -1,7 +1,6 @@
 package me.nanova.summaryexpressive.ui
 
-import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.EaseOut
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -21,6 +20,10 @@ import me.nanova.summaryexpressive.ui.page.HomeScreen
 import me.nanova.summaryexpressive.ui.page.OnboardingScreen
 import me.nanova.summaryexpressive.ui.page.SettingsScreen
 import me.nanova.summaryexpressive.vm.AppViewModel
+
+private val EmphasizedDecelerateEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
+private val EmphasizedAccelerateEasing = CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)
+private val EmphasizedEasing = CubicBezierEasing(0.2f, 0.0f, 0.0f, 1.0f)
 
 @Composable
 fun AppNavigation(
@@ -90,28 +93,28 @@ fun AppNavigation(
         transitionSpec = {
             slideInHorizontally(
                 initialOffsetX = { it },
-                animationSpec = tween(300, easing = EaseIn)
+                animationSpec = tween(400, easing = EmphasizedDecelerateEasing)
             ) togetherWith slideOutHorizontally(
-                targetOffsetX = { -it },
-                animationSpec = tween(300, easing = EaseOut)
+                targetOffsetX = { -it / 3 },
+                animationSpec = tween(300, easing = EmphasizedAccelerateEasing)
             )
         },
         popTransitionSpec = {
             slideInHorizontally(
-                initialOffsetX = { -it },
-                animationSpec = tween(300, easing = EaseIn)
+                initialOffsetX = { -it / 3 },
+                animationSpec = tween(400, easing = EmphasizedDecelerateEasing)
             ) togetherWith slideOutHorizontally(
                 targetOffsetX = { it },
-                animationSpec = tween(300, easing = EaseOut)
+                animationSpec = tween(300, easing = EmphasizedAccelerateEasing)
             )
         },
         predictivePopTransitionSpec = {
             slideInHorizontally(
-                initialOffsetX = { -it },
-                animationSpec = tween(300, easing = EaseIn)
+                initialOffsetX = { -it / 3 },
+                animationSpec = tween(400, easing = EmphasizedEasing)
             ) togetherWith slideOutHorizontally(
                 targetOffsetX = { it },
-                animationSpec = tween(300, easing = EaseOut)
+                animationSpec = tween(350, easing = EmphasizedEasing)
             )
         }
     )

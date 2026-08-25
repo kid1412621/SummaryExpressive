@@ -5,28 +5,29 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.compose.animation.Animatable
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
@@ -208,53 +209,40 @@ fun SettingsScreen(
         }
     }
 
-    AnimatedContent(
-        targetState = dialogState,
-        transitionSpec = {
-            if (targetState.ordinal > initialState.ordinal) {
-                slideInHorizontally { width -> width } togetherWith slideOutHorizontally { width -> -width }
-            } else {
-                slideInHorizontally { width -> -width } togetherWith slideOutHorizontally { width -> width }
-            }
-        },
-        label = "dialog animation"
-    ) { targetDialog ->
-        when (targetDialog) {
-            DialogState.NONE -> {}
-            DialogState.THEME -> {
-                ThemeSettingsDialog(
-                    onDismissRequest = { dialogState = DialogState.NONE },
-                    currentTheme = state.theme,
-                    onThemeChange = actions.onThemeChange,
-                )
-            }
+    when (dialogState) {
+        DialogState.NONE -> {}
+        DialogState.THEME -> {
+            ThemeSettingsDialog(
+                onDismissRequest = { dialogState = DialogState.NONE },
+                currentTheme = state.theme,
+                onThemeChange = actions.onThemeChange,
+            )
+        }
 
-            DialogState.AI_PROVIDER -> {
-                AIProviderSettingsDialog(
-                    initialProvider = state.aiProvider ?: AIProvider.OPENAI,
-                    providerConfigs = state.providerConfigs,
-                    onDismissRequest = { dialogState = DialogState.NONE },
-                    onConfirm = { provider, baseUrl, apiKey ->
-                        actions.onProviderConfigChange(provider.name, baseUrl, apiKey)
-                    },
-                    onNext = { provider, baseUrl, apiKey ->
-                        actions.onProviderConfigChange(provider.name, baseUrl, apiKey)
-                        dialogState = DialogState.MODEL
-                    }
-                )
-            }
+        DialogState.AI_PROVIDER -> {
+            AIProviderSettingsDialog(
+                initialProvider = state.aiProvider ?: AIProvider.OPENAI,
+                providerConfigs = state.providerConfigs,
+                onDismissRequest = { dialogState = DialogState.NONE },
+                onConfirm = { provider, baseUrl, apiKey ->
+                    actions.onProviderConfigChange(provider.name, baseUrl, apiKey)
+                },
+                onNext = { provider, baseUrl, apiKey ->
+                    actions.onProviderConfigChange(provider.name, baseUrl, apiKey)
+                    dialogState = DialogState.MODEL
+                }
+            )
+        }
 
-            DialogState.MODEL -> {
-                ModelSettingsDialog(
-                    onDismissRequest = { dialogState = DialogState.NONE },
-                    provider = state.aiProvider ?: AIProvider.OPENAI,
-                    initialModelId = state.model,
-                    onConfirm = { modelId ->
-                        actions.onModelChange(modelId)
-                    },
-                )
-            }
-
+        DialogState.MODEL -> {
+            ModelSettingsDialog(
+                onDismissRequest = { dialogState = DialogState.NONE },
+                provider = state.aiProvider ?: AIProvider.OPENAI,
+                initialModelId = state.model,
+                onConfirm = { modelId ->
+                    actions.onModelChange(modelId)
+                },
+            )
         }
     }
 
@@ -262,6 +250,7 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             LargeTopAppBar(
                 title = {
@@ -324,304 +313,315 @@ private fun SettingsContent(
         }
     }
 
-    LazyColumn(
-        state = lazyListState,
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        contentPadding = innerPadding,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .consumeWindowInsets(innerPadding),
+        contentAlignment = Alignment.TopCenter
     ) {
-        item {
-            SettingsGroup {
-                ListItem(
-                    modifier = Modifier
-                        .clickable {
-                            val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
-                            val uri = Uri.fromParts("package", context.packageName, null)
-                            intent.data = uri
-                            context.startActivity(intent)
+        LazyColumn(
+            state = lazyListState,
+            modifier = Modifier
+                .fillMaxSize()
+                .widthIn(max = 840.dp)
+                .padding(horizontal = 16.dp),
+            contentPadding = innerPadding,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                SettingsGroup {
+                    ListItem(
+                        modifier = Modifier
+                            .clickable {
+                                val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
+                                val uri = Uri.fromParts("package", context.packageName, null)
+                                intent.data = uri
+                                context.startActivity(intent)
+                            }
+                            .fillMaxWidth(),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        leadingContent = {
+                            Icon(
+                                Icons.Rounded.Language,
+                                contentDescription = "Localized description",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        supportingContent = { Text(stringResource(id = R.string.chooseLanguageDescription)) },
+                    ) { Text(stringResource(id = R.string.chooseLanguage)) }
+
+                    ListItem(
+                        modifier = Modifier
+                            .clickable(onClick = onShowThemeDialog)
+                            .fillMaxWidth(),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        leadingContent = {
+                            Icon(
+                                Icons.Rounded.DarkMode,
+                                contentDescription = "Dark mode",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                when (state.theme) {
+                                    1 -> stringResource(id = R.string.darkTheme)
+                                    2 -> stringResource(id = R.string.lightTheme)
+                                    else -> stringResource(id = R.string.systemTheme)
+                                }
+                            )
                         }
-                        .fillMaxWidth(),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    leadingContent = {
-                        Icon(
-                            Icons.Rounded.Language,
-                            contentDescription = "Localized description",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    supportingContent = { Text(stringResource(id = R.string.chooseLanguageDescription)) },
-                ) { Text(stringResource(id = R.string.chooseLanguage)) }
+                    ) { Text(stringResource(id = R.string.theme)) }
 
-                ListItem(
-                    modifier = Modifier
-                        .clickable(onClick = onShowThemeDialog)
-                        .fillMaxWidth(),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    leadingContent = {
-                        Icon(
-                            Icons.Rounded.DarkMode,
-                            contentDescription = "Dark mode",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    supportingContent = {
-                        Text(
-                            when (state.theme) {
-                                1 -> stringResource(id = R.string.darkTheme)
-                                2 -> stringResource(id = R.string.lightTheme)
-                                else -> stringResource(id = R.string.systemTheme)
-                            }
-                        )
-                    }
-                ) { Text(stringResource(id = R.string.theme)) }
-
-                ListItem(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    supportingContent = { Text(stringResource(id = R.string.useDynamicColorDescription)) },
-                    leadingContent = {
-                        Icon(
-                            Icons.Rounded.Palette,
-                            contentDescription = "Dynamic Color",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    trailingContent = {
-                        Switch(
-                            checked = state.dynamicColor,
-                            onCheckedChange = {
-                                actions.onDynamicColorChange(it)
-                            }
-                        )
-                    }
-                ) { Text(stringResource(id = R.string.useDynamicColor)) }
+                    ListItem(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        supportingContent = { Text(stringResource(id = R.string.useDynamicColorDescription)) },
+                        leadingContent = {
+                            Icon(
+                                Icons.Rounded.Palette,
+                                contentDescription = "Dynamic Color",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        trailingContent = {
+                            Switch(
+                                checked = state.dynamicColor,
+                                onCheckedChange = {
+                                    actions.onDynamicColorChange(it)
+                                }
+                            )
+                        }
+                    ) { Text(stringResource(id = R.string.useDynamicColor)) }
+                }
             }
-        }
 
-        item {
-            SettingsGroup(highlighted = highlightSection == "ai") {
-                ListItem(
-                    modifier = Modifier
-                        .clickable(onClick = onShowAIProviderDialog)
-                        .fillMaxWidth(),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    supportingContent = { Text(stringResource(id = R.string.setAIProviderDescription)) },
-                    leadingContent = {
-                        Icon(
-                            Icons.Default.Cloud,
-                            contentDescription = "AI Provider",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                ) { Text(stringResource(id = R.string.setAIProvider)) }
+            item {
+                SettingsGroup(highlighted = highlightSection == "ai") {
+                    ListItem(
+                        modifier = Modifier
+                            .clickable(onClick = onShowAIProviderDialog)
+                            .fillMaxWidth(),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        supportingContent = { Text(stringResource(id = R.string.setAIProviderDescription)) },
+                        leadingContent = {
+                            Icon(
+                                Icons.Default.Cloud,
+                                contentDescription = "AI Provider",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    ) { Text(stringResource(id = R.string.setAIProvider)) }
 
-                ListItem(
-                    modifier = Modifier
-                        .clickable(onClick = onShowModelDialog)
-                        .fillMaxWidth(),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    supportingContent = { Text(stringResource(id = R.string.setModelDescription)) },
-                    leadingContent = {
-                        Icon(
-                            Icons.Default.AutoAwesome,
-                            contentDescription = "LLM Model",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                ) { Text(stringResource(id = R.string.setModel)) }
+                    ListItem(
+                        modifier = Modifier
+                            .clickable(onClick = onShowModelDialog)
+                            .fillMaxWidth(),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        supportingContent = { Text(stringResource(id = R.string.setModelDescription)) },
+                        leadingContent = {
+                            Icon(
+                                Icons.Default.AutoAwesome,
+                                contentDescription = "LLM Model",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    ) { Text(stringResource(id = R.string.setModel)) }
 
-                ListItem(
-                    modifier = Modifier
-                        .clickable { onNav(Nav.AdvancedSummarySetup) }
-                        .fillMaxWidth(),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    supportingContent = { Text(stringResource(id = R.string.advancedSummarySetupDescription)) },
-                    leadingContent = {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ShortText,
-                            contentDescription = "Advanced Summary Setup",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                ) { Text(stringResource(id = R.string.advancedSummarySetup)) }
+                    ListItem(
+                        modifier = Modifier
+                            .clickable { onNav(Nav.AdvancedSummarySetup) }
+                            .fillMaxWidth(),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        supportingContent = { Text(stringResource(id = R.string.advancedSummarySetupDescription)) },
+                        leadingContent = {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ShortText,
+                                contentDescription = "Advanced Summary Setup",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    ) { Text(stringResource(id = R.string.advancedSummarySetup)) }
+                }
             }
-        }
 
-        item {
-            SettingsGroup(highlighted = highlightSection == "3rd-party-service") {
-                val sessDataValid =
-                    (state.sessData.isNotBlank() && state.sessDataExpires > System.currentTimeMillis())
-                val itemColor =
-                    if (sessDataValid) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else LocalContentColor.current
+            item {
+                SettingsGroup(highlighted = highlightSection == "3rd-party-service") {
+                    val sessDataValid =
+                        (state.sessData.isNotBlank() && state.sessDataExpires > System.currentTimeMillis())
+                    val itemColor =
+                        if (sessDataValid) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else LocalContentColor.current
 
-                ListItem(
-                    modifier = Modifier.combinedClickable(
-                        onClick = {
-                            if (!sessDataValid) {
-                                onShowBiliBiliLoginSheet()
+                    ListItem(
+                        modifier = Modifier.combinedClickable(
+                            onClick = {
+                                if (!sessDataValid) {
+                                    onShowBiliBiliLoginSheet()
+                                }
+                            },
+                            onLongClick = {
+                                if (sessDataValid) {
+                                    onShowClearSessDataDialog()
+                                }
+                            }
+                        ),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        supportingContent = {
+                            if (sessDataValid) {
+                                val expiryDate = SimpleDateFormat(
+                                    "yyyy-MM-dd",
+                                    LocalLocale.current.platformLocale
+                                )
+                                    .format(Date(state.sessDataExpires))
+                                Text(
+                                    "Logged in, expires on $expiryDate. Long press to clear.",
+                                    color = itemColor
+                                )
+                            } else {
+                                Text("BiliBili required login to get transcripts which used for video summary")
                             }
                         },
-                        onLongClick = {
-                            if (sessDataValid) {
-                                onShowClearSessDataDialog()
-                            }
-                        }
-                    ),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    supportingContent = {
-                        if (sessDataValid) {
-                            val expiryDate = SimpleDateFormat("yyyy-MM-dd", LocalLocale.current.platformLocale)
-                                .format(Date(state.sessDataExpires))
-                            Text(
-                                "Logged in, expires on $expiryDate. Long press to clear.",
-                                color = itemColor
+                        leadingContent = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.bilibili),
+                                contentDescription = "BiliBili",
+                                modifier = Modifier.size(24.dp),
+                                tint = itemColor
                             )
-                        } else {
-                            Text("BiliBili required login to get transcripts which used for video summary")
                         }
-                    },
-                    leadingContent = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.bilibili),
-                            contentDescription = "BiliBili",
-                            modifier = Modifier.size(24.dp),
-                            tint = itemColor
-                        )
-                    }
-                ) { Text("BiliBili Account", color = itemColor) }
+                    ) { Text("BiliBili Account", color = itemColor) }
+                }
             }
-        }
 
-        item {
-            SettingsGroup {
-                ListItem(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    supportingContent = { Text(stringResource(R.string.useAutoExtractLinkDescription)) },
-                    leadingContent = {
-                        Icon(
-                            Icons.Rounded.Link,
-                            contentDescription = stringResource(R.string.useAutoExtractLink),
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    trailingContent = {
-                        Switch(
-                            checked = state.autoExtractUrl,
-                            onCheckedChange = { actions.onAutoExtractUrlChange(it) }
-                        )
-                    }
-                ) { Text(stringResource(R.string.useAutoExtractLink)) }
+            item {
+                SettingsGroup {
+                    ListItem(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        supportingContent = { Text(stringResource(R.string.useAutoExtractLinkDescription)) },
+                        leadingContent = {
+                            Icon(
+                                Icons.Rounded.Link,
+                                contentDescription = stringResource(R.string.useAutoExtractLink),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        trailingContent = {
+                            Switch(
+                                checked = state.autoExtractUrl,
+                                onCheckedChange = { actions.onAutoExtractUrlChange(it) }
+                            )
+                        }
+                    ) { Text(stringResource(R.string.useAutoExtractLink)) }
+                }
             }
-        }
 
-        item {
-            SettingsGroup {
-                ListItem(
-                    modifier = Modifier
-                        .clickable(onClick = { onNav(Nav.Onboarding) })
-                        .fillMaxWidth(),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    leadingContent = {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.HelpCenter,
-                            contentDescription = "Tutorial",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    supportingContent = { Text(stringResource(id = R.string.tutorialDescription)) },
-                ) { Text(stringResource(id = R.string.tutorial)) }
+            item {
+                SettingsGroup {
+                    ListItem(
+                        modifier = Modifier
+                            .clickable(onClick = { onNav(Nav.Onboarding) })
+                            .fillMaxWidth(),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        leadingContent = {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.HelpCenter,
+                                contentDescription = "Tutorial",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        supportingContent = { Text(stringResource(id = R.string.tutorialDescription)) },
+                    ) { Text(stringResource(id = R.string.tutorial)) }
 
-                ListItem(
-                    modifier = Modifier
-                        .clickable {
-                            val url =
-                                "https://play.google.com/store/apps/details?id=${context.packageName}"
-                            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                            context.startActivity(intent)
-                        }
-                        .fillMaxWidth(),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    leadingContent = {
-                        Icon(
-                            Icons.Rounded.StarRate,
-                            contentDescription = "Rate app",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    supportingContent = { Text(stringResource(id = R.string.googlePlayDescription)) },
-                ) { Text(stringResource(id = R.string.googlePlay)) }
-
-                ListItem(
-                    modifier = Modifier
-                        .clickable {
-                            val url = "https://discord.gg/WjN73wKTqd"
-                            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                            context.startActivity(intent)
-                        }
-                        .fillMaxWidth(),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    leadingContent = {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.discord),
-                            contentDescription = "Discord",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    supportingContent = { Text(stringResource(id = R.string.discordDescription)) },
-                ) { Text(stringResource(id = R.string.discord)) }
-
-                ListItem(
-                    modifier = Modifier
-                        .clickable {
-                            val url = "https://github.com/kid1412621/SummaryExpressive"
-                            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                            context.startActivity(intent)
-                        }
-                        .fillMaxWidth(),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    leadingContent = {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.github),
-                            contentDescription = "Codebase",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    supportingContent = { Text(stringResource(id = R.string.githubDescription)) },
-                ) { Text(stringResource(id = R.string.repository)) }
-            }
-        }
-
-        item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalAlignment = CenterHorizontally
-            ) {
-                val appInfo =
-                    "${BuildConfig.VERSION_NAME} - ${BuildConfig.VERSION_CODE} (${BuildConfig.FLAVOR})"
-                Text(
-                    text = "Version $appInfo",
-                    modifier = Modifier
-                        .clickable {
-                            scope.launch {
-                                clipboard.setClipEntry(
-                                    ClipData.newPlainText("App info", appInfo).toClipEntry()
-                                )
+                    ListItem(
+                        modifier = Modifier
+                            .clickable {
+                                val url =
+                                    "https://play.google.com/store/apps/details?id=${context.packageName}"
+                                val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                                context.startActivity(intent)
                             }
-                        })
-                Text(
-                    text = stringResource(id = R.string.madeBy),
+                            .fillMaxWidth(),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        leadingContent = {
+                            Icon(
+                                Icons.Rounded.StarRate,
+                                contentDescription = "Rate app",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        supportingContent = { Text(stringResource(id = R.string.googlePlayDescription)) },
+                    ) { Text(stringResource(id = R.string.googlePlay)) }
+
+                    ListItem(
+                        modifier = Modifier
+                            .clickable {
+                                val url = "https://discord.gg/WjN73wKTqd"
+                                val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                                context.startActivity(intent)
+                            }
+                            .fillMaxWidth(),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        leadingContent = {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.discord),
+                                contentDescription = "Discord",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        supportingContent = { Text(stringResource(id = R.string.discordDescription)) },
+                    ) { Text(stringResource(id = R.string.discord)) }
+
+                    ListItem(
+                        modifier = Modifier
+                            .clickable {
+                                val url = "https://github.com/kid1412621/SummaryExpressive"
+                                val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                                context.startActivity(intent)
+                            }
+                            .fillMaxWidth(),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        leadingContent = {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.github),
+                                contentDescription = "Codebase",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        supportingContent = { Text(stringResource(id = R.string.githubDescription)) },
+                    ) { Text(stringResource(id = R.string.repository)) }
+                }
+            }
+
+            item {
+                Column(
                     modifier = Modifier
-                        .clickable {
-                            val url = "https://nanova.me"
-                            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                            context.startActivity(intent)
-                        }
-                )
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalAlignment = CenterHorizontally
+                ) {
+                    val appInfo =
+                        "${BuildConfig.VERSION_NAME} - ${BuildConfig.VERSION_CODE} (${BuildConfig.FLAVOR})"
+                    Text(
+                        text = "Version $appInfo",
+                        modifier = Modifier
+                            .clickable {
+                                scope.launch {
+                                    clipboard.setClipEntry(
+                                        ClipData.newPlainText("App info", appInfo).toClipEntry()
+                                    )
+                                }
+                            })
+                    Text(
+                        text = stringResource(id = R.string.madeBy),
+                        modifier = Modifier
+                            .clickable {
+                                val url = "https://nanova.me"
+                                val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                                context.startActivity(intent)
+                            }
+                    )
+                }
             }
         }
     }
@@ -636,30 +636,31 @@ private fun SettingsGroup(
     highlighted: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val surfaceVariantColor = MaterialTheme.colorScheme.surfaceVariant
+    val containerColor = MaterialTheme.colorScheme.surfaceContainer
     val secondaryContainerColor = MaterialTheme.colorScheme.secondaryContainer
 
-    val animatedColor = remember(surfaceVariantColor) { Animatable(surfaceVariantColor) }
+    val animatedColor = remember(containerColor) { Animatable(containerColor) }
     val animatedBorderWidth = remember { CoreAnimatable(0f) }
 
-    LaunchedEffect(highlighted, surfaceVariantColor, secondaryContainerColor) {
+    LaunchedEffect(highlighted, containerColor, secondaryContainerColor) {
         if (highlighted) {
             launch {
                 animatedColor.animateTo(secondaryContainerColor, animationSpec = inTween())
-                animatedColor.animateTo(surfaceVariantColor, animationSpec = outTween())
+                animatedColor.animateTo(containerColor, animationSpec = outTween())
             }
             launch {
                 animatedBorderWidth.animateTo(3f, animationSpec = inTween())
                 animatedBorderWidth.animateTo(0f, animationSpec = outTween())
             }
         } else {
-            animatedColor.snapTo(surfaceVariantColor)
+            animatedColor.snapTo(containerColor)
             animatedBorderWidth.snapTo(0f)
         }
     }
 
     Card(
         modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = animatedColor.value,
         ),
@@ -1075,7 +1076,7 @@ private fun ScrollContentPreview() {
             onSessDataChange = { _, _ -> },
             onSessDataClear = {}
         )
-        Scaffold { innerPadding ->
+        Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
             SettingsContent(
                 innerPadding = innerPadding,
                 state = state,

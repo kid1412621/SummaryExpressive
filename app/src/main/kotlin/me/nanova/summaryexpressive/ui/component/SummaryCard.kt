@@ -85,7 +85,9 @@ private const val MAX_LINES_WHEN_COLLAPSE = 7
 fun SummaryCard(
     modifier: Modifier = Modifier,
     summary: SummaryOutput,
-    cardColors: CardColors = CardDefaults.cardColors(),
+    cardColors: CardColors = CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceContainer
+    ),
     isExpandedByDefault: Boolean = false,
     onLongClick: (() -> Unit)? = null,
     onShowSnackbar: (String) -> Unit,
@@ -108,8 +110,8 @@ fun SummaryCard(
                     Modifier.clickable { if (isTextOverflowing) isExpanded = !isExpanded }
                 }
             ),
+        shape = MaterialTheme.shapes.large,
         colors = cardColors,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
     ) {
         Column(
             modifier = Modifier.animateContentSize()

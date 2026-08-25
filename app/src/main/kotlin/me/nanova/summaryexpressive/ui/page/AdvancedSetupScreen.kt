@@ -2,13 +2,18 @@ package me.nanova.summaryexpressive.ui.page
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -60,6 +65,7 @@ fun AdvancedSummarySetupScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             TopAppBar(
                 title = {
@@ -81,159 +87,174 @@ fun AdvancedSummarySetupScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
-                .padding(innerPadding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .consumeWindowInsets(innerPadding),
+            contentAlignment = Alignment.TopCenter
         ) {
-            Text(
-                text = stringResource(id = R.string.basePrompt),
-                style = MaterialTheme.typography.titleMedium
-            )
-            OutlinedTextField(
-                value = if (state.isAppendMode) defaultSystemPromptPlaceholder else state.customBasePrompt,
-                onValueChange = { appViewModel.setCustomBasePrompt(it) },
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 120.dp, max = 240.dp),
-                readOnly = state.isAppendMode,
-                enabled = !state.isAppendMode
-            )
-
-            AnimatedVisibility(visible = !state.isAppendMode) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-                ) {
-                    FilledTonalButton(
-                        onClick = { appViewModel.setCustomBasePrompt("") },
-                        enabled = state.customBasePrompt.isNotEmpty()
-                    ) {
-                        Text("Clear")
-                    }
-                    FilledTonalButton(
-                        onClick = { appViewModel.setCustomBasePrompt(defaultSystemPromptPlaceholder) },
-                        enabled = state.customBasePrompt != defaultSystemPromptPlaceholder
-                    ) {
-                        Text("Reset to Default")
-                    }
-                }
-            }
-
-            HorizontalDivider()
-
-            Text(
-                text = stringResource(id = R.string.additionalConfigurations),
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            ListItem(
-                modifier = Modifier.fillMaxWidth(),
-                leadingContent = {
-                    Icon(
-                        Icons.Rounded.PostAdd,
-                        contentDescription = "Append Custom Prompt",
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                supportingContent = { Text(stringResource(id = R.string.appendCustomPromptDescription)) },
-                trailingContent = {
-                    Switch(
-                        checked = state.isAppendMode,
-                        onCheckedChange = { appViewModel.setIsAppendMode(it) }
-                    )
-                }
-            ) { Text(stringResource(id = R.string.appendCustomPrompt)) }
-
-            AnimatedVisibility(visible = state.isAppendMode) {
-                OutlinedTextField(
-                    value = state.additionalSystemPrompt,
-                    onValueChange = { appViewModel.setAdditionalSystemPrompt(it) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 80.dp, max = 160.dp),
-                    placeholder = {
-                        Text(
-                            text = "Enter additional instructions...",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                )
-            }
-
-            ListItem(
-                modifier = Modifier.fillMaxWidth(),
-                leadingContent = {
-                    Icon(
-                        Icons.Rounded.Translate,
-                        contentDescription = "Language Settings",
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                trailingContent = {
-                    Switch(
-                        checked = state.useOriginalLanguage,
-                        onCheckedChange = { appViewModel.setUseOriginalLanguageValue(it) }
-                    )
-                },
-                supportingContent = { Text(stringResource(id = R.string.useOriginalLanguageDescription)) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-            ) { Text(stringResource(id = R.string.useOriginalLanguage)) }
-
-            ListItem(
-                modifier = Modifier.fillMaxWidth(),
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                supportingContent = { Text(stringResource(id = R.string.useLengthOptionsDescription)) },
-                leadingContent = {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.ShortText,
-                        contentDescription = "Length Options",
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                trailingContent = {
-                    Switch(
-                        checked = state.showLength,
-                        onCheckedChange = { appViewModel.setShowLengthValue(it) }
-                    )
-                }
-            ) { Text(stringResource(id = R.string.useLengthOptions)) }
-
-            HorizontalDivider()
-
-            Text(
-                text = stringResource(id = R.string.finalPromptPreview),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            val appLanguage = LocalLocale.current.platformLocale.getDisplayLanguage(Locale.ENGLISH)
-            val finalPromptPreview = generateFinalPromptString(
-                length = state.summaryLength,
-                showLength = state.showLength,
-                useContentLanguage = state.useOriginalLanguage,
-                appLanguage = appLanguage,
-                isAppendMode = state.isAppendMode,
-                customBasePrompt = state.customBasePrompt,
-                additionalSystemPrompt = state.additionalSystemPrompt
-            )
-
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ),
-                modifier = Modifier.fillMaxWidth()
+                    .fillMaxSize()
+                    .widthIn(max = 840.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = finalPromptPreview,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(16.dp)
+                    text = stringResource(id = R.string.basePrompt),
+                    style = MaterialTheme.typography.titleMedium
                 )
+                OutlinedTextField(
+                    value = if (state.isAppendMode) defaultSystemPromptPlaceholder else state.customBasePrompt,
+                    onValueChange = { appViewModel.setCustomBasePrompt(it) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 120.dp, max = 240.dp),
+                    shape = MaterialTheme.shapes.large,
+                    readOnly = state.isAppendMode,
+                    enabled = !state.isAppendMode
+                )
+
+                AnimatedVisibility(visible = !state.isAppendMode) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                    ) {
+                        FilledTonalButton(
+                            onClick = { appViewModel.setCustomBasePrompt("") },
+                            enabled = state.customBasePrompt.isNotEmpty()
+                        ) {
+                            Text("Clear")
+                        }
+                        FilledTonalButton(
+                            onClick = {
+                                appViewModel.setCustomBasePrompt(
+                                    defaultSystemPromptPlaceholder
+                                )
+                            },
+                            enabled = state.customBasePrompt != defaultSystemPromptPlaceholder
+                        ) {
+                            Text("Reset to Default")
+                        }
+                    }
+                }
+
+                HorizontalDivider()
+
+                Text(
+                    text = stringResource(id = R.string.additionalConfigurations),
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                ListItem(
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingContent = {
+                        Icon(
+                            Icons.Rounded.PostAdd,
+                            contentDescription = "Append Custom Prompt",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    supportingContent = { Text(stringResource(id = R.string.appendCustomPromptDescription)) },
+                    trailingContent = {
+                        Switch(
+                            checked = state.isAppendMode,
+                            onCheckedChange = { appViewModel.setIsAppendMode(it) }
+                        )
+                    }
+                ) { Text(stringResource(id = R.string.appendCustomPrompt)) }
+
+                AnimatedVisibility(visible = state.isAppendMode) {
+                    OutlinedTextField(
+                        value = state.additionalSystemPrompt,
+                        onValueChange = { appViewModel.setAdditionalSystemPrompt(it) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 80.dp, max = 160.dp),
+                        shape = MaterialTheme.shapes.large,
+                        placeholder = {
+                            Text(
+                                text = "Enter additional instructions...",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    )
+                }
+
+                ListItem(
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingContent = {
+                        Icon(
+                            Icons.Rounded.Translate,
+                            contentDescription = "Language Settings",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = state.useOriginalLanguage,
+                            onCheckedChange = { appViewModel.setUseOriginalLanguageValue(it) }
+                        )
+                    },
+                    supportingContent = { Text(stringResource(id = R.string.useOriginalLanguageDescription)) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                ) { Text(stringResource(id = R.string.useOriginalLanguage)) }
+
+                ListItem(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    supportingContent = { Text(stringResource(id = R.string.useLengthOptionsDescription)) },
+                    leadingContent = {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ShortText,
+                            contentDescription = "Length Options",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = state.showLength,
+                            onCheckedChange = { appViewModel.setShowLengthValue(it) }
+                        )
+                    }
+                ) { Text(stringResource(id = R.string.useLengthOptions)) }
+
+                HorizontalDivider()
+
+                Text(
+                    text = stringResource(id = R.string.finalPromptPreview),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                val appLanguage =
+                    LocalLocale.current.platformLocale.getDisplayLanguage(Locale.ENGLISH)
+                val finalPromptPreview = generateFinalPromptString(
+                    length = state.summaryLength,
+                    showLength = state.showLength,
+                    useContentLanguage = state.useOriginalLanguage,
+                    appLanguage = appLanguage,
+                    isAppendMode = state.isAppendMode,
+                    customBasePrompt = state.customBasePrompt,
+                    additionalSystemPrompt = state.additionalSystemPrompt
+                )
+
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = finalPromptPreview,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
         }
     }

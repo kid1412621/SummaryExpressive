@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -20,8 +21,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
@@ -62,6 +64,7 @@ class InstantSummaryActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         handleIntent(intent)
 
@@ -144,22 +147,26 @@ fun InstantSummaryDialog(viewModel: SummaryViewModel, onDismiss: () -> Unit) {
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .padding(top = 16.dp),
             contentAlignment = Alignment.TopCenter
         ) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .widthIn(max = 600.dp)
                     .padding(horizontal = 16.dp)
                     .heightIn(max = maxHeight),
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 8.dp
+                shape = MaterialTheme.shapes.extraLarge,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
             ) {
                 Column(
                     modifier = Modifier

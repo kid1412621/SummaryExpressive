@@ -6,11 +6,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -86,50 +90,59 @@ fun HistoryScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
-            Column(
-                Modifier
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
                     .background(color = MaterialTheme.colorScheme.surface)
-                    .statusBarsPadding()
+                    .statusBarsPadding(),
+                contentAlignment = Alignment.TopCenter
             ) {
-                SearchBar(
-                    state = searchBarState,
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 20.dp, end = 20.dp, top = 15.dp),
-                    inputField = {
-                        SearchBarDefaults.InputField(
-                            textFieldState = viewModel.searchState,
-                            searchBarState = searchBarState,
-                            onSearch = { focusManager.clearFocus() },
-                            placeholder = { Text(stringResource(id = R.string.search)) },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.Search,
-                                    contentDescription = stringResource(id = R.string.search)
-                                )
-                            },
-                            trailingIcon = {
-                                if (viewModel.searchState.text.isNotBlank()) {
-                                    IconButton(onClick = { viewModel.onSearchTextChanged("") }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Clear,
-                                            contentDescription = "Clear"
-                                        )
+                        .widthIn(max = 840.dp)
+                ) {
+                    SearchBar(
+                        state = searchBarState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 20.dp, end = 20.dp, top = 15.dp),
+                        inputField = {
+                            SearchBarDefaults.InputField(
+                                textFieldState = viewModel.searchState,
+                                searchBarState = searchBarState,
+                                onSearch = { focusManager.clearFocus() },
+                                placeholder = { Text(stringResource(id = R.string.search)) },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Search,
+                                        contentDescription = stringResource(id = R.string.search)
+                                    )
+                                },
+                                trailingIcon = {
+                                    if (viewModel.searchState.text.isNotBlank()) {
+                                        IconButton(onClick = { viewModel.onSearchTextChanged("") }) {
+                                            Icon(
+                                                imageVector = Icons.Default.Clear,
+                                                contentDescription = "Clear"
+                                            )
+                                        }
                                     }
-                                }
-                            },
-                        )
-                    },
-                )
+                                },
+                            )
+                        },
+                    )
 
-                TypeFilters(
-                    selectedFilter = selectedFilter,
-                    onFilterChanged = { viewModel.onFilterChanged(it) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 8.dp)
-                )
+                    TypeFilters(
+                        selectedFilter = selectedFilter,
+                        onFilterChanged = { viewModel.onFilterChanged(it) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 8.dp)
+                    )
+                }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -160,6 +173,7 @@ fun HistoryScreen(
                 Box(
                     modifier = Modifier
                         .padding(innerPadding)
+                        .consumeWindowInsets(innerPadding)
                         .fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
@@ -178,16 +192,19 @@ fun HistoryScreen(
                         id = if (viewModel.searchState.text.isBlank() && selectedFilter == null) R.string.noHistory
                         else R.string.nothingFound
                     )
-                    Column(
+                    Box(
                         modifier = Modifier
                             .padding(innerPadding)
-                            .fillMaxSize()
+                            .consumeWindowInsets(innerPadding)
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.TopCenter
                     ) {
                         Text(
                             text = message,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 20.dp)
+                                .widthIn(max = 840.dp)
+                                .padding(horizontal = 20.dp, vertical = 16.dp)
                         )
                     }
                     return@Scaffold
@@ -195,66 +212,74 @@ fun HistoryScreen(
             }
         }
 
-        LazyColumn(
-            state = lazyListState,
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp),
-            contentPadding = innerPadding,
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .consumeWindowInsets(innerPadding),
+            contentAlignment = Alignment.TopCenter
         ) {
-            items(
-                count = historySummaries.itemCount,
-                key = historySummaries.itemKey { it.id }
-            ) { index ->
-                val summary = historySummaries[index]
-                if (summary != null) {
-                    SwipeableSummaryCard(
-                        summary = summary,
-                        isPlaying = playingSummaryId == summary.id,
-                        onPlayRequest = {
-                            playingSummaryId =
-                                if (playingSummaryId == summary.id) null else summary.id
-                        },
-                        onShowSnackbar = onShowSnackbar,
-                        onDismiss = {
-                            scope.launch {
-                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                viewModel.removeHistorySummary(summary.id)
+            LazyColumn(
+                state = lazyListState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 840.dp)
+                    .padding(horizontal = 20.dp),
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(
+                    count = historySummaries.itemCount,
+                    key = historySummaries.itemKey { it.id }
+                ) { index ->
+                    val summary = historySummaries[index]
+                    if (summary != null) {
+                        SwipeableSummaryCard(
+                            summary = summary,
+                            isPlaying = playingSummaryId == summary.id,
+                            onPlayRequest = {
+                                playingSummaryId =
+                                    if (playingSummaryId == summary.id) null else summary.id
+                            },
+                            onShowSnackbar = onShowSnackbar,
+                            onDismiss = {
+                                scope.launch {
+                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    viewModel.removeHistorySummary(summary.id)
 
-                                val result = snackbarHostState.showSnackbar(
-                                    message = deletedMessage,
-                                    actionLabel = undoMessage,
-                                    duration = SnackbarDuration.Long
-                                )
-                                when (result) {
-                                    SnackbarResult.ActionPerformed -> {
-                                        viewModel.addHistorySummary(summary)
-                                        snackbarHostState.currentSnackbarData?.dismiss()
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = deletedMessage,
+                                        actionLabel = undoMessage,
+                                        duration = SnackbarDuration.Long
+                                    )
+                                    when (result) {
+                                        SnackbarResult.ActionPerformed -> {
+                                            viewModel.addHistorySummary(summary)
+                                            snackbarHostState.currentSnackbarData?.dismiss()
+                                        }
+
+                                        SnackbarResult.Dismissed -> {}
                                     }
-
-                                    SnackbarResult.Dismissed -> {}
                                 }
-                            }
-                        },
-                        modifier = Modifier.animateItem()
-                    )
+                            },
+                            modifier = Modifier.animateItem()
+                        )
+                    }
                 }
-            }
 
-            if (historySummaries.loadState.append is LoadState.Loading) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        LinearWavyProgressIndicator(
+                if (historySummaries.loadState.append is LoadState.Loading) {
+                    item {
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 5.dp)
-                        )
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            LinearWavyProgressIndicator(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 5.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -352,8 +377,8 @@ private fun SwipeableSummaryCard(
                 provider = summary.provider,
                 model = summary.model,
             ),
-            cardColors = CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            cardColors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
             ),
             onShowSnackbar = onShowSnackbar,
             isPlaying = isPlaying,

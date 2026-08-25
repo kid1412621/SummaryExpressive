@@ -23,7 +23,8 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:launchMode="standard">
+            android:launchMode="standard"
+            android:windowSoftInputMode="adjustResize">
 
             <meta-data
                 android:name="android.app.shortcuts"
@@ -63,7 +64,8 @@
             android:exported="true"
             android:label="@string/instant_summarize"
             android:taskAffinity=""
-            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:windowSoftInputMode="adjustResize">
 
             <intent-filter>
                 <action android:name="me.nanova.summaryexpressive.action.INSTANT_SUMMARIZE" />

@@ -67,6 +67,35 @@ val md_theme_dark_outlineVariant = Color(0xFF49454F)
 val md_theme_dark_scrim = Color(0xFF000000)
 
 
+val md_theme_light_surfaceDim = Color(0xFFDED8E1)
+val md_theme_light_surfaceBright = Color(0xFFFEF7FF)
+val md_theme_light_surfaceContainerLowest = Color(0xFFFFFFFF)
+val md_theme_light_surfaceContainerLow = Color(0xFFF7F2FA)
+val md_theme_light_surfaceContainer = Color(0xFFF3EDF7)
+val md_theme_light_surfaceContainerHigh = Color(0xFFECE6F0)
+val md_theme_light_surfaceContainerHighest = Color(0xFFE6E0E9)
+
+val md_theme_dark_surfaceDim = Color(0xFF141218)
+val md_theme_dark_surfaceBright = Color(0xFF3B383E)
+val md_theme_dark_surfaceContainerLowest = Color(0xFF0F0D13)
+val md_theme_dark_surfaceContainerLow = Color(0xFF1D1B20)
+val md_theme_dark_surfaceContainer = Color(0xFF211F26)
+val md_theme_dark_surfaceContainerHigh = Color(0xFF2B2930)
+val md_theme_dark_surfaceContainerHighest = Color(0xFF36343B)
+
+val md_theme_primaryFixed = Color(0xFFEADDFF)
+val md_theme_primaryFixedDim = Color(0xFFD0BCFF)
+val md_theme_onPrimaryFixed = Color(0xFF21005D)
+val md_theme_onPrimaryFixedVariant = Color(0xFF4F378B)
+val md_theme_secondaryFixed = Color(0xFFFFDF9A)
+val md_theme_secondaryFixedDim = Color(0xFFF2C048)
+val md_theme_onSecondaryFixed = Color(0xFF251A00)
+val md_theme_onSecondaryFixedVariant = Color(0xFF5A4400)
+val md_theme_tertiaryFixed = Color(0xFF97F0FF)
+val md_theme_tertiaryFixedDim = Color(0xFF4FD8EC)
+val md_theme_onTertiaryFixed = Color(0xFF001F24)
+val md_theme_onTertiaryFixedVariant = Color(0xFF004F58)
+
 val seed = Color(0xFF6750A4)
 
 internal val LightColors = lightColorScheme(
@@ -99,6 +128,25 @@ internal val LightColors = lightColorScheme(
     surfaceTint = md_theme_light_surfaceTint,
     outlineVariant = md_theme_light_outlineVariant,
     scrim = md_theme_light_scrim,
+    surfaceDim = md_theme_light_surfaceDim,
+    surfaceBright = md_theme_light_surfaceBright,
+    surfaceContainerLowest = md_theme_light_surfaceContainerLowest,
+    surfaceContainerLow = md_theme_light_surfaceContainerLow,
+    surfaceContainer = md_theme_light_surfaceContainer,
+    surfaceContainerHigh = md_theme_light_surfaceContainerHigh,
+    surfaceContainerHighest = md_theme_light_surfaceContainerHighest,
+    primaryFixed = md_theme_primaryFixed,
+    primaryFixedDim = md_theme_primaryFixedDim,
+    onPrimaryFixed = md_theme_onPrimaryFixed,
+    onPrimaryFixedVariant = md_theme_onPrimaryFixedVariant,
+    secondaryFixed = md_theme_secondaryFixed,
+    secondaryFixedDim = md_theme_secondaryFixedDim,
+    onSecondaryFixed = md_theme_onSecondaryFixed,
+    onSecondaryFixedVariant = md_theme_onSecondaryFixedVariant,
+    tertiaryFixed = md_theme_tertiaryFixed,
+    tertiaryFixedDim = md_theme_tertiaryFixedDim,
+    onTertiaryFixed = md_theme_onTertiaryFixed,
+    onTertiaryFixedVariant = md_theme_onTertiaryFixedVariant,
 )
 
 
@@ -132,4 +180,23 @@ internal val DarkColors = darkColorScheme(
     surfaceTint = md_theme_dark_surfaceTint,
     outlineVariant = md_theme_dark_outlineVariant,
     scrim = md_theme_dark_scrim,
+    surfaceDim = md_theme_dark_surfaceDim,
+    surfaceBright = md_theme_dark_surfaceBright,
+    surfaceContainerLowest = md_theme_dark_surfaceContainerLowest,
+    surfaceContainerLow = md_theme_dark_surfaceContainerLow,
+    surfaceContainer = md_theme_dark_surfaceContainer,
+    surfaceContainerHigh = md_theme_dark_surfaceContainerHigh,
+    surfaceContainerHighest = md_theme_dark_surfaceContainerHighest,
+    primaryFixed = md_theme_primaryFixed,
+    primaryFixedDim = md_theme_primaryFixedDim,
+    onPrimaryFixed = md_theme_onPrimaryFixed,
+    onPrimaryFixedVariant = md_theme_onPrimaryFixedVariant,
+    secondaryFixed = md_theme_secondaryFixed,
+    secondaryFixedDim = md_theme_secondaryFixedDim,
+    onSecondaryFixed = md_theme_onSecondaryFixed,
+    onSecondaryFixedVariant = md_theme_onSecondaryFixedVariant,
+    tertiaryFixed = md_theme_tertiaryFixed,
+    tertiaryFixedDim = md_theme_tertiaryFixedDim,
+    onTertiaryFixed = md_theme_onTertiaryFixed,
+    onTertiaryFixedVariant = md_theme_onTertiaryFixedVariant,
 )

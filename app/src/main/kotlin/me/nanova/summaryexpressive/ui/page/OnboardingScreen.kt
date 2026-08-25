@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
@@ -176,7 +175,7 @@ private fun OnboardingImage(imageRes: String, imageLoader: ImageLoader) {
         contentDescription = null,
         contentScale = ContentScale.FillBounds,
         modifier = Modifier
-            .clip(shape = RoundedCornerShape(20.dp))
+            .clip(shape = MaterialTheme.shapes.extraLarge)
             .heightIn(max = maxHeight)
     )
 }

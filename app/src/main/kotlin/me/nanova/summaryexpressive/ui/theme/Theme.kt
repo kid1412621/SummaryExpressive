@@ -34,7 +34,7 @@ fun SummaryExpressiveTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
+            val window = (view.context as? Activity)?.window ?: return@SideEffect
             WindowCompat.setDecorFitsSystemWindows(window, false)
             window.isNavigationBarContrastEnforced = false
             val windowsInsetsController = WindowCompat.getInsetsController(window, view)

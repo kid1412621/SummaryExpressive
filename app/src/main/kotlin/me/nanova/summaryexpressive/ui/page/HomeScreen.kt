@@ -22,12 +22,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -287,6 +291,7 @@ fun HomeScreen(
         modifier = modifier
             .fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentWindowInsets = WindowInsets.safeDrawing,
         topBar = { 
             HomeTopAppBar(
                 onNav = { onNav(it) }, 
@@ -346,23 +351,30 @@ fun HomeScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
-            state = listState,
+        Box(
             modifier = Modifier
-                .fillMaxSize(),
-            contentPadding = innerPadding
+                .fillMaxSize()
+                .consumeWindowInsets(innerPadding),
+            contentAlignment = Alignment.TopCenter
         ) {
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.headlineMedium
-                    )
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 840.dp),
+                contentPadding = innerPadding
+            ) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.headlineMedium
+                        )
 
                     InputSection(
                         urlOrText = urlOrText,
@@ -422,6 +434,7 @@ fun HomeScreen(
                 }
             }
         }
+    }
     }
 }
 

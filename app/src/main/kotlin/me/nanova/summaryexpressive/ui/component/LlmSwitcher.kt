@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.SmartToy
 import androidx.compose.material3.Icon
@@ -107,7 +106,7 @@ private fun ModelLabel(
             .widthIn(max = boxSize * 1.5f)
             .background(
                 color = MaterialTheme.colorScheme.primaryContainer,
-                shape = RoundedCornerShape(4.dp)
+                shape = MaterialTheme.shapes.extraSmall
             )
             .padding(horizontal = 2.dp, vertical = 0.dp)
     )
