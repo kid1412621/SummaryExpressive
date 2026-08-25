@@ -57,8 +57,8 @@ import androidx.core.net.toUri
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.R
 import me.nanova.summaryexpressive.llm.AIProvider
-import me.nanova.summaryexpressive.llm.SummaryLength
-import me.nanova.summaryexpressive.llm.SummaryOutput
+import me.nanova.summaryexpressive.model.SummaryLength
+import me.nanova.summaryexpressive.model.SummaryOutput
 import me.nanova.summaryexpressive.util.getLanguageCode
 import java.util.Locale
 import java.util.UUID

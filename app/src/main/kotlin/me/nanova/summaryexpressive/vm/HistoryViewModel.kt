@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
-import me.nanova.summaryexpressive.data.HistoryRepository
+import me.nanova.summaryexpressive.data.repository.HistoryRepository
 import me.nanova.summaryexpressive.model.HistorySummary
 import me.nanova.summaryexpressive.model.SummaryType
 import javax.inject.Inject

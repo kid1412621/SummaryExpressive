@@ -79,31 +79,42 @@ Configure in `app/build.gradle.kts:58-68`.
 
 #### Dependency Injection (`di/AppModule.kt`)
 Hilt module providing:
-- User preferences repository
-- Room database and DAO
-- History repository
+- Repositories (`UserPreferencesRepository`, `AIProviderConfigRepository`, `HistoryRepository`)
+- Room database and DAOs (`HistoryDao`, `AIProviderConfigDao`)
 - LLM handler
 - Ktor HTTP client with cookies and JSON serialization
 
 #### Data Layer (`data/`)
-- **`AppDatabase.kt`**: Room database definition
-- **`HistoryDao.kt`**: DAO for history operations
-- **`HistoryRepository.kt`**: Repository managing history data
-- **`converters/`**: Type converters for Room (SummaryType, VideoSubtype, SummaryLength)
+- **`local/database/`**: Room database, DAOs, entities, and type converters
+  - `AppDatabase.kt`, `HistoryDao.kt`, `AIProviderConfigDao.kt`, `AIProviderConfigEntity.kt`, `converters/`
+- **`local/datastore/`**: User preferences ProtoBuf DataStore and serializer
+  - `UserPreferencesSerializer.kt`
+- **`repository/`**: Single sources of truth for data access
+  - `AIProviderConfigRepository.kt`: AI provider credentials and configurations
+  - `HistoryRepository.kt`: Summarization history repository
+  - `UserPreferencesRepository.kt`: User settings and preferences repository
 
-#### Domain Models (`model/`)
-- `SummaryData.kt`: Core summary data model
-- `HistorySummary.kt`: History entry model
-- `SummaryType.kt`: Supported content types (YouTube, BiliBili, article, image, document, text)
-- `VideoSubtype.kt`: Video platform classifications
-- `SummaryException.kt`: Custom exception types
+#### Domain & Data Models (`model/`)
 - `ExtractedContent.kt`: Content extraction model
+- `HistorySummary.kt`: History entry entity/model
+- `ProviderConfig.kt`: AI provider configuration model
+- `SummaryData.kt`: Core summary data model interface
+- `SummaryLength.kt`: Summarization length enum
+- `SummaryOutput.kt`: LLM output model
+- `SummarySource.kt`: Input source model (Video, Article, Text, Document)
+- `SummaryType.kt`: Supported content types (YouTube, BiliBili, article, image, document, text)
+- `UserPreferences.kt`: User preferences state and settings model
+- `VideoSubtype.kt`: Video platform classifications
+
+#### Custom Exceptions (`exception/`)
+- **`SummaryException.kt`**: Custom exception hierarchy with localization support
 
 #### LLM Integration (`llm/`)
 - **`LLMHandler.kt`**: Core handler for LLM interactions, supports multiple providers
-- **`AIProvider.kt`**: Provider definitions (OpenAI, Gemini, Claude, DeepSeek)
+- **`AIProvider.kt`**: Provider definitions (OpenAI, Gemini, Claude, DeepSeek, etc.)
 - **`Prompts.kt`**: Prompt templates for different content types
 - **`CustomModel.kt`**: Custom model configuration
+- **`GeminiSanitizingHttpClientEngine.kt`**: Engine decorator for Google Gemini compatibility
 - **`tools/`**: Extraction tools
   - `YouTubeTranscriptTool.kt`: YouTube transcript extraction
   - `BiliBiliSubtitleTool.kt`: BiliBili subtitle extraction
@@ -119,13 +130,14 @@ Hilt module providing:
 #### UI Layer (`ui/`)
 - **`AppNavigation.kt`**: Navigation graph setup
 - **`Nav.kt`**: Route definitions
-- **`page/`**: Screen composables
+- **`page/`**: Screen composables & page-specific subcomponents
   - `HomeScreen.kt`: Main summary screen
   - `HistoryScreen.kt`: History browser with paging
   - `SettingsScreen.kt`: App configuration
+  - `AdvancedSetupScreen.kt`: Advanced prompt setup
   - `OnboardingScreen.kt`: First-run setup
-  - `BilibiliLoginScreen.kt`: BiliBili authentication
-- **`component/`**: Reusable UI components
+  - `BilibiliLoginScreen.kt`: BiliBili authentication sheet
+- **`component/`**: Global reusable UI components (`SummaryCard`, `LlmSwitcher`, `LlmIndicator`, `LogoIcon`, `ClickablePasteIcon`)
 - **`theme/`**: Material 3 theming (colors, typography, theme)
 
 #### Services
@@ -183,11 +195,13 @@ Release signing keys (not tracked in git)
 - Follow Android best practices
 
 ### Architecture Patterns
-- MVVM (Model-View-ViewModel)
-- Repository pattern for data access
-- Hilt for dependency injection
-- StateFlow for reactive UI state
-- Sealed classes for type-safe navigation and state management
+- **Layered Architecture & UDF**: UI Layer (Compose + ViewModels with StateFlow), Domain/Model Layer (`model/`, `exception/`), and Data Layer (`data/repository/`, `data/local/`).
+- **Repository Pattern**: Repositories act as the Single Source of Truth (SSOT). ViewModels never interact directly with DAOs, DataStores, or raw network clients.
+- **Dependency Inversion**: Models and domain logic are decoupled from UI and ViewModel layers.
+- **Component Placement Conventions**:
+  - **Global Reusable Components**: Place in `ui/component/` (e.g. `SummaryCard`, `LlmSwitcher`, `LlmIndicator`, `LogoIcon`, `ClickablePasteIcon`).
+  - **Page-Specific Components**: Place alongside the screen in `ui/page/` (or `ui/page/<feature>/`) scoped specifically to that screen/feature (e.g. `BilibiliLoginScreen.kt` sheet).
+- **Custom Exceptions**: Centralized in `exception/SummaryException.kt` with string resource localization support.
 
 ### Dependency Injection
 - All major components are Hilt-injectable

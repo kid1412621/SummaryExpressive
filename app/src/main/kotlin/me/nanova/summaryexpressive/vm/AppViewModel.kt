@@ -12,20 +12,19 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import me.nanova.summaryexpressive.ProviderConfig
-import me.nanova.summaryexpressive.UserPreferencesRepository
-import me.nanova.summaryexpressive.data.AIProviderConfigDao
-import me.nanova.summaryexpressive.data.AIProviderConfigEntity
+import me.nanova.summaryexpressive.data.repository.AIProviderConfigRepository
+import me.nanova.summaryexpressive.data.repository.UserPreferencesRepository
 import me.nanova.summaryexpressive.llm.AIProvider
-import me.nanova.summaryexpressive.llm.SummaryLength
+import me.nanova.summaryexpressive.llm.defaultSystemPromptPlaceholder
+import me.nanova.summaryexpressive.model.ProviderConfig
+import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.ui.Nav
 import javax.inject.Inject
-
 
 @HiltViewModel
 class AppViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val aiProviderConfigDao: AIProviderConfigDao
+    private val aiProviderConfigRepository: AIProviderConfigRepository
 ) : ViewModel() {
 
     private val _startDestination = MutableStateFlow<Nav?>(null)
@@ -44,11 +43,8 @@ class AppViewModel @Inject constructor(
 
     val settingsUiState: StateFlow<SettingsUiState> = combine(
         userPreferencesRepository.preferencesFlow,
-        aiProviderConfigDao.getAllConfigsFlow()
-    ) { prefs, configEntities ->
-        val providerConfigs = configEntities.associate { 
-            it.provider to it.toProviderConfig() 
-        }
+        aiProviderConfigRepository.providerConfigsFlow
+    ) { prefs, providerConfigs ->
         val providerConfig = prefs.aiProvider?.let { providerConfigs[it] }
         SettingsUiState(
             useOriginalLanguage = prefs.useOriginalLanguage,
@@ -90,10 +86,7 @@ class AppViewModel @Inject constructor(
     fun setApiKeyValue(newValue: String) {
         viewModelScope.launch {
             val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
-            val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
-            aiProviderConfigDao.insertConfig(
-                AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(apiKey = newValue))
-            )
+            aiProviderConfigRepository.updateApiKey(provider, newValue)
         }
     }
 
@@ -102,10 +95,7 @@ class AppViewModel @Inject constructor(
         val baseUrlWithProtocol = if (newValue.isBlank() || newValue.startsWith("http")) newValue else "https://$newValue"
         viewModelScope.launch {
             val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
-            val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
-            aiProviderConfigDao.insertConfig(
-                AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(baseUrl = baseUrlWithProtocol))
-            )
+            aiProviderConfigRepository.updateBaseUrl(provider, baseUrlWithProtocol)
         }
     }
 
@@ -116,9 +106,9 @@ class AppViewModel @Inject constructor(
     fun setProviderConfig(provider: String, baseUrl: String, apiKey: String) {
         val baseUrlWithProtocol = if (baseUrl.isBlank() || baseUrl.startsWith("http")) baseUrl else "https://$baseUrl"
         viewModelScope.launch {
-            val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
-            aiProviderConfigDao.insertConfig(
-                AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(baseUrl = baseUrlWithProtocol, apiKey = apiKey))
+            aiProviderConfigRepository.saveConfig(
+                provider,
+                ProviderConfig(apiKey = apiKey, baseUrl = baseUrlWithProtocol)
             )
             userPreferencesRepository.setAIProvider(provider)
         }
@@ -128,10 +118,7 @@ class AppViewModel @Inject constructor(
     fun setModel(newValue: String) {
         viewModelScope.launch {
             val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
-            val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
-            aiProviderConfigDao.insertConfig(
-                AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(model = newValue))
-            )
+            aiProviderConfigRepository.updateModel(provider, newValue)
         }
     }
 
@@ -168,7 +155,7 @@ class AppViewModel @Inject constructor(
     fun setIsAppendMode(newValue: Boolean) {
         savePreference(userPreferencesRepository::setIsAppendMode, newValue)
         if (!newValue && settingsUiState.value.customBasePrompt.isEmpty()) {
-            setCustomBasePrompt(me.nanova.summaryexpressive.llm.defaultSystemPromptPlaceholder)
+            setCustomBasePrompt(defaultSystemPromptPlaceholder)
         }
     }
 

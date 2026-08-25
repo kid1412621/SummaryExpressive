@@ -86,9 +86,21 @@ package previously.
 
 - **History search**
 
+## 🏗️ Architecture
+
+The app follows Google's [official Android Architecture Recommendations](https://developer.android.com/topic/architecture/recommendations) and [Modern Android Development (MAD)](https://developer.android.com/courses/pathways/android-architecture) best practices:
+
+- **Layered Architecture**:
+  - **UI Layer**: Built with Jetpack Compose and Material 3 Expressive, powered by ViewModels exposing reactive `StateFlow` and following Unidirectional Data Flow (UDF).
+  - **Domain & Model Layer (`model/`, `exception/`)**: Pure domain models and centralized custom exceptions decoupled from UI and data layers.
+  - **Data Layer (`data/`)**: Repositories act as the Single Source of Truth (SSOT), encapsulating Room SQLite DB, ProtoBuf DataStore, Ktor network client, and Koog LLM engine.
+- **Dependency Injection**: Powered by Dagger Hilt for loose coupling and testability.
+- **Asynchronous Operations**: Kotlin Coroutines + Flow for reactive, main-safe async streams.
+
 ## 🌟 Credits
 
 - The [original idea](https://github.com/talosross/SummaryYou)
   from [talosross](https://github.com/talosross)
 
 - [Koog](https://koog.ai) for kotlin-based LLM interactions
+

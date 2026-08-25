@@ -1,46 +1,20 @@
-package me.nanova.summaryexpressive
+package me.nanova.summaryexpressive.data.repository
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.dataStore
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.serialization.Serializable
-import me.nanova.summaryexpressive.llm.SummaryLength
+import me.nanova.summaryexpressive.data.local.datastore.userPreferencesDataStore
+import me.nanova.summaryexpressive.model.UserPreferences
 import java.io.IOException
+import javax.inject.Inject
+import javax.inject.Singleton
 
-val Context.dataStore: DataStore<UserPreferences> by dataStore(
-    fileName = "user_prefs.pb",
-    serializer = UserPreferencesSerializer
-)
-
-data class ProviderConfig(
-    val apiKey: String = "",
-    val baseUrl: String = "",
-    val model: String = ""
-)
-
-@Serializable
-data class UserPreferences(
-    // state
-    val isOnboarded: Boolean = false,
-    // settings
-    val useOriginalLanguage: Boolean = true,
-    val dynamicColor: Boolean = true,
-    val theme: Int = 0,
-    val aiProvider: String? = null,
-    val showLength: Boolean = true,
-    val summaryLength: String = SummaryLength.MEDIUM.name,
-    val autoExtractUrl: Boolean = true,
-    val sessData: String = "",
-    val sessDataExpires: Long = 0L,
-    val isAppendMode: Boolean = true,
-    val customBasePrompt: String = "",
-    val additionalSystemPrompt: String = ""
-)
-
-class UserPreferencesRepository(private val context: Context) {
-    val preferencesFlow: Flow<UserPreferences> = context.dataStore.data
+@Singleton
+class UserPreferencesRepository @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+    val preferencesFlow: Flow<UserPreferences> = context.userPreferencesDataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(UserPreferences())
@@ -50,7 +24,7 @@ class UserPreferencesRepository(private val context: Context) {
         }
 
     private suspend fun updatePreferences(transform: suspend (UserPreferences) -> UserPreferences) {
-        context.dataStore.updateData { transform(it) }
+        context.userPreferencesDataStore.updateData { transform(it) }
     }
 
     suspend fun setUseOriginalLanguage(value: Boolean) =

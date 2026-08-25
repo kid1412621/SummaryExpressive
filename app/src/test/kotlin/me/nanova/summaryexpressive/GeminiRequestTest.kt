@@ -19,7 +19,7 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.InternalAPI
 import kotlinx.coroutines.runBlocking
 import me.nanova.summaryexpressive.llm.GeminiSanitizingHttpClientEngine
-import me.nanova.summaryexpressive.llm.SummaryLength
+import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.llm.createSummarizationPrompt
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue

@@ -15,11 +15,12 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.cookies.AcceptAllCookiesStorage
 import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.serialization.kotlinx.json.json
-import me.nanova.summaryexpressive.UserPreferencesRepository
 import me.nanova.summaryexpressive.data.AIProviderConfigDao
 import me.nanova.summaryexpressive.data.AppDatabase
 import me.nanova.summaryexpressive.data.HistoryDao
-import me.nanova.summaryexpressive.data.HistoryRepository
+import me.nanova.summaryexpressive.data.repository.AIProviderConfigRepository
+import me.nanova.summaryexpressive.data.repository.HistoryRepository
+import me.nanova.summaryexpressive.data.repository.UserPreferencesRepository
 import me.nanova.summaryexpressive.llm.LLMHandler
 import javax.inject.Singleton
 
@@ -73,11 +74,18 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideAIProviderConfigRepository(aiProviderConfigDao: AIProviderConfigDao): AIProviderConfigRepository {
+        return AIProviderConfigRepository(aiProviderConfigDao)
+    }
+
+    @Provides
+    @Singleton
     fun provideLLMHandler(
         @ApplicationContext context: Context,
-        httpClient: HttpClient
+        httpClient: HttpClient,
+        userPreferencesRepository: UserPreferencesRepository
     ): LLMHandler {
-        return LLMHandler(context, httpClient)
+        return LLMHandler(context, httpClient, userPreferencesRepository)
     }
 
     @Provides

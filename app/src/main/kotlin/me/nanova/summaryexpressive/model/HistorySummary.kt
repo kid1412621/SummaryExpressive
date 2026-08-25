@@ -8,7 +8,6 @@ import kotlinx.serialization.Serializable
 import me.nanova.summaryexpressive.data.converters.SummaryLengthConverter
 import me.nanova.summaryexpressive.data.converters.SummaryTypeConverter
 import me.nanova.summaryexpressive.data.converters.VideoSubtypeConverter
-import me.nanova.summaryexpressive.llm.SummaryLength
 import java.util.UUID
 
 @Serializable

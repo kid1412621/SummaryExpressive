@@ -39,8 +39,7 @@ import ai.koog.prompt.executor.ollama.client.OllamaModels
 import ai.koog.prompt.message.Message
 import android.content.Context
 import io.ktor.client.HttpClient
-import kotlinx.serialization.Serializable
-import me.nanova.summaryexpressive.UserPreferencesRepository
+import me.nanova.summaryexpressive.data.repository.UserPreferencesRepository
 import me.nanova.summaryexpressive.llm.tools.Article
 import me.nanova.summaryexpressive.llm.tools.ArticleExtractorTool
 import me.nanova.summaryexpressive.llm.tools.BiliBiliSubtitleTool
@@ -51,26 +50,17 @@ import me.nanova.summaryexpressive.llm.tools.YouTubeTranscript
 import me.nanova.summaryexpressive.llm.tools.YouTubeTranscriptTool
 import me.nanova.summaryexpressive.model.ExtractedContent
 import me.nanova.summaryexpressive.model.SummaryData
-import me.nanova.summaryexpressive.model.SummaryException
-import me.nanova.summaryexpressive.vm.SummaryViewModel.SummarySource
+import me.nanova.summaryexpressive.exception.SummaryException
+import me.nanova.summaryexpressive.model.SummaryLength
+import me.nanova.summaryexpressive.model.SummaryOutput
+import me.nanova.summaryexpressive.model.SummarySource
 import java.util.Locale
 
-@Serializable
-data class SummaryOutput(
-    override val title: String,
-    override val author: String,
-    override val summary: String,
-    val sourceLink: String? = null,
-    // TODO: just use SummarySource
-    val isYoutubeLink: Boolean,
-    val isBiliBiliLink: Boolean,
-    val length: SummaryLength,
-    val provider: String? = null,
-    val model: String? = null,
-) : SummaryData
-
-class LLMHandler(context: Context, private val httpClient: HttpClient) {
-    private val userPreferencesRepository = UserPreferencesRepository(context)
+class LLMHandler(
+    context: Context,
+    private val httpClient: HttpClient,
+    private val userPreferencesRepository: UserPreferencesRepository
+) {
     private val koogHttpClientFactory = KtorKoogHttpClient.Factory(httpClient)
     private val geminiKoogHttpClientFactory = KtorKoogHttpClient.Factory(
         HttpClient(GeminiSanitizingHttpClientEngine(httpClient.engine))

@@ -1,9 +1,10 @@
-package me.nanova.summaryexpressive.data
+package me.nanova.summaryexpressive.data.repository
 
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
+import me.nanova.summaryexpressive.data.HistoryDao
 import me.nanova.summaryexpressive.model.HistorySummary
 import me.nanova.summaryexpressive.model.SummaryType
 import javax.inject.Inject

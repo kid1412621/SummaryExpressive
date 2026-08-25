@@ -2,10 +2,7 @@ package me.nanova.summaryexpressive.llm
 
 import ai.koog.prompt.Prompt
 import ai.koog.prompt.dsl.prompt
-
-enum class SummaryLength {
-    SHORT, MEDIUM, LONG
-}
+import me.nanova.summaryexpressive.model.SummaryLength
 
 val defaultSystemPromptPlaceholder = """
     You are an expert summarization assistant. Your task is to produce a clear, concise, and accurate summary of the provided text.

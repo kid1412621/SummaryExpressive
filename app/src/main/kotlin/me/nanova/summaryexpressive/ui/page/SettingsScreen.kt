@@ -103,7 +103,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.BuildConfig
-import me.nanova.summaryexpressive.ProviderConfig
+import me.nanova.summaryexpressive.model.ProviderConfig
 import me.nanova.summaryexpressive.R
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.ui.Nav
