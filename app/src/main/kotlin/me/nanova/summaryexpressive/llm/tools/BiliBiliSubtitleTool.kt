@@ -19,9 +19,9 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import me.nanova.summaryexpressive.UserPreferencesRepository
+import me.nanova.summaryexpressive.data.repository.UserPreferencesRepository
+import me.nanova.summaryexpressive.exception.SummaryException
 import me.nanova.summaryexpressive.model.ExtractedContent
-import me.nanova.summaryexpressive.model.SummaryException
 
 @Serializable
 private data class BiliVideoInfoResponse(

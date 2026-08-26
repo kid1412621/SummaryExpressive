@@ -1,7 +1,7 @@
 package me.nanova.summaryexpressive.data.converters
 
 import androidx.room.TypeConverter
-import me.nanova.summaryexpressive.llm.SummaryLength
+import me.nanova.summaryexpressive.model.SummaryLength
 
 class SummaryLengthConverter {
     @TypeConverter

@@ -55,9 +55,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import me.nanova.summaryexpressive.ProviderConfig
 import me.nanova.summaryexpressive.R
 import me.nanova.summaryexpressive.llm.AIProvider
+import me.nanova.summaryexpressive.model.ProviderConfig
 import me.nanova.summaryexpressive.ui.component.ClickablePasteIcon
 import me.nanova.summaryexpressive.ui.component.ReorderDragHandle
 import me.nanova.summaryexpressive.ui.component.ReorderableItem

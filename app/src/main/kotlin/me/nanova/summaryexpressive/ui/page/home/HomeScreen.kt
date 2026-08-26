@@ -58,11 +58,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.R
+import me.nanova.summaryexpressive.exception.SummaryException
 import me.nanova.summaryexpressive.llm.AIProvider
-import me.nanova.summaryexpressive.llm.SummaryLength
-import me.nanova.summaryexpressive.llm.SummaryOutput
 import me.nanova.summaryexpressive.llm.tools.getFileName
-import me.nanova.summaryexpressive.model.SummaryException
+import me.nanova.summaryexpressive.model.SummaryLength
+import me.nanova.summaryexpressive.model.SummaryOutput
 import me.nanova.summaryexpressive.ui.Nav
 import me.nanova.summaryexpressive.ui.component.SummaryCard
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme

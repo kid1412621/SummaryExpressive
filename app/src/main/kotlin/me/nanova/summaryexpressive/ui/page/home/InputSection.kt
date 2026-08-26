@@ -38,7 +38,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import me.nanova.summaryexpressive.model.SummaryException
+import me.nanova.summaryexpressive.exception.SummaryException
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme
 
 @Composable

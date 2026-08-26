@@ -57,7 +57,11 @@ SummaryExpressive is an AI/LLM summarizer FOSS Android app that summarizes YouTu
 - **Expressive Compliance**: Use the `material-3` skill to check and ensure that any newly added or updated UI complies with Material Design 3 Expressive guidelines (expressive shapes, spring motion physics, tonal elevation, dynamic color, and tokens).
 - **Material 3 Version**: The app targets Compose Material 3 Expressive features using `1.5.0-alpha26`.
 
-### Architecture & Patterns
+---
+
+## Architecture
+
+### Architectural Patterns
 - **Layered Architecture & UDF**:
   - **UI Layer**: Compose + ViewModels exposing reactive `StateFlow`, adhering to Unidirectional Data Flow (UDF).
   - **Domain / Model Layer (`model/`, `exception/`)**: Pure domain models and centralized exceptions decoupled from UI and Data layers.
@@ -74,10 +78,6 @@ SummaryExpressive is an AI/LLM summarizer FOSS Android app that summarizes YouTu
 - **Custom Exceptions**:
   - Centralized in `exception/SummaryException.kt` with string resource localization support.
 
----
-
-## Architecture & Code Structure
-
 ### Technology Stack & Key Dependencies
 - **Language**: Kotlin 2.4.x
 - **UI Framework**: Jetpack Compose with Material 3 Expressive (`1.5.0-alpha26` for expressive features)
@@ -89,6 +89,10 @@ SummaryExpressive is an AI/LLM summarizer FOSS Android app that summarizes YouTu
 - **Image Loading**: Coil (`io.coil-kt:coil-compose`)
 - **Async**: Kotlin Coroutines + Flow
 - **ML Kit**: Text recognition from images (Google Play Services / standalone bundled)
+
+---
+
+## Code Structure
 
 ### Build Flavors & Distribution
 The app defines two product flavors under the `distribution` dimension (`app/build.gradle.kts`):
@@ -102,21 +106,25 @@ The app defines two product flavors under the `distribution` dimension (`app/bui
 - **`MainActivity.kt`**: Main activity handling deep links, share intents, and navigation
 - **`InstantSummaryActivity.kt`**: Overlay activity for instant summarization via share sheet or text selection
 
-#### Dependency Injection (`di/`)
-- **`AppModule.kt`**: Hilt module providing repositories, Room DB/DAOs, LLM handler, and Ktor HTTP client
+#### Dependency Injection (`di/AppModule.kt`)
+Hilt module providing:
+- Repositories (`UserPreferencesRepository`, `AIProviderConfigRepository`, `HistoryRepository`)
+- Room database and DAOs (`HistoryDao`, `AIProviderConfigDao`)
+- LLM handler
+- Ktor HTTP client with cookies and JSON serialization
 
 #### Data Layer (`data/`)
-- **`AppDatabase.kt`**: Room database definition (`summary_expressive_db`)
-- **`HistoryDao.kt`**, **`AIProviderConfigDao.kt`**, **`AIProviderConfigEntity.kt`**: Room DAOs & entities
-- **`converters/`**: Room type converters (`SummaryLengthConverter`, `SummaryTypeConverter`, `VideoSubtypeConverter`)
-- **`local/datastore/`**: ProtoBuf DataStore serializer (`UserPreferencesSerializer.kt`)
-- **`repository/`**: Single Sources of Truth
+- **`local/database/`**: Room database, DAOs, entities, and type converters
+  - `AppDatabase.kt`, `HistoryDao.kt`, `AIProviderConfigDao.kt`, `AIProviderConfigEntity.kt`, `converters/`
+- **`local/datastore/`**: User preferences ProtoBuf DataStore and serializer
+  - `UserPreferencesSerializer.kt`
+- **`repository/`**: Single sources of truth for data access
   - `AIProviderConfigRepository.kt`: AI provider credentials and configurations
   - `HistoryRepository.kt`: Summarization history repository
   - `UserPreferencesRepository.kt`: User settings and preferences repository
 
 #### Domain & Data Models (`model/`)
-- `ExtractedContent.kt`: Extracted content container
+- `ExtractedContent.kt`: Content extraction model
 - `HistorySummary.kt`: History entry entity/model
 - `ProviderConfig.kt`: AI provider configuration model
 - `SummaryData.kt`: Core summary data model interface
@@ -131,28 +139,35 @@ The app defines two product flavors under the `distribution` dimension (`app/bui
 - **`SummaryException.kt`**: Custom exception hierarchy with localization support
 
 #### LLM Integration (`llm/`)
-- **`LLMHandler.kt`**: Core handler orchestrating LLM interactions across providers
-- **`AIProvider.kt`**: Provider definitions and model catalogs
+- **`LLMHandler.kt`**: Core handler for LLM interactions, supports multiple providers
+- **`AIProvider.kt`**: Provider definitions (OpenAI, Gemini, Claude, DeepSeek, etc.)
 - **`Prompts.kt`**: Prompt templates for different content types
 - **`CustomModel.kt`**: Custom model configuration
 - **`GeminiSanitizingHttpClientEngine.kt`**: Engine decorator for Google Gemini compatibility
-- **`tools/`**: Content extractors
+- **`tools/`**: Extraction tools
   - `YouTubeTranscriptTool.kt`: YouTube transcript extraction
   - `BiliBiliSubtitleTool.kt`: BiliBili subtitle extraction
   - `ArticleExtractorTool.kt`: Web article content extraction
-  - `FileExtractorTool.kt`: Document parsing (PDF, Word, etc.)
+  - `FileExtractorTool.kt`: Document parsing
 
 #### ViewModels (`vm/`)
-- **`AppViewModel.kt`**: App-level state, onboarding, settings, deep links
-- **`SummaryViewModel.kt`**: Main summarization logic and content processing
-- **`HistoryViewModel.kt`**: History browsing, searching, and deletion
-- **`UiState.kt`**: UI state representations
+- **`AppViewModel`**: App-level state, onboarding, settings, deep links
+- **`SummaryViewModel`**: Main summarization logic, content processing
+- **`HistoryViewModel`**: History browsing, searching, deletion
+- **`UiState.kt`**: State classes for UI rendering
 
 #### UI Layer (`ui/`)
-- **`AppNavigation.kt`**, **`Nav.kt`**: Navigation graph and route definitions
-- **`page/`**: Screen composables (`HomeScreen.kt`, `HistoryScreen.kt`, `SettingsScreen.kt`, `AdvancedSetupScreen.kt`, `OnboardingScreen.kt`, `BilibiliLoginScreen.kt`)
+- **`AppNavigation.kt`**: Navigation graph setup
+- **`Nav.kt`**: Route definitions
+- **`page/`**: Screen composables & page-specific subcomponents
+  - `HomeScreen.kt`: Main summary screen
+  - `HistoryScreen.kt`: History browser with paging
+  - `SettingsScreen.kt`: App configuration
+  - `AdvancedSetupScreen.kt`: Advanced prompt setup
+  - `OnboardingScreen.kt`: First-run setup
+  - `BilibiliLoginScreen.kt`: BiliBili authentication sheet
 - **`component/`**: Global reusable UI components (`SummaryCard`, `LlmSwitcher`, `LlmIndicator`, `LogoIcon`, `ClickablePasteIcon`)
-- **`theme/`**: Material 3 theming (`Color.kt`, `Theme.kt`, `Type.kt`)
+- **`theme/`**: Material 3 theming (colors, typography, theme)
 
 ---
 
@@ -182,9 +197,19 @@ The app defines two product flavors under the `distribution` dimension (`app/bui
 - **Bedrock**
 - **Custom models** (OpenAI-compatible endpoints)
 
----
+### Code Style
+- Follow [Kotlin Android Style Guide](https://developer.android.com/kotlin/style-guide)
+- Keep code structure as simple as possible
+- Follow Android best practices
 
-## Configuration Files & Build Notes
+### Architecture Patterns
+- **Layered Architecture & UDF**: UI Layer (Compose + ViewModels with StateFlow), Domain/Model Layer (`model/`, `exception/`), and Data Layer (`data/repository/`, `data/local/`).
+- **Repository Pattern**: Repositories act as the Single Source of Truth (SSOT). ViewModels never interact directly with DAOs, DataStores, or raw network clients.
+- **Dependency Inversion**: Models and domain logic are decoupled from UI and ViewModel layers.
+- **Component Placement Conventions**:
+  - **Global Reusable Components**: Place in `ui/component/` (e.g. `SummaryCard`, `LlmSwitcher`, `LlmIndicator`, `LogoIcon`, `ClickablePasteIcon`).
+  - **Page-Specific Components**: Place alongside the screen in `ui/page/` (or `ui/page/<feature>/`) scoped specifically to that screen/feature (e.g. `BilibiliLoginScreen.kt` sheet).
+- **Custom Exceptions**: Centralized in `exception/SummaryException.kt` with string resource localization support.
 
 ### Key Configuration Files
 - **`build.gradle.kts`**: Root build file defining build plugins (AGP, Kotlin, KSP, Hilt).

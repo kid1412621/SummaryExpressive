@@ -2,6 +2,7 @@ package me.nanova.summaryexpressive
 
 import me.nanova.summaryexpressive.data.AIProviderConfigEntity
 import me.nanova.summaryexpressive.llm.AIProvider
+import me.nanova.summaryexpressive.model.ProviderConfig
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

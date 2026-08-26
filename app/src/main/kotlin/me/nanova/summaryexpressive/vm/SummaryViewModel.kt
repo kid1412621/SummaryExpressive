@@ -13,15 +13,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.nanova.summaryexpressive.data.HistoryRepository
+import me.nanova.summaryexpressive.data.repository.HistoryRepository
+import me.nanova.summaryexpressive.exception.SummaryException
 import me.nanova.summaryexpressive.llm.LLMHandler
-import me.nanova.summaryexpressive.llm.SummaryLength
-import me.nanova.summaryexpressive.llm.SummaryOutput
 import me.nanova.summaryexpressive.llm.tools.BiliBiliSubtitleTool
 import me.nanova.summaryexpressive.llm.tools.YouTubeTranscriptTool
 import me.nanova.summaryexpressive.llm.tools.getFileName
 import me.nanova.summaryexpressive.model.HistorySummary
-import me.nanova.summaryexpressive.model.SummaryException
+import me.nanova.summaryexpressive.model.SummaryLength
+import me.nanova.summaryexpressive.model.SummaryOutput
+import me.nanova.summaryexpressive.model.SummarySource
 import me.nanova.summaryexpressive.model.SummaryType
 import me.nanova.summaryexpressive.model.VideoSubtype
 import javax.inject.Inject
@@ -32,14 +33,6 @@ class SummaryViewModel @Inject constructor(
     private val application: Application,
     private val historyRepository: HistoryRepository,
 ) : ViewModel() {
-
-    sealed class SummarySource {
-        data class Video(val url: String) : SummarySource()
-        data class Article(val url: String) : SummarySource()
-        data class Text(val content: String) : SummarySource()
-        data class Document(val filename: String, val uri: String) : SummarySource()
-        object None : SummarySource()
-    }
 
     private val _summarizationState = MutableStateFlow(SummarizationState())
     val summarizationState: StateFlow<SummarizationState> = _summarizationState.asStateFlow()

@@ -1,4 +1,4 @@
-package me.nanova.summaryexpressive.model
+package me.nanova.summaryexpressive.exception
 
 import androidx.annotation.StringRes
 import me.nanova.summaryexpressive.R

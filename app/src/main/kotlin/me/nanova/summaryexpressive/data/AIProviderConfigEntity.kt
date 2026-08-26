@@ -4,8 +4,8 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
-import me.nanova.summaryexpressive.ProviderConfig
 import me.nanova.summaryexpressive.data.converters.StringListConverter
+import me.nanova.summaryexpressive.model.ProviderConfig
 import me.nanova.summaryexpressive.util.SecurityUtil
 
 @Entity(tableName = "ai_provider_config")

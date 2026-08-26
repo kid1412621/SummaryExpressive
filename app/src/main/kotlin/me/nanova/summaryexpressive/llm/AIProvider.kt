@@ -11,8 +11,8 @@ import ai.koog.prompt.executor.ollama.client.OllamaModels
 import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
-import me.nanova.summaryexpressive.ProviderConfig
 import me.nanova.summaryexpressive.R
+import me.nanova.summaryexpressive.model.ProviderConfig
 
 enum class AIProvider(
     val id: LLMProvider,

@@ -1,9 +1,9 @@
 package me.nanova.summaryexpressive.vm
 
-import me.nanova.summaryexpressive.ProviderConfig
 import me.nanova.summaryexpressive.llm.AIProvider
-import me.nanova.summaryexpressive.llm.SummaryLength
-import me.nanova.summaryexpressive.llm.SummaryOutput
+import me.nanova.summaryexpressive.model.ProviderConfig
+import me.nanova.summaryexpressive.model.SummaryLength
+import me.nanova.summaryexpressive.model.SummaryOutput
 
 data class AppStartAction(val content: String? = null, val autoTrigger: Boolean = false)
 

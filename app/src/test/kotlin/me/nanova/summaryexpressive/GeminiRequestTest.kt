@@ -10,8 +10,8 @@ import io.ktor.client.engine.callContext
 import io.ktor.client.request.HttpRequestData
 import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.HttpProtocolVersion
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.headersOf
 import io.ktor.util.date.GMTDate
@@ -19,8 +19,8 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.InternalAPI
 import kotlinx.coroutines.runBlocking
 import me.nanova.summaryexpressive.llm.GeminiSanitizingHttpClientEngine
-import me.nanova.summaryexpressive.llm.SummaryLength
 import me.nanova.summaryexpressive.llm.createSummarizationPrompt
+import me.nanova.summaryexpressive.model.SummaryLength
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
