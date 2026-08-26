@@ -1,14 +1,16 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance for AI agents working with code in this repository.
 
 ## Project Overview
 
-SummaryExpressive is an AI/LLM summarizer FOSS Android app that summarizes YouTube videos, web articles, images, and documents. It follows [MAD](https://developer.android.com/courses/pathways/android-architecture) principles using pure Kotlin + Jetpack Compose + Material 3 Expressive. The app is BYOK (Bring Your Own Key), allowing users to configure their own LLM API keys.
+SummaryExpressive is an AI/LLM summarizer FOSS Android app that summarizes YouTube/BiliBili videos, web articles, images, and documents. It follows [MAD (Modern Android Development)](https://developer.android.com/courses/pathways/android-architecture) principles using pure Kotlin + Jetpack Compose + Material 3 Expressive. The app is BYOK (Bring Your Own Key), allowing users to configure their own LLM API keys.
+
+---
 
 ## Common Commands
 
-### Building the App
+### Building
 ```bash
 # Clean and build debug APK
 ./gradlew clean assembleDebug
@@ -16,7 +18,7 @@ SummaryExpressive is an AI/LLM summarizer FOSS Android app that summarizes YouTu
 # Build release APK (requires keystore.properties setup)
 ./gradlew assembleRelease
 
-# Build specific variant
+# Build specific flavor variant
 ./gradlew assembleGmsRelease
 ./gradlew assembleStandaloneRelease
 ```
@@ -26,56 +28,83 @@ SummaryExpressive is an AI/LLM summarizer FOSS Android app that summarizes YouTu
 # Run unit tests
 ./gradlew clean test
 
-# Run instrumented tests
-./gradlew connectedAndroidTest
-
-# Run a specific test class
+# Run a specific unit test class
 ./gradlew testDebugUnitTest --tests="me.nanova.summaryexpressive.ExampleUnitTest"
+
+# Run instrumented tests on connected device/emulator
+./gradlew connectedAndroidTest
 ```
 
-### Code Quality
+### Code Quality & Lint
 ```bash
 # Run lint analysis
 ./gradlew lint
-
-# Format code (follow Kotlin style guide)
 ```
 
-## Code Style Guidelines
-- Make the code structure as simple as possible
-- Never use full-qualified class name inline, use import statement instead
-- Follow [Kotlin style guide](https://developer.android.com/kotlin/style-guide)
+> [!TIP]
+> Coding agents should use the `android-cli` skill for CLI workflows, SDK management, running/debugging apps on emulators/devices, UI inspection, and taking screenshots.
 
-## Dev Environment Tips
-- Use `./gradlew clean assembleDebug` to verify the build
-- Use `./gradlew clean test` to run tests
-- Configure SDK paths in `local.properties`
-- Set up signing keys in `keystore.properties` for release builds
+---
 
-## Architecture & Code Structure
+## Development Guidelines
 
-### Technology Stack
-- **Language**: Kotlin
-- **UI Framework**: Jetpack Compose with Material 3 Expressive (alpha version for expressive features)
-- **DI**: Dagger/Hilt
-- **Database**: Room (SQLite)
-- **Networking**: Ktor 3.x
+### Code Style
+- **Simple structure**: Keep the code structure as simple and readable as possible.
+- **Imports**: Never use fully-qualified class names inline; always use import statements.
+- **Style guide**: Follow the [Kotlin Android Style Guide](https://developer.android.com/kotlin/style-guide).
+
+### Material 3 Expressive UI
+- **Expressive Compliance**: Use the `material-3` skill to check and ensure that any newly added or updated UI complies with Material Design 3 Expressive guidelines (expressive shapes, spring motion physics, tonal elevation, dynamic color, and tokens).
+- **Material 3 Version**: The app targets Compose Material 3 Expressive features using `1.5.0-alpha26`.
+
+---
+
+## Architecture
+
+### Architectural Patterns
+- **Layered Architecture & UDF**:
+  - **UI Layer**: Compose + ViewModels exposing reactive `StateFlow`, adhering to Unidirectional Data Flow (UDF).
+  - **Domain / Model Layer (`model/`, `exception/`)**: Pure domain models and centralized exceptions decoupled from UI and Data layers.
+  - **Data Layer (`data/`)**: Repositories act as the Single Source of Truth (SSOT). ViewModels never interact directly with DAOs, DataStores, or raw network clients.
+- **Component Placement Conventions**:
+  - **Global Reusable Components**: Place in `ui/component/` (e.g. `SummaryCard`, `LlmSwitcher`, `LlmIndicator`, `LogoIcon`, `ClickablePasteIcon`).
+  - **Page-Specific Components**: Place alongside the screen in `ui/page/` (or `ui/page/<feature>/`) scoped to that specific screen/feature (e.g. `BilibiliLoginScreen.kt` sheet).
+- **Dependency Injection (Hilt)**:
+  - All major dependencies are Hilt-injectable using `@Singleton` for app-wide dependencies or `@ActivityScoped` for activity-level dependencies.
+- **Database (Room)**:
+  - Database name: `summary_expressive_db`.
+  - Main entity: `HistorySummary` with `HistoryDao`.
+  - Custom type converters reside in `data/converters/`.
+- **Custom Exceptions**:
+  - Centralized in `exception/SummaryException.kt` with string resource localization support.
+
+### Technology Stack & Key Dependencies
+- **Language**: Kotlin 2.4.x
+- **UI Framework**: Jetpack Compose with Material 3 Expressive (`1.5.0-alpha26` for expressive features)
+- **Dependency Injection**: Dagger / Hilt
+- **Database**: Room (SQLite) 2.8.x with Paging 3
+- **Networking**: Ktor Client 3.x
+- **LLM Integration**: Koog library (`ai.koog:koog-agents`, client executors for OpenAI, Gemini, Anthropic, DeepSeek, Mistral, Qwen, Ollama, OpenRouter)
+- **HTML Parsing**: Jsoup
+- **Image Loading**: Coil (`io.coil-kt:coil-compose`)
 - **Async**: Kotlin Coroutines + Flow
-- **ML Kit**: For text recognition from images (build flavor dependent)
-- **LLM Integration**: Koog library
+- **ML Kit**: Text recognition from images (Google Play Services / standalone bundled)
 
-### Build Flavors
-The app uses two product flavors:
-- **gms**: Uses Google Play Services ML Kit (smaller APK size, requires Google Play Services)
-- **standalone**: Bundles ML model in APK (larger package size, works without Google Play Services)
+---
 
-Configure in `app/build.gradle.kts:58-68`.
+## Code Structure
+
+### Build Flavors & Distribution
+The app defines two product flavors under the `distribution` dimension (`app/build.gradle.kts`):
+- **`gms`**: Uses Google Play Services ML Kit (`com.google.android.gms:play-services-mlkit-text-recognition`). Smaller APK size, requires Google Play Services. Used for Google Play Store releases (signed with Google-managed key).
+- **`standalone`**: Bundles ML model in the APK (`com.google.mlkit:text-recognition`). Larger package size, functions offline without Google Play Services.
 
 ### Project Structure
 
 #### Core Application (`app/src/main/kotlin/me/nanova/summaryexpressive/`)
-- **`App.kt`**: Application class with `@HiltAndroidApp` annotation
-- **`MainActivity.kt`**: Main activity handling deep links, share intents, and initialization
+- **`App.kt`**: Application entry point with `@HiltAndroidApp`
+- **`MainActivity.kt`**: Main activity handling deep links, share intents, and navigation
+- **`InstantSummaryActivity.kt`**: Overlay activity for instant summarization via share sheet or text selection
 
 #### Dependency Injection (`di/AppModule.kt`)
 Hilt module providing:
@@ -140,54 +169,33 @@ Hilt module providing:
 - **`component/`**: Global reusable UI components (`SummaryCard`, `LlmSwitcher`, `LlmIndicator`, `LogoIcon`, `ClickablePasteIcon`)
 - **`theme/`**: Material 3 theming (colors, typography, theme)
 
-#### Services
-- **`InstantSummaryActivity.kt`**: Overlay activity for instant summaries via share sheet
+---
+
+## Supported Content & LLM Providers
 
 ### Supported Content Types
 
-| Type | Source | Processing Method |
-|------|--------|-------------------|
-| YouTube videos | Video URL | Transcript extraction via `YouTubeTranscriptTool` |
-| BiliBili videos | Video URL | Subtitle extraction via `BiliBiliSubtitleTool` |
-| Articles | URL | Content extraction via `ArticleExtractorTool` |
-| Images | File/URI | ML Kit text recognition (flavor-dependent) |
-| Documents | File/URI | File parsing via `FileExtractorTool` |
-| Text | Direct input | Direct LLM processing |
+| Type            | Source       | Processing Method                                 |
+|-----------------|--------------|---------------------------------------------------|
+| YouTube videos  | Video URL    | Transcript extraction via `YouTubeTranscriptTool` |
+| BiliBili videos | Video URL    | Subtitle extraction via `BiliBiliSubtitleTool`    |
+| Articles        | URL          | Content extraction via `ArticleExtractorTool`     |
+| Images          | File / URI   | ML Kit text recognition (flavor-dependent)        |
+| Documents       | File / URI   | File parsing via `FileExtractorTool` (PDF, DOCX)  |
+| Text            | Direct input | Direct LLM processing                             |
 
-### LLM Providers
+### Supported LLM Providers
 
-The app supports multiple LLM providers configured in settings:
-- **OpenAI**: gpt-4.1, gpt-4.1-mini, gpt-4.1-nano, gpt-40, gpt-4o-mini, gpt-5, gpt-5-mini, gpt-5-nano, o1, o3, o3-mini, o4-mini
-- **Gemini**: gemini-2.0-flash, gemini-2.0-flash-001, gemini-2.0-flash-lite, gemini-2.0-flash-lite-001, gemini-2.5-flash, gemini-2.5-pro
-- **Claude**: claude-3-haiku, claude-3-opus, claude-3-5-haiku, claude-3-5-sonnet, claude-3-7-sonnet, claude-opus-4-0, claude-sonnet-4-0
-- **DeepSeek**: deepseek-chat, deepseek-reasoner
-- **Custom models**: User-configurable endpoints
-
-## Key Configuration Files
-
-### `build.gradle.kts` (root)
-Defines plugin versions:
-- Android Gradle Plugin: 9.3.1
-- Kotlin: 2.4.0
-- KSP: 2.3.11
-- Hilt: 2.60
-
-### `app/build.gradle.kts`
-Main app configuration:
-- Min SDK: 33 (Android 13)
-- Target SDK: 37
-- Java 25 toolchain
-- Compose BOM: 2026.06.00
-- Room: 2.8.4
-- Key signing configuration in `keystore.properties`
-
-### `local.properties`
-Local SDK paths (not tracked in git)
-
-### `keystore.properties`
-Release signing keys (not tracked in git)
-
-## Development Guidelines
+- **OpenAI**
+- **Gemini**
+- **Claude**
+- **DeepSeek**
+- **Mistral**
+- **Ollama**
+- **OpenRouter**
+- **DashScope (Qwen)**
+- **Bedrock**
+- **Custom models** (OpenAI-compatible endpoints)
 
 ### Code Style
 - Follow [Kotlin Android Style Guide](https://developer.android.com/kotlin/style-guide)
@@ -203,62 +211,14 @@ Release signing keys (not tracked in git)
   - **Page-Specific Components**: Place alongside the screen in `ui/page/` (or `ui/page/<feature>/`) scoped specifically to that screen/feature (e.g. `BilibiliLoginScreen.kt` sheet).
 - **Custom Exceptions**: Centralized in `exception/SummaryException.kt` with string resource localization support.
 
-### Dependency Injection
-- All major components are Hilt-injectable
-- Use `@Singleton` for app-wide dependencies
-- Use `@ActivityScoped` for activity-level dependencies (when needed)
+### Key Configuration Files
+- **`build.gradle.kts`**: Root build file defining build plugins (AGP, Kotlin, KSP, Hilt).
+- **`app/build.gradle.kts`**: App build configuration (Min SDK: 33, Target SDK: 37, Java 25 toolchain, flavors, packaging).
+- **`gradle/libs.versions.toml`**: Centralized version catalog for dependencies and plugins.
+- **`local.properties`**: Local Android SDK paths (not tracked in git).
+- **`keystore.properties`**: Release signing credentials (not tracked in git).
 
-### Room Database
-- Database: `summary_expressive_db`
-- Main entity: `HistorySummary` with DAO operations
-- Type converters in `converters/` package
-
-### Material 3 Expressive
-The app uses Material 3 Expressive alpha features for enhanced UI. Material version: `1.5.0-alpha26`
-
-## Testing
-- Unit tests in `src/test/kotlin/`
-- Instrumented tests in `src/androidTest/kotlin/`
-- Use `./gradlew test` for unit tests
-- Use `./gradlew connectedAndroidTest` for instrumented tests
-
-## Build & Release
-
-### Development
-- Debug builds are debuggable with application ID suffix `.debug`
-- Use `assembleDebug` for development builds
-
-### Release
-- Release builds are minified and shrunk
-- Requires `keystore.properties` for signing
-- Two distribution channels:
-  1. **GitHub Releases**: Both gms and standalone variants
-  2. **Google Play Store**: GMS variant with Google-managed signing
-
-### Version Info
-Current version: 1.3.2 (versionCode 49)
-- Update version in `app/build.gradle.kts:21-22`
-
-## Permissions & Security
-The app likely requires:
-- Internet access (for LLM calls and content extraction)
-- Storage access (for document/image processing)
-- Clipboard access (for instant summary feature)
-- Overlay permission (for instant summary overlay)
-
-## Known Dependencies
-- `ai.koog:koog-agents:1.1.1` - Kotlin-based LLM interactions
-- `io.ktor:ktor-client-android:3.5.2` - HTTP client
-- `org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0` - JSON serialization
-- `org.jsoup:jsoup:1.23.1` - HTML parsing
-- `io.coil-kt:coil-compose:2.7.0` - Image loading
-
-## Build Warnings & Notes
-- ML Kit dependency is flavor-specific (see `app/build.gradle.kts:145-150`)
-- ProGuard/R8 rules configured in `app/proguard-rules.pro`
-- Some resources excluded from APK (see packaging section)
-- Lint rule: MissingTranslation disabled for localization flexibility
-
----
-
-**Note**: Content from AGENTS.md has been merged into this file.
+### Build & Packaging Notes
+- **ProGuard / R8**: Release builds enable minification and resource shrinking with rules in `app/proguard-rules.pro`.
+- **Packaging Exclusions**: Certain license and netty property files are excluded from the APK in `packaging.resources`.
+- **Lint**: `MissingTranslation` rule is disabled in `app/build.gradle.kts` for localization flexibility.

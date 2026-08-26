@@ -41,17 +41,17 @@ object AppModule {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE history ADD COLUMN provider TEXT DEFAULT NULL")
                 db.execSQL("ALTER TABLE history ADD COLUMN model TEXT DEFAULT NULL")
-                db.execSQL("CREATE TABLE IF NOT EXISTS `ai_provider_config` (`provider` TEXT NOT NULL, `apiKey` TEXT NOT NULL, `baseUrl` TEXT NOT NULL, `model` TEXT NOT NULL, PRIMARY KEY(`provider`))")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `ai_provider_config` (`provider` TEXT NOT NULL, `apiKey` TEXT NOT NULL, `baseUrl` TEXT NOT NULL, `active_model` TEXT NOT NULL, `models` TEXT DEFAULT NULL, PRIMARY KEY(`provider`))")
             }
         }
-        
+
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             "summary_expressive_db"
         )
-        .addMigrations(migrationV2)
-        .build()
+            .addMigrations(migrationV2)
+            .build()
     }
 
     @Provides
@@ -83,7 +83,7 @@ object AppModule {
     fun provideLLMHandler(
         @ApplicationContext context: Context,
         httpClient: HttpClient,
-        userPreferencesRepository: UserPreferencesRepository
+        userPreferencesRepository: UserPreferencesRepository,
     ): LLMHandler {
         return LLMHandler(context, httpClient, userPreferencesRepository)
     }

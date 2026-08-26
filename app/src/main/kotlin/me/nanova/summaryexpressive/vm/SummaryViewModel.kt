@@ -14,12 +14,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.nanova.summaryexpressive.data.repository.HistoryRepository
+import me.nanova.summaryexpressive.exception.SummaryException
 import me.nanova.summaryexpressive.llm.LLMHandler
 import me.nanova.summaryexpressive.llm.tools.BiliBiliSubtitleTool
 import me.nanova.summaryexpressive.llm.tools.YouTubeTranscriptTool
 import me.nanova.summaryexpressive.llm.tools.getFileName
 import me.nanova.summaryexpressive.model.HistorySummary
-import me.nanova.summaryexpressive.exception.SummaryException
 import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryOutput
 import me.nanova.summaryexpressive.model.SummarySource
@@ -93,15 +93,15 @@ class SummaryViewModel @Inject constructor(
 
             val appLanguage = application.resources.configuration.locales[0]
 
-            if (settings.aiProvider == null) {
+            if (settings.activeProvider == null) {
                 throw SummaryException.NoKeyException()
             }
 
             val agent = llmHandler.getSummarizationAgent(
-                provider = settings.aiProvider,
+                provider = settings.activeProvider,
                 apiKey = currentApiKey,
                 baseUrl = settings.baseUrl,
-                model = settings.model,
+                model = settings.activeModel,
                 summaryLength = settings.summaryLength,
                 showLength = settings.showLength,
                 useContentLanguage = settings.useOriginalLanguage,
@@ -116,7 +116,13 @@ class SummaryViewModel @Inject constructor(
             }
 
             _summarizationState.update { it.copy(summaryResult = summaryOutput) }
-            saveSummaryToHistory(summaryOutput, settings.summaryLength, source, settings.aiProvider.name, settings.model)
+            saveSummaryToHistory(
+                summaryOutput,
+                settings.summaryLength,
+                source,
+                settings.activeProvider.name,
+                settings.activeModel
+            )
 
         } catch (e: Exception) {
             Log.e("LLMViewModel", "Failed to summarize", e)
@@ -136,7 +142,7 @@ class SummaryViewModel @Inject constructor(
         summaryLength: SummaryLength,
         source: SummarySource,
         provider: String,
-        model: String?
+        model: String?,
     ) {
         if (source is SummarySource.None) return
 

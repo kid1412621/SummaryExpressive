@@ -24,45 +24,41 @@ import javax.inject.Inject
 @HiltViewModel
 class AppViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val aiProviderConfigRepository: AIProviderConfigRepository
+    private val aiProviderConfigRepository: AIProviderConfigRepository,
 ) : ViewModel() {
 
-    private val _startDestination = MutableStateFlow<Nav?>(null)
-    val startDestination: StateFlow<Nav?> = _startDestination
-
-    init {
-        viewModelScope.launch {
-            val isOnboardingCompleted = userPreferencesRepository.preferencesFlow.map { it.isOnboarded }.first()
-            if (isOnboardingCompleted) {
-                _startDestination.value = Nav.Home
-            } else {
-                _startDestination.value = Nav.Onboarding
-            }
-        }
-    }
+    val startDestination: StateFlow<Nav?> = userPreferencesRepository.preferencesFlow
+        .map { if (it.isOnboarded) Nav.Home else Nav.Onboarding }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = null
+        )
 
     val settingsUiState: StateFlow<SettingsUiState> = combine(
         userPreferencesRepository.preferencesFlow,
         aiProviderConfigRepository.providerConfigsFlow
     ) { prefs, providerConfigs ->
-        val providerConfig = prefs.aiProvider?.let { providerConfigs[it] }
+        val providerConfig = prefs.activeProvider?.let { providerConfigs[it] }
         SettingsUiState(
             useOriginalLanguage = prefs.useOriginalLanguage,
             dynamicColor = prefs.dynamicColor,
             theme = prefs.theme,
             apiKey = providerConfig?.apiKey?.takeIf { it.isNotBlank() },
             baseUrl = providerConfig?.baseUrl?.takeIf { it.isNotBlank() },
-            aiProvider = prefs.aiProvider?.let { runCatching { AIProvider.valueOf(it) }.getOrNull() },
+            activeProvider = prefs.activeProvider?.let { AIProvider.entries.find { p -> p.name == it } },
             providerConfigs = providerConfigs,
-            model = providerConfig?.model?.takeIf { it.isNotBlank() },
+            activeModel = providerConfig?.activeModel?.takeIf { it.isNotBlank() },
             showLength = prefs.showLength,
-            summaryLength = SummaryLength.valueOf(prefs.summaryLength),
+            summaryLength = SummaryLength.entries.find { it.name == prefs.summaryLength }
+                ?: SummaryLength.MEDIUM,
             autoExtractUrl = prefs.autoExtractUrl,
             sessData = prefs.sessData,
             sessDataExpires = prefs.sessDataExpires,
             isAppendMode = prefs.isAppendMode,
             customBasePrompt = prefs.customBasePrompt,
-            additionalSystemPrompt = prefs.additionalSystemPrompt
+            additionalSystemPrompt = prefs.additionalSystemPrompt,
+            providerOrder = prefs.providerOrder,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -85,40 +81,104 @@ class AppViewModel @Inject constructor(
     // API Key
     fun setApiKeyValue(newValue: String) {
         viewModelScope.launch {
-            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
-            aiProviderConfigRepository.updateApiKey(provider, newValue)
+            val provider =
+                userPreferencesRepository.preferencesFlow.first().activeProvider ?: return@launch
+            aiProviderConfigRepository.updateApiKey(provider, newValue.trim())
         }
     }
 
     // API base url
     fun setBaseUrlValue(newValue: String) {
-        val baseUrlWithProtocol = if (newValue.isBlank() || newValue.startsWith("http")) newValue else "https://$newValue"
+        val baseUrl = normalizeBaseUrl(newValue)
         viewModelScope.launch {
-            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
-            aiProviderConfigRepository.updateBaseUrl(provider, baseUrlWithProtocol)
+            val provider =
+                userPreferencesRepository.preferencesFlow.first().activeProvider ?: return@launch
+            aiProviderConfigRepository.updateBaseUrl(provider, baseUrl)
         }
     }
 
     // AI provider
     fun setAIProviderValue(newValue: String) =
-        savePreference(userPreferencesRepository::setAIProvider, newValue)
+        savePreference(userPreferencesRepository::setActiveProvider, newValue)
 
-    fun setProviderConfig(provider: String, baseUrl: String, apiKey: String) {
-        val baseUrlWithProtocol = if (baseUrl.isBlank() || baseUrl.startsWith("http")) baseUrl else "https://$baseUrl"
+    fun setProviderOrder(order: List<String>) =
+        savePreference(userPreferencesRepository::setProviderOrder, order)
+
+    fun setProviderConfig(
+        provider: String,
+        baseUrl: String,
+        apiKey: String,
+        providerOrder: List<String>? = null,
+    ) {
+        val normalizedBaseUrl = normalizeBaseUrl(baseUrl)
         viewModelScope.launch {
+            val currentConfig = aiProviderConfigRepository.getConfig(provider) ?: ProviderConfig()
             aiProviderConfigRepository.saveConfig(
                 provider,
-                ProviderConfig(apiKey = apiKey, baseUrl = baseUrlWithProtocol)
+                currentConfig.copy(apiKey = apiKey.trim(), baseUrl = normalizedBaseUrl)
             )
-            userPreferencesRepository.setAIProvider(provider)
+            userPreferencesRepository.setActiveProvider(provider)
+            if (providerOrder != null) {
+                userPreferencesRepository.setProviderOrder(providerOrder)
+            }
         }
     }
 
     // Model
     fun setModel(newValue: String) {
         viewModelScope.launch {
-            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
-            aiProviderConfigRepository.updateModel(provider, newValue)
+            val provider =
+                userPreferencesRepository.preferencesFlow.first().activeProvider ?: return@launch
+            updateModelForProvider(provider, newValue)
+        }
+    }
+
+    fun setModelForProvider(provider: String, model: String) {
+        viewModelScope.launch {
+            updateModelForProvider(provider, model)
+        }
+    }
+
+    private suspend fun updateModelForProvider(provider: String, model: String) {
+        val currentConfig = aiProviderConfigRepository.getConfig(provider) ?: ProviderConfig()
+        val models =
+            if (currentConfig.models.isNotEmpty() && !currentConfig.models.contains(model)) {
+                currentConfig.models + model
+            } else {
+                currentConfig.models
+            }
+        aiProviderConfigRepository.saveConfig(
+            provider,
+            currentConfig.copy(activeModel = model, models = models)
+        )
+    }
+
+    fun setProviderModels(provider: String, models: List<String>, selectedModel: String? = null) {
+        viewModelScope.launch {
+            val currentConfig = aiProviderConfigRepository.getConfig(provider) ?: ProviderConfig()
+            val targetModel =
+                selectedModel ?: currentConfig.activeModel.takeIf { it in models }
+                ?: models.firstOrNull()
+                ?: ""
+            aiProviderConfigRepository.saveConfig(
+                provider,
+                currentConfig.copy(models = models, activeModel = targetModel)
+            )
+        }
+    }
+
+    fun resetProviderModelsToDefault(provider: String) {
+        viewModelScope.launch {
+            val aiProvider =
+                AIProvider.entries.find { it.name == provider } ?: return@launch
+            val defaultModels = aiProvider.defaultModelIds
+            val currentConfig =
+                aiProviderConfigRepository.getConfig(provider) ?: ProviderConfig()
+            val defaultModel = defaultModels.firstOrNull() ?: ""
+            aiProviderConfigRepository.saveConfig(
+                provider,
+                currentConfig.copy(models = defaultModels, activeModel = defaultModel)
+            )
         }
     }
 
@@ -153,9 +213,15 @@ class AppViewModel @Inject constructor(
 
     // Advanced Setup
     fun setIsAppendMode(newValue: Boolean) {
-        savePreference(userPreferencesRepository::setIsAppendMode, newValue)
-        if (!newValue && settingsUiState.value.customBasePrompt.isEmpty()) {
-            setCustomBasePrompt(defaultSystemPromptPlaceholder)
+        viewModelScope.launch {
+            userPreferencesRepository.setIsAppendMode(newValue)
+            if (!newValue) {
+                val currentPrompt =
+                    userPreferencesRepository.preferencesFlow.first().customBasePrompt
+                if (currentPrompt.isEmpty()) {
+                    userPreferencesRepository.setCustomBasePrompt(defaultSystemPromptPlaceholder)
+                }
+            }
         }
     }
 
@@ -181,6 +247,19 @@ class AppViewModel @Inject constructor(
     private fun <T> savePreference(setter: suspend (T) -> Unit, value: T) {
         viewModelScope.launch {
             setter(value)
+        }
+    }
+
+    private fun normalizeBaseUrl(url: String): String {
+        val trimmed = url.trim()
+        return when {
+            trimmed.isBlank() -> ""
+            trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith(
+                "https://",
+                ignoreCase = true
+            ) -> trimmed
+
+            else -> "https://$trimmed"
         }
     }
 }

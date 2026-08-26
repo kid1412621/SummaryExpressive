@@ -76,6 +76,7 @@ class MainActivity : ComponentActivity() {
                     viewModel.onEvent(AppStartAction(content))
                 }
             }
+
             Intent.ACTION_VIEW -> {
                 if (intent.data?.host != "clipboard") return
                 // To avoid re-triggering on configuration change, we clear the data.

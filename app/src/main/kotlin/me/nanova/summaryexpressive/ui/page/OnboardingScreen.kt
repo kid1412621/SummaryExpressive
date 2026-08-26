@@ -63,57 +63,57 @@ fun OnboardingScreen(
     Surface {
         Box(
             modifier = modifier.fillMaxSize(),
-    ) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize()
-        ) { page ->
-            OnboardingStepPage(
-                page = page,
-                imageLoader = imageLoader,
-            )
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 18.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            val isLast = pagerState.currentPage == pagerState.pageCount - 1
-            val isFirst = pagerState.currentPage == 0
-
-            TextButton(onClick = {
-                if (isFirst) onDone()
-                else scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
-            }) {
-                Text(text = if (isFirst) stringResource(id = R.string.skip) else "Previous")
-            }
-
-            if (isLast) {
-                Button(onClick = {
-                    onDoneAndNavigate(Nav.Settings(highlight = "ai"))
-                }) {
-                    Text("Setup AI")
-                }
-            }
-
-            FilledTonalButton(
-                onClick = {
-                    if (isLast) onDone()
-                    else scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
-                }
-            ) {
-                Text(
-                    text = if (isLast) stringResource(id = R.string.finishButton)
-                    else "Next"
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                OnboardingStepPage(
+                    page = page,
+                    imageLoader = imageLoader,
                 )
             }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                val isLast = pagerState.currentPage == pagerState.pageCount - 1
+                val isFirst = pagerState.currentPage == 0
+
+                TextButton(onClick = {
+                    if (isFirst) onDone()
+                    else scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
+                }) {
+                    Text(text = if (isFirst) stringResource(id = R.string.skip) else "Previous")
+                }
+
+                if (isLast) {
+                    Button(onClick = {
+                        onDoneAndNavigate(Nav.Settings(highlight = "ai"))
+                    }) {
+                        Text("Setup AI")
+                    }
+                }
+
+                FilledTonalButton(
+                    onClick = {
+                        if (isLast) onDone()
+                        else scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
+                    }
+                ) {
+                    Text(
+                        text = if (isLast) stringResource(id = R.string.finishButton)
+                        else "Next"
+                    )
+                }
+            }
         }
-    }
     }
 }
 

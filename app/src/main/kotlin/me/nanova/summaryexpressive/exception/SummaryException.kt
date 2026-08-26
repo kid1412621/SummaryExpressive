@@ -82,7 +82,11 @@ sealed class SummaryException(message: String) : Exception(message) {
                     ignoreCase = true
                 ) -> NoContentException()
 
-                message.contains("Unsupported file type", ignoreCase = true) -> InvalidLinkException()
+                message.contains(
+                    "Unsupported file type",
+                    ignoreCase = true
+                ) -> InvalidLinkException()
+
                 message.contains(
                     "Extracted text from file is empty",
                     ignoreCase = true

@@ -13,9 +13,9 @@ data class SettingsUiState(
     val theme: Int = 0,
     val apiKey: String? = null,
     val baseUrl: String? = null,
-    val aiProvider: AIProvider? = null,
+    val activeProvider: AIProvider? = null,
     val providerConfigs: Map<String, ProviderConfig> = emptyMap(),
-    val model: String? = null,
+    val activeModel: String? = null,
     val autoExtractUrl: Boolean = true,
     val showLength: Boolean = true,
     val summaryLength: SummaryLength = SummaryLength.MEDIUM,
@@ -24,10 +24,11 @@ data class SettingsUiState(
     val isAppendMode: Boolean = true,
     val customBasePrompt: String = "",
     val additionalSystemPrompt: String = "",
+    val providerOrder: List<String> = emptyList(),
 )
 
 data class SummarizationState(
     val isLoading: Boolean = false,
     val summaryResult: SummaryOutput? = null,
-    val error: Throwable? = null
+    val error: Throwable? = null,
 )

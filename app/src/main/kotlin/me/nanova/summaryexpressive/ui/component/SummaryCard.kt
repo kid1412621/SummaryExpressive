@@ -149,9 +149,9 @@ fun SummaryCard(
                             modifier = Modifier.padding(top = 1.dp)
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.weight(1f))
-                    
+
                     val aiProvider = summary.provider?.let { providerName ->
                         AIProvider.entries.find { it.name == providerName }
                     }

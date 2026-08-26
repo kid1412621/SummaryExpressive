@@ -16,7 +16,7 @@ interface AIProviderConfigDao {
 
     @Query("SELECT * FROM ai_provider_config")
     fun getAllConfigsFlow(): Flow<List<AIProviderConfigEntity>>
-    
+
     @Query("SELECT * FROM ai_provider_config")
     suspend fun getAllConfigs(): List<AIProviderConfigEntity>
 

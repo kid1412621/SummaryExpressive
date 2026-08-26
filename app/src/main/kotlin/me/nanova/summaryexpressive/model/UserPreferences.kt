@@ -10,7 +10,7 @@ data class UserPreferences(
     val useOriginalLanguage: Boolean = true,
     val dynamicColor: Boolean = true,
     val theme: Int = 0,
-    val aiProvider: String? = null,
+    val activeProvider: String? = null,
     val showLength: Boolean = true,
     val summaryLength: String = SummaryLength.MEDIUM.name,
     val autoExtractUrl: Boolean = true,
@@ -18,5 +18,6 @@ data class UserPreferences(
     val sessDataExpires: Long = 0L,
     val isAppendMode: Boolean = true,
     val customBasePrompt: String = "",
-    val additionalSystemPrompt: String = ""
+    val additionalSystemPrompt: String = "",
+    val providerOrder: List<String> = emptyList(),
 )

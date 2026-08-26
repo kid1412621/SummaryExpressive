@@ -14,11 +14,11 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import me.nanova.summaryexpressive.ui.page.AdvancedSummarySetupScreen
 import me.nanova.summaryexpressive.ui.page.HistoryScreen
-import me.nanova.summaryexpressive.ui.page.HomeScreen
 import me.nanova.summaryexpressive.ui.page.OnboardingScreen
-import me.nanova.summaryexpressive.ui.page.SettingsScreen
+import me.nanova.summaryexpressive.ui.page.home.HomeScreen
+import me.nanova.summaryexpressive.ui.page.settings.AdvancedSummarySetupScreen
+import me.nanova.summaryexpressive.ui.page.settings.SettingsScreen
 import me.nanova.summaryexpressive.vm.AppViewModel
 
 private val EmphasizedDecelerateEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)

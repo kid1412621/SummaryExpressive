@@ -28,7 +28,7 @@ fun generateFinalPromptString(
     appLanguage: String,
     isAppendMode: Boolean,
     customBasePrompt: String,
-    additionalSystemPrompt: String
+    additionalSystemPrompt: String,
 ): String {
     val lengthInstruction = when (length) {
         SummaryLength.SHORT -> "a few sentences(better within 100 words)"
@@ -60,7 +60,7 @@ fun generateFinalPromptString(
 
         append("\n\n")
         append(languageInstruction)
-        
+
         if (showLength) {
             append("\n")
             append("The summary should be about $lengthInstruction long, and must not exceed the length of the original content.")
@@ -78,7 +78,13 @@ fun createSummarizationPrompt(
     additionalSystemPrompt: String = "",
 ): Prompt {
     val finalPrompt = generateFinalPromptString(
-        length, showLength, useContentLanguage, appLanguage, isAppendMode, customBasePrompt, additionalSystemPrompt
+        length,
+        showLength,
+        useContentLanguage,
+        appLanguage,
+        isAppendMode,
+        customBasePrompt,
+        additionalSystemPrompt
     )
 
     return prompt("summarizer-prompt") {

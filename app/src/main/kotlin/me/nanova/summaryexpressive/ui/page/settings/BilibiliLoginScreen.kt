@@ -1,4 +1,4 @@
-package me.nanova.summaryexpressive.ui.page
+package me.nanova.summaryexpressive.ui.page.settings
 
 import android.annotation.SuppressLint
 import android.webkit.CookieManager
@@ -54,7 +54,8 @@ fun BiliBiliLoginSheetContent(
 
                             val sessData = findSessDataCookie()
                             if (sessData != null) {
-                                val expires = System.currentTimeMillis() + SESSDATA_EXPIRATION_APPROX
+                                val expires =
+                                    System.currentTimeMillis() + SESSDATA_EXPIRATION_APPROX
                                 onSessDataFound(sessData, expires)
                             }
                         }

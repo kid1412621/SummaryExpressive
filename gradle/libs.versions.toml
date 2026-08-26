@@ -17,6 +17,7 @@ koog = "1.1.1"
 # Koog only provided some features via the beta version
 koog-beta = "1.1.1-beta"
 kotlin = "2.4.10"
+kotlinx-coroutines = "1.10.1"
 kotlinx-serialization = "1.11.0"
 ksp = "2.3.11"
 ktor = "3.5.2"
@@ -71,6 +72,7 @@ junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform
 koog-agents = { group = "ai.koog", name = "koog-agents", version.ref = "koog" }
 koog-agents-additions = { group = "ai.koog", name = "koog-agents-additions", version.ref = "koog-beta" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "kotlinx-serialization" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-protobuf = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
 ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktor" }

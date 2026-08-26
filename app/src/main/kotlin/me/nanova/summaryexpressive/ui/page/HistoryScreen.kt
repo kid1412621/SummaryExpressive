@@ -68,8 +68,8 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.R
-import me.nanova.summaryexpressive.model.SummaryOutput
 import me.nanova.summaryexpressive.model.HistorySummary
+import me.nanova.summaryexpressive.model.SummaryOutput
 import me.nanova.summaryexpressive.model.SummaryType
 import me.nanova.summaryexpressive.ui.component.SummaryCard
 import me.nanova.summaryexpressive.vm.HistoryViewModel
