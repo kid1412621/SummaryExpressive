@@ -1,6 +1,7 @@
 package me.nanova.summaryexpressive.data.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import me.nanova.summaryexpressive.data.AIProviderConfigDao
 import me.nanova.summaryexpressive.data.AIProviderConfigEntity
@@ -15,11 +16,11 @@ open class AIProviderConfigRepository @Inject constructor(
     open val providerConfigsFlow: Flow<Map<String, ProviderConfig>>
         get() = aiProviderConfigDao?.getAllConfigsFlow()?.map { entities ->
             entities.associate { it.provider to it.toProviderConfig() }
-        } ?: kotlinx.coroutines.flow.emptyFlow()
+        } ?: emptyFlow()
 
     open fun getConfigFlow(provider: String): Flow<ProviderConfig?> =
         aiProviderConfigDao?.getConfigFlow(provider)?.map { it?.toProviderConfig() }
-            ?: kotlinx.coroutines.flow.emptyFlow()
+            ?: emptyFlow()
 
     open suspend fun getConfig(provider: String): ProviderConfig? =
         aiProviderConfigDao?.getConfig(provider)?.toProviderConfig()

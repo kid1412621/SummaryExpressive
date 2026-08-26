@@ -4,6 +4,7 @@ import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emptyFlow
 import me.nanova.summaryexpressive.data.local.datastore.userPreferencesDataStore
 import me.nanova.summaryexpressive.model.UserPreferences
 import java.io.IOException
@@ -21,7 +22,7 @@ open class UserPreferencesRepository @Inject constructor(
             } else {
                 throw exception
             }
-        } ?: kotlinx.coroutines.flow.emptyFlow()
+        } ?: emptyFlow()
 
     private suspend fun updatePreferences(transform: suspend (UserPreferences) -> UserPreferences) {
         context?.userPreferencesDataStore?.updateData { transform(it) }
