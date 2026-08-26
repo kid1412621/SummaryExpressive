@@ -1,4 +1,4 @@
-package me.nanova.summaryexpressive.ui.page
+package me.nanova.summaryexpressive.ui.page.settings
 
 import android.annotation.SuppressLint
 import android.webkit.CookieManager

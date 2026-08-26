@@ -1,4 +1,4 @@
-package me.nanova.summaryexpressive.ui.page
+package me.nanova.summaryexpressive.ui.page.settings
 
 import android.content.ClipData
 import android.content.Intent
@@ -15,24 +15,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.HelpCenter
@@ -44,7 +36,6 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.StarRate
-import androidx.compose.material.icons.rounded.VpnKey
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -57,8 +48,6 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Switch
@@ -71,7 +60,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -79,35 +67,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLocale
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.BuildConfig
-import me.nanova.summaryexpressive.ProviderConfig
 import me.nanova.summaryexpressive.R
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.ui.Nav
-import me.nanova.summaryexpressive.ui.component.ClickablePasteIcon
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme
 import me.nanova.summaryexpressive.vm.AppViewModel
 import me.nanova.summaryexpressive.vm.SettingsUiState
@@ -124,13 +102,15 @@ data class SettingsActions(
     val onApiKeyChange: (String) -> Unit,
     val onProviderChange: (String) -> Unit,
     val onModelChange: (String) -> Unit,
-    val onProviderConfigChange: (String, String, String) -> Unit,
+    val onProviderConfigChange: (String, String, String, List<String>?) -> Unit,
+    val onSaveProviderModels: (String, List<String>, String) -> Unit,
+    val onResetProviderModels: (String) -> Unit,
     val onUseOriginalLanguageChange: (Boolean) -> Unit,
     val onDynamicColorChange: (Boolean) -> Unit,
     val onShowLengthChange: (Boolean) -> Unit,
     val onAutoExtractUrlChange: (Boolean) -> Unit,
     val onSessDataChange: (String, Long) -> Unit,
-    val onSessDataClear: () -> Unit
+    val onSessDataClear: () -> Unit,
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -151,6 +131,8 @@ fun SettingsScreen(
         onProviderChange = appViewModel::setAIProviderValue,
         onModelChange = appViewModel::setModel,
         onProviderConfigChange = appViewModel::setProviderConfig,
+        onSaveProviderModels = appViewModel::setProviderModels,
+        onResetProviderModels = appViewModel::resetProviderModelsToDefault,
         onUseOriginalLanguageChange = appViewModel::setUseOriginalLanguageValue,
         onDynamicColorChange = appViewModel::setDynamicColorValue,
         onShowLengthChange = appViewModel::setShowLengthValue,
@@ -221,26 +203,30 @@ fun SettingsScreen(
 
         DialogState.AI_PROVIDER -> {
             AIProviderSettingsDialog(
-                initialProvider = state.aiProvider ?: AIProvider.OPENAI,
+                initialProvider = state.activeProvider ?: AIProvider.OPENAI,
                 providerConfigs = state.providerConfigs,
+                providerOrder = state.providerOrder,
                 onDismissRequest = { dialogState = DialogState.NONE },
-                onConfirm = { provider, baseUrl, apiKey ->
-                    actions.onProviderConfigChange(provider.name, baseUrl, apiKey)
+                onConfirm = { provider, baseUrl, apiKey, order ->
+                    actions.onProviderConfigChange(provider.name, baseUrl, apiKey, order)
                 },
-                onNext = { provider, baseUrl, apiKey ->
-                    actions.onProviderConfigChange(provider.name, baseUrl, apiKey)
+                onNext = { provider, baseUrl, apiKey, order ->
+                    actions.onProviderConfigChange(provider.name, baseUrl, apiKey, order)
                     dialogState = DialogState.MODEL
                 }
             )
         }
 
         DialogState.MODEL -> {
+            val currentProvider = state.activeProvider ?: AIProvider.OPENAI
             ModelSettingsDialog(
                 onDismissRequest = { dialogState = DialogState.NONE },
-                provider = state.aiProvider ?: AIProvider.OPENAI,
-                initialModelId = state.model,
-                onConfirm = { modelId ->
-                    actions.onModelChange(modelId)
+                provider = currentProvider,
+                initialModelId = state.activeModel,
+                providerConfigs = state.providerConfigs,
+                onConfirm = { models, selectedModel ->
+                    actions.onSaveProviderModels(currentProvider.name, models, selectedModel)
+                    dialogState = DialogState.NONE
                 },
             )
         }
@@ -673,382 +659,6 @@ private fun SettingsGroup(
     }
 }
 
-@Composable
-private fun ThemeSettingsDialog(
-    onDismissRequest: () -> Unit,
-    currentTheme: Int,
-    onThemeChange: (Int) -> Unit,
-) {
-    var theme by remember { mutableIntStateOf(currentTheme) }
-
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        title = { Text(stringResource(id = R.string.theme)) },
-        text = {
-            Column {
-                RadioButtonItem(
-                    selected = theme == 0,
-                    onSelectionChange = { theme = 0 },
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.systemTheme),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-                RadioButtonItem(
-                    selected = theme == 2,
-                    onSelectionChange = { theme = 2 }
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.lightTheme),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-                RadioButtonItem(
-                    selected = theme == 1,
-                    onSelectionChange = { theme = 1 }
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.darkTheme),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onThemeChange(theme)
-                    onDismissRequest()
-                }
-            ) {
-                Text(stringResource(id = R.string.ok))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text(stringResource(id = R.string.cancel))
-            }
-        },
-    )
-}
-
-@Composable
-private fun AIProviderSettingsDialog(
-    onDismissRequest: () -> Unit,
-    initialProvider: AIProvider,
-    providerConfigs: Map<String, ProviderConfig>,
-    onConfirm: (provider: AIProvider, baseUrl: String, apiKey: String) -> Unit,
-    onNext: (provider: AIProvider, baseUrl: String, apiKey: String) -> Unit,
-) {
-    val focusManager = LocalFocusManager.current
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    val apiKeyFocusRequester = remember { FocusRequester() }
-    var selectedProvider by remember { mutableStateOf(initialProvider) }
-    
-    var baseUrlTextFieldValue by remember(selectedProvider) { 
-        mutableStateOf(providerConfigs[selectedProvider.name]?.baseUrl ?: "") 
-    }
-    var apiKeyTextFieldValue by remember(selectedProvider) { 
-        mutableStateOf(providerConfigs[selectedProvider.name]?.apiKey ?: "") 
-    }
-
-    val formValid = (selectedProvider.isMandatoryBaseUrl && baseUrlTextFieldValue.isNotBlank())
-            || (selectedProvider.isRequiredApiKey && apiKeyTextFieldValue.isNotBlank())
-    val providerChanged = selectedProvider != initialProvider
-
-    val submit = {
-        if (formValid) {
-            if (providerChanged) {
-                onNext(selectedProvider, baseUrlTextFieldValue, apiKeyTextFieldValue)
-            } else {
-                onConfirm(selectedProvider, baseUrlTextFieldValue, apiKeyTextFieldValue)
-                onDismissRequest()
-            }
-        }
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        title = { Text(stringResource(id = R.string.setAIProvider)) },
-        text = {
-            Column {
-                AIProvider.entries.forEach {
-                    AIProviderItem(it, selected = (selectedProvider == it)) {
-                        selectedProvider = it
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(9.dp))
-
-                OutlinedTextField(
-                    value = baseUrlTextFieldValue,
-                    onValueChange = { baseUrlTextFieldValue = it },
-                    label = { Text(if (selectedProvider.isMandatoryBaseUrl) "* Base Url" else "Custom URL") },
-                    singleLine = true,
-                    shape = MaterialTheme.shapes.large,
-                    leadingIcon = { Icon(Icons.Rounded.Link, contentDescription = "Base Url") },
-                    trailingIcon = {
-                        ClickablePasteIcon(
-                            text = baseUrlTextFieldValue,
-                            onPaste = { baseUrlTextFieldValue = it.trim() },
-                            onClear = { baseUrlTextFieldValue = "" }
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Uri,
-                        imeAction = ImeAction.Next
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onNext = { apiKeyFocusRequester.requestFocus() }
-                    ),
-                )
-
-                Spacer(modifier = Modifier.height(9.dp))
-
-                if (selectedProvider.isRequiredApiKey) {
-                    OutlinedTextField(
-                        modifier = Modifier.focusRequester(apiKeyFocusRequester),
-                        value = apiKeyTextFieldValue,
-                        onValueChange = { apiKeyTextFieldValue = it },
-                        singleLine = true,
-                        leadingIcon = {
-                            Icon(
-                                Icons.Rounded.VpnKey,
-                                contentDescription = "API Key"
-                            )
-                        },
-                        label = { Text("* " + stringResource(R.string.setApiKey)) },
-                        shape = MaterialTheme.shapes.large,
-                        trailingIcon = {
-                            ClickablePasteIcon(
-                                text = apiKeyTextFieldValue,
-                                onPaste = { apiKeyTextFieldValue = it.trim() },
-                                onClear = { apiKeyTextFieldValue = "" }
-                            )
-                        },
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                keyboardController?.hide()
-                                focusManager.clearFocus()
-                                submit()
-                            }
-                        ),
-                    )
-                }
-            }
-        },
-        confirmButton = {
-                TextButton(
-                    enabled = formValid,
-                    onClick = { submit() }
-                ) {
-                    Text(stringResource(id = if (providerChanged) R.string.next else R.string.ok))
-                }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text(stringResource(id = R.string.cancel))
-            }
-        },
-    )
-}
-
-@Composable
-private fun ModelSettingsDialog(
-    onDismissRequest: () -> Unit,
-    provider: AIProvider,
-    initialModelId: String?,
-    onConfirm: (modelId: String) -> Unit,
-) {
-    val customModelKey = "##CUSTOM_MODEL##"
-    val isInitialModelCustom =
-        initialModelId?.let { id -> provider.models.none { it.id == id } } == true
-
-    var selectedKey by remember {
-        mutableStateOf(if (isInitialModelCustom) customModelKey else initialModelId)
-    }
-    var customModelName by remember {
-        mutableStateOf(if (isInitialModelCustom) initialModelId else "")
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        title = { Text(stringResource(id = R.string.setModel) + " (${provider.id.display})") },
-        text = {
-            Column(Modifier.heightIn(max = 390.dp)) {
-                LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
-                    items(provider.models.size) { index ->
-                        val model = provider.models[index]
-                        RadioButtonItem(
-                            selected = selectedKey == model.id,
-                            onSelectionChange = { selectedKey = model.id }
-                        ) {
-                            Text(text = model.id)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                RadioButtonItem(
-                    selected = selectedKey == customModelKey,
-                    onSelectionChange = { selectedKey = customModelKey }
-                ) {
-                    OutlinedTextField(
-                        value = customModelName,
-                        onValueChange = {
-                            customModelName = it
-                            selectedKey = customModelKey
-                        },
-                        label = { Text("Custom Model") },
-                        shape = MaterialTheme.shapes.large,
-                        singleLine = true,
-                        trailingIcon = {
-                            ClickablePasteIcon(
-                                text = customModelName,
-                                onPaste = {
-                                    customModelName = it.trim()
-                                    selectedKey = customModelKey
-                                },
-                                onClear = { customModelName = "" }
-                            )
-                        },
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val resultModelId = if (selectedKey == customModelKey) {
-                        customModelName
-                    } else {
-                        selectedKey ?: ""
-                    }
-                    onConfirm(resultModelId)
-                    onDismissRequest()
-                },
-                enabled = ((selectedKey != customModelKey && selectedKey != null) || (selectedKey == customModelKey && customModelName.isNotBlank()))
-            ) {
-                Text(stringResource(id = R.string.ok))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text(stringResource(id = R.string.cancel))
-            }
-        },
-    )
-}
-
-
-@Composable
-private fun RadioButtonItem(
-    selected: Boolean,
-    onSelectionChange: () -> Unit,
-    content: @Composable () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectable(
-                selected = selected,
-                onClick = onSelectionChange,
-                role = Role.RadioButton
-            )
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RadioButton(
-            selected = selected,
-            onClick = null
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        content()
-    }
-}
-
-@Composable
-private fun AIProviderItem(
-    llm: AIProvider,
-    selected: Boolean,
-    onSelectionChange: () -> Unit,
-) {
-    RadioButtonItem(selected, onSelectionChange) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = ImageVector.vectorResource(id = llm.icon),
-                tint = if (selected && !llm.isMonochromeIcon) Color.Unspecified else LocalContentColor.current,
-                contentDescription = "${llm.id.display} icon",
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = llm.id.display, style = MaterialTheme.typography.bodyLarge)
-        }
-    }
-}
-
-
-@Preview
-@Composable
-private fun AIProviderSettingsDialogPreview() {
-    SummaryExpressiveTheme {
-        AIProviderSettingsDialog(
-            onDismissRequest = {},
-            initialProvider = AIProvider.OPENAI,
-            providerConfigs = emptyMap(),
-            onConfirm = { _, _, _ -> },
-            onNext = { _, _, _ -> },
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun ModelSettingsDialogPreview() {
-    SummaryExpressiveTheme {
-        ModelSettingsDialog(
-            onDismissRequest = {},
-            provider = AIProvider.OPENAI,
-            onConfirm = { _ -> },
-            initialModelId = AIProvider.OPENAI.models.first().id,
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun RadioButtonItemPreview() {
-    SummaryExpressiveTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
-            RadioButtonItem(selected = true, onSelectionChange = {}) {
-                Text("Option 1")
-            }
-            RadioButtonItem(selected = false, onSelectionChange = {}) {
-                Text("Option 2")
-            }
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun AIProviderItemPreview() {
-    SummaryExpressiveTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
-            AIProvider.entries
-                .forEach { AIProviderItem(it, selected = it == AIProvider.OPENAI) {} }
-        }
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 private fun ScrollContentPreview() {
@@ -1057,7 +667,7 @@ private fun ScrollContentPreview() {
             theme = 0,
             apiKey = "test_key",
             baseUrl = "",
-            aiProvider = AIProvider.OPENAI,
+            activeProvider = AIProvider.OPENAI,
             useOriginalLanguage = false,
             dynamicColor = true,
             showLength = true,
@@ -1068,7 +678,9 @@ private fun ScrollContentPreview() {
             onApiKeyChange = {},
             onProviderChange = {},
             onModelChange = {},
-            onProviderConfigChange = { _, _, _ -> },
+            onProviderConfigChange = { _, _, _, _ -> },
+            onSaveProviderModels = { _, _, _ -> },
+            onResetProviderModels = {},
             onUseOriginalLanguageChange = {},
             onDynamicColorChange = {},
             onShowLengthChange = {},

@@ -74,13 +74,19 @@ package previously.
   - Mistral
   - OpenRouter
   - Ollama
+  - AWS Bedrock
+  - Custom OpenAI-compatible endpoints
+
+- **Custom Model Management**: Add, edit, delete, and drag-and-drop reorder models per provider with fallback to Koog defaults
+
+- **Quick Model Switcher**: Easily switch providers and active models on the Home screen following your custom configured order
 
 - **[Material 3 Expressive](https://m3.material.io/blog/building-with-m3-expressive) UI**: Engaging
   and easier to use, light/dark theme and dynamic color theme
 
-- **Instant summarize via share sheet or text selection toolbar**: Convenient to trigger summarization, show result in overlayer
+- **Instant summarize via share sheet or text selection toolbar**: Convenient to trigger summarization, show result in overlay
 
-- **Configurable LLM settings**
+- **Configurable LLM settings**: Custom API keys, base URLs, prompt customization, and summary lengths
 
 - **Text to speech for the summaries with multilingual and speed adjustment support**
 

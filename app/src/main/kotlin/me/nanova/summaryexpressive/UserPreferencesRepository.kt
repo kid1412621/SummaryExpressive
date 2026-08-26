@@ -17,7 +17,8 @@ val Context.dataStore: DataStore<UserPreferences> by dataStore(
 data class ProviderConfig(
     val apiKey: String = "",
     val baseUrl: String = "",
-    val model: String = ""
+    val activeModel: String = "",
+    val models: List<String> = emptyList(),
 )
 
 @Serializable
@@ -28,7 +29,7 @@ data class UserPreferences(
     val useOriginalLanguage: Boolean = true,
     val dynamicColor: Boolean = true,
     val theme: Int = 0,
-    val aiProvider: String? = null,
+    val activeProvider: String? = null,
     val showLength: Boolean = true,
     val summaryLength: String = SummaryLength.MEDIUM.name,
     val autoExtractUrl: Boolean = true,
@@ -36,7 +37,8 @@ data class UserPreferences(
     val sessDataExpires: Long = 0L,
     val isAppendMode: Boolean = true,
     val customBasePrompt: String = "",
-    val additionalSystemPrompt: String = ""
+    val additionalSystemPrompt: String = "",
+    val providerOrder: List<String> = emptyList(),
 )
 
 class UserPreferencesRepository(private val context: Context) {
@@ -61,7 +63,11 @@ class UserPreferencesRepository(private val context: Context) {
 
     suspend fun setTheme(value: Int) = updatePreferences { it.copy(theme = value) }
 
-    suspend fun setAIProvider(value: String?) = updatePreferences { it.copy(aiProvider = value) }
+    suspend fun setActiveProvider(value: String?) =
+        updatePreferences { it.copy(activeProvider = value) }
+
+    suspend fun setProviderOrder(value: List<String>) =
+        updatePreferences { it.copy(providerOrder = value) }
 
     suspend fun setIsOnboarded(value: Boolean) =
         updatePreferences { it.copy(isOnboarded = value) }

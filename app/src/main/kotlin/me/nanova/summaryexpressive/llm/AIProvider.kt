@@ -11,6 +11,7 @@ import ai.koog.prompt.executor.ollama.client.OllamaModels
 import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
+import me.nanova.summaryexpressive.ProviderConfig
 import me.nanova.summaryexpressive.R
 
 enum class AIProvider(
@@ -111,5 +112,26 @@ enum class AIProvider(
         false,
         OpenRouterModels.models.filter { it.supports(LLMCapability.Completion) }
             .sortedBy { it.id }
-    )
+    );
+
+    val defaultModelIds: List<String>
+        get() = models.map { it.id }
+
+    fun getEffectiveModels(providerConfig: ProviderConfig?): List<String> =
+        providerConfig?.models?.takeIf { it.isNotEmpty() } ?: defaultModelIds
+
+    fun getEffectiveModel(providerConfig: ProviderConfig?): String =
+        providerConfig?.activeModel?.takeIf { it.isNotBlank() } ?: defaultModelIds.firstOrNull()
+        ?: ""
+
+    companion object {
+        fun getEffectiveProviders(order: List<String>): List<AIProvider> {
+            if (order.isEmpty()) return entries
+            val ordered = order.mapNotNull { name ->
+                runCatching { valueOf(name) }.getOrNull()
+            }
+            val missing = entries.filter { it !in ordered }
+            return ordered + missing
+        }
+    }
 }

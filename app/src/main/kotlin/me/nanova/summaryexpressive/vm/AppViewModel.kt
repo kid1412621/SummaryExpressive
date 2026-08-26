@@ -49,16 +49,19 @@ class AppViewModel @Inject constructor(
         val providerConfigs = configEntities.associate { 
             it.provider to it.toProviderConfig() 
         }
-        val providerConfig = prefs.aiProvider?.let { providerConfigs[it] }
+        val provider =
+            prefs.activeProvider?.let { runCatching { AIProvider.valueOf(it) }.getOrNull() }
+        val providerConfig = provider?.name?.let { providerConfigs[it] }
+        val effectiveModel = provider?.getEffectiveModel(providerConfig)?.takeIf { it.isNotBlank() }
         SettingsUiState(
             useOriginalLanguage = prefs.useOriginalLanguage,
             dynamicColor = prefs.dynamicColor,
             theme = prefs.theme,
             apiKey = providerConfig?.apiKey?.takeIf { it.isNotBlank() },
             baseUrl = providerConfig?.baseUrl?.takeIf { it.isNotBlank() },
-            aiProvider = prefs.aiProvider?.let { runCatching { AIProvider.valueOf(it) }.getOrNull() },
+            activeProvider = provider,
             providerConfigs = providerConfigs,
-            model = providerConfig?.model?.takeIf { it.isNotBlank() },
+            activeModel = effectiveModel,
             showLength = prefs.showLength,
             summaryLength = SummaryLength.valueOf(prefs.summaryLength),
             autoExtractUrl = prefs.autoExtractUrl,
@@ -66,7 +69,8 @@ class AppViewModel @Inject constructor(
             sessDataExpires = prefs.sessDataExpires,
             isAppendMode = prefs.isAppendMode,
             customBasePrompt = prefs.customBasePrompt,
-            additionalSystemPrompt = prefs.additionalSystemPrompt
+            additionalSystemPrompt = prefs.additionalSystemPrompt,
+            providerOrder = prefs.providerOrder,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -89,7 +93,8 @@ class AppViewModel @Inject constructor(
     // API Key
     fun setApiKeyValue(newValue: String) {
         viewModelScope.launch {
-            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
+            val provider =
+                userPreferencesRepository.preferencesFlow.first().activeProvider ?: return@launch
             val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
             aiProviderConfigDao.insertConfig(
                 AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(apiKey = newValue))
@@ -101,7 +106,8 @@ class AppViewModel @Inject constructor(
     fun setBaseUrlValue(newValue: String) {
         val baseUrlWithProtocol = if (newValue.isBlank() || newValue.startsWith("http")) newValue else "https://$newValue"
         viewModelScope.launch {
-            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
+            val provider =
+                userPreferencesRepository.preferencesFlow.first().activeProvider ?: return@launch
             val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
             aiProviderConfigDao.insertConfig(
                 AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(baseUrl = baseUrlWithProtocol))
@@ -111,26 +117,87 @@ class AppViewModel @Inject constructor(
 
     // AI provider
     fun setAIProviderValue(newValue: String) =
-        savePreference(userPreferencesRepository::setAIProvider, newValue)
+        savePreference(userPreferencesRepository::setActiveProvider, newValue)
 
-    fun setProviderConfig(provider: String, baseUrl: String, apiKey: String) {
+    fun setProviderOrder(order: List<String>) =
+        savePreference(userPreferencesRepository::setProviderOrder, order)
+
+    fun setProviderConfig(
+        provider: String,
+        baseUrl: String,
+        apiKey: String,
+        providerOrder: List<String>? = null,
+    ) {
         val baseUrlWithProtocol = if (baseUrl.isBlank() || baseUrl.startsWith("http")) baseUrl else "https://$baseUrl"
         viewModelScope.launch {
             val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
             aiProviderConfigDao.insertConfig(
                 AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(baseUrl = baseUrlWithProtocol, apiKey = apiKey))
             )
-            userPreferencesRepository.setAIProvider(provider)
+            userPreferencesRepository.setActiveProvider(provider)
+            if (providerOrder != null) {
+                userPreferencesRepository.setProviderOrder(providerOrder)
+            }
         }
     }
 
     // Model
     fun setModel(newValue: String) {
         viewModelScope.launch {
-            val provider = userPreferencesRepository.preferencesFlow.first().aiProvider ?: return@launch
-            val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
+            val provider =
+                userPreferencesRepository.preferencesFlow.first().activeProvider ?: return@launch
+            setModelForProvider(provider, newValue)
+        }
+    }
+
+    fun setModelForProvider(provider: String, model: String) {
+        viewModelScope.launch {
+            val currentConfig =
+                aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
+            val models =
+                if (currentConfig.models.isNotEmpty() && !currentConfig.models.contains(model)) {
+                    currentConfig.models + model
+                } else {
+                    currentConfig.models
+                }
             aiProviderConfigDao.insertConfig(
-                AIProviderConfigEntity.fromProviderConfig(provider, currentConfig.copy(model = newValue))
+                AIProviderConfigEntity.fromProviderConfig(
+                    provider,
+                    currentConfig.copy(activeModel = model, models = models)
+                )
+            )
+        }
+    }
+
+    fun setProviderModels(provider: String, models: List<String>, selectedModel: String? = null) {
+        viewModelScope.launch {
+            val currentConfig = aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
+            val targetModel =
+                selectedModel ?: currentConfig.activeModel.takeIf { it in models }
+                ?: models.firstOrNull()
+                ?: ""
+            aiProviderConfigDao.insertConfig(
+                AIProviderConfigEntity.fromProviderConfig(
+                    provider,
+                    currentConfig.copy(models = models, activeModel = targetModel)
+                )
+            )
+        }
+    }
+
+    fun resetProviderModelsToDefault(provider: String) {
+        viewModelScope.launch {
+            val aiProvider =
+                runCatching { AIProvider.valueOf(provider) }.getOrNull() ?: return@launch
+            val defaultModels = aiProvider.defaultModelIds
+            val currentConfig =
+                aiProviderConfigDao.getConfig(provider)?.toProviderConfig() ?: ProviderConfig()
+            val defaultModel = defaultModels.firstOrNull() ?: ""
+            aiProviderConfigDao.insertConfig(
+                AIProviderConfigEntity.fromProviderConfig(
+                    provider,
+                    currentConfig.copy(models = defaultModels, activeModel = defaultModel)
+                )
             )
         }
     }

@@ -75,6 +75,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
@@ -282,7 +283,10 @@ fun HomeScreen(
                 settings = settings,
                 onProviderSelect = { appViewModel.setAIProviderValue(it.name) },
                 onModelSelect = { appViewModel.setModel(it) },
-                onDismiss = { showProviderModelSheet = false }
+                onDismiss = { showProviderModelSheet = false },
+                onGoToSettings = {
+                    onNav(Nav.Settings(highlight = "ai"))
+                }
             )
         }
     }
@@ -458,8 +462,8 @@ private fun HomeTopAppBar(
                     Icon(Icons.Outlined.Settings, contentDescription = "Settings")
                 }
                 LlmSwitcher(
-                    provider = settings.aiProvider,
-                    model = settings.model,
+                    provider = settings.activeProvider,
+                    model = settings.activeModel,
                     onClick = onIndicatorClick
                 )
             }
@@ -486,18 +490,36 @@ fun ProviderModelSheetContent(
     onProviderSelect: (AIProvider) -> Unit,
     onModelSelect: (String) -> Unit,
     onDismiss: () -> Unit,
+    onGoToSettings: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
     ) {
-        Text("Select AI Provider", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Select AI Provider", style = MaterialTheme.typography.titleMedium)
+            TextButton(
+                onClick = {
+                    onDismiss()
+                    onGoToSettings()
+                }
+            ) {
+                Text("Setup AI")
+            }
+        }
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            val sortedProviders = AIProvider.entries.sortedByDescending { provider ->
+            val sortedProviders = AIProvider.getEffectiveProviders(settings.providerOrder)
+                .sortedByDescending { provider ->
                 settings.providerConfigs[provider.name]?.let { 
                     it.apiKey.isNotBlank() || it.baseUrl.isNotBlank() 
                 } ?: false
@@ -510,7 +532,7 @@ fun ProviderModelSheetContent(
                 val context = LocalContext.current
                 Box {
                     FilterChip(
-                        selected = settings.aiProvider == provider,
+                        selected = settings.activeProvider == provider,
                         enabled = isConfigured,
                         onClick = { if (isConfigured) onProviderSelect(provider) },
                         label = { Text(provider.name) },
@@ -548,61 +570,39 @@ fun ProviderModelSheetContent(
         }
         
         Spacer(modifier = Modifier.height(16.dp))
-        Text("Select Model", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
-        
-        val predefinedModels = settings.aiProvider?.models ?: emptyList()
-        val customModel = settings.model?.takeIf { modelId -> 
-            modelId.isNotBlank() && predefinedModels.none { it.id == modelId } 
-        }
+        val currentProvider = settings.activeProvider
+        val currentProviderConfig = currentProvider?.name?.let { settings.providerConfigs[it] }
+        val models = currentProvider?.getEffectiveModels(currentProviderConfig) ?: emptyList()
 
-        if (predefinedModels.isNotEmpty() || customModel != null) {
+        if (models.isNotEmpty()) {
             LazyColumn(
                 modifier = Modifier.heightIn(max = 300.dp)
             ) {
-                if (customModel != null) {
-                    item {
-                        ListItem(
-                            modifier = Modifier.clickable {
-                                onModelSelect(customModel)
-                                onDismiss()
-                            },
-                            leadingContent = null,
-                            trailingContent = {
-                                if (settings.model == customModel) {
-                                    Icon(Icons.Rounded.Check, contentDescription = "Selected")
-                                }
-                            },
-                            overlineContent = null,
-                            supportingContent = null,
-                            colors = ListItemDefaults.colors(),
-                            elevation = ListItemDefaults.elevation(),
-                            content = { Text("$customModel (Custom)") },
-                        )
-                    }
-                }
-
-                items(predefinedModels) { model ->
+                items(models) { modelId ->
                     ListItem(
-                        modifier = Modifier.clickable {
-                            onModelSelect(model.id)
-                            onDismiss()
-                        },
-                        leadingContent = null,
+                        modifier = Modifier
+                            .clickable {
+                                onModelSelect(modelId)
+                                onDismiss()
+                            }
+                            .fillMaxWidth(),
                         trailingContent = {
-                            if (settings.model == model.id) {
+                            if (settings.activeModel == modelId) {
                                 Icon(Icons.Rounded.Check, contentDescription = "Selected")
                             }
                         },
-                        overlineContent = null,
-                        supportingContent = null,
-                        colors = ListItemDefaults.colors(),
-                        elevation = ListItemDefaults.elevation(),
-                        content = { Text(model.id) },
-                    )
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    ) {
+                        Text(modelId)
+                    }
                 }
             }
         } else {
-            Text("No predefined models. Please configure in Settings.", modifier = Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "No models configured. Please configure in Settings.",
+                modifier = Modifier.padding(vertical = 16.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
         Spacer(modifier = Modifier.height(16.dp))
     }
