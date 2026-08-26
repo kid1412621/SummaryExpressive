@@ -85,4 +85,9 @@
     <string name="additionalPrompt">Additional Prompt</string>
     <string name="finalPromptPreview">Final Prompt Preview</string>
     <string name="dynamicConstraints">Dynamic Constraints (Read-only)</string>
+    <string name="selectAIProvider">Select AI Provider</string>
+    <string name="setupAI">Setup AI</string>
+    <string name="noModelsConfigured">No models configured. Please configure in Settings.</string>
+    <string name="configureInSettings">Configure in Settings</string>
+    <string name="providerNotConfiguredPrompt">Please configure %1$s in Settings before use</string>
 </resources>
