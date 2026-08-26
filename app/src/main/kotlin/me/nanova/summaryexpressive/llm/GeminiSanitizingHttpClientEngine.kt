@@ -33,7 +33,7 @@ import kotlin.coroutines.CoroutineContext
  */
 @OptIn(InternalAPI::class)
 class GeminiSanitizingHttpClientEngine(
-    private val delegate: HttpClientEngine
+    private val delegate: HttpClientEngine,
 ) : HttpClientEngineBase("gemini-sanitizing-engine") {
 
     override val config: HttpClientEngineConfig = delegate.config
@@ -55,11 +55,13 @@ class GeminiSanitizingHttpClientEngine(
                 val sanitized = sanitizeGeminiRequestBody(original)
                 val bytes = sanitized.toByteArray(Charsets.UTF_8)
                 object : OutgoingContent.ByteArrayContent() {
-                    override val contentType: ContentType = body.contentType ?: ContentType.Application.Json
+                    override val contentType: ContentType =
+                        body.contentType ?: ContentType.Application.Json
                     override val contentLength: Long = bytes.size.toLong()
                     override fun bytes(): ByteArray = bytes
                 }
             }
+
             else -> body
         }
 

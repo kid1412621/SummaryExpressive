@@ -54,7 +54,8 @@ fun BiliBiliLoginSheetContent(
 
                             val sessData = findSessDataCookie()
                             if (sessData != null) {
-                                val expires = System.currentTimeMillis() + SESSDATA_EXPIRATION_APPROX
+                                val expires =
+                                    System.currentTimeMillis() + SESSDATA_EXPIRATION_APPROX
                                 onSessDataFound(sessData, expires)
                             }
                         }

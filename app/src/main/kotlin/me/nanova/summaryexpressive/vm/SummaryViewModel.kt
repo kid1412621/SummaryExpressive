@@ -142,7 +142,7 @@ class SummaryViewModel @Inject constructor(
         summaryLength: SummaryLength,
         source: SummarySource,
         provider: String,
-        model: String?
+        model: String?,
     ) {
         if (source is SummarySource.None) return
 

@@ -30,5 +30,5 @@ data class SettingsUiState(
 data class SummarizationState(
     val isLoading: Boolean = false,
     val summaryResult: SummaryOutput? = null,
-    val error: Throwable? = null
+    val error: Throwable? = null,
 )

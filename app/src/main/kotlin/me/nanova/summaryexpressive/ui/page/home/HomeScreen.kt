@@ -202,7 +202,9 @@ fun HomeScreen(
     val fabVisible by remember { derivedStateOf { !listState.canScrollBackward } }
 
     val hasResult = summarizationState.summaryResult?.summary?.isNotEmpty() == true
-    val isDirty = settings.showLength && (summarizationState.summaryResult?.let { it.length != settings.summaryLength } ?: false)
+    val isDirty =
+        settings.showLength && (summarizationState.summaryResult?.let { it.length != settings.summaryLength }
+            ?: false)
 
     val actions = HomeActions(
         onSummarize = {
@@ -383,17 +385,18 @@ private fun HomeContent(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    summarizationState.summaryResult?.takeIf { it.summary.isNotEmpty() }?.let { summaryOutput ->
-                        SummaryCard(
-                            modifier = Modifier.padding(vertical = 15.dp),
-                            isExpandedByDefault = true,
-                            summary = summaryOutput,
-                            onLongClick = { actions.onCopySummary(summaryOutput.summary) },
-                            onShowSnackbar = actions.onShowSnackBar,
-                            isPlaying = isPlaying,
-                            onPlayRequest = actions.onPlaySummary
-                        )
-                    }
+                    summarizationState.summaryResult?.takeIf { it.summary.isNotEmpty() }
+                        ?.let { summaryOutput ->
+                            SummaryCard(
+                                modifier = Modifier.padding(vertical = 15.dp),
+                                isExpandedByDefault = true,
+                                summary = summaryOutput,
+                                onLongClick = { actions.onCopySummary(summaryOutput.summary) },
+                                onShowSnackbar = actions.onShowSnackBar,
+                                isPlaying = isPlaying,
+                                onPlayRequest = actions.onPlaySummary
+                            )
+                        }
                 }
             }
         }

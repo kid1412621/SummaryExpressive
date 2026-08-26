@@ -171,6 +171,7 @@ fun ErrorMessage(
             val resId = error.getUserMessageResId(apiKey)
             if (resId != null) stringResource(id = resId) else error.message ?: "unknown error"
         }
+
         else -> error?.message ?: "unknown error"
     }
     Text(

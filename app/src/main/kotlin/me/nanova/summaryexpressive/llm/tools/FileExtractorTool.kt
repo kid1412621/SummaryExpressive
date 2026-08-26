@@ -182,7 +182,8 @@ class FileExtractorTool(private val context: Context) : Tool<File, ExtractedCont
                     filename.endsWith(".jpg", ignoreCase = true) ||
                     filename.endsWith(".jpeg", ignoreCase = true) ||
                     filename.endsWith(".png", ignoreCase = true)
-            -> ImageTextExtractor
+                -> ImageTextExtractor
+
             else -> null
         }
 

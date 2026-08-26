@@ -50,7 +50,8 @@ class AppViewModel @Inject constructor(
             providerConfigs = providerConfigs,
             activeModel = providerConfig?.activeModel?.takeIf { it.isNotBlank() },
             showLength = prefs.showLength,
-            summaryLength = SummaryLength.entries.find { it.name == prefs.summaryLength } ?: SummaryLength.MEDIUM,
+            summaryLength = SummaryLength.entries.find { it.name == prefs.summaryLength }
+                ?: SummaryLength.MEDIUM,
             autoExtractUrl = prefs.autoExtractUrl,
             sessData = prefs.sessData,
             sessDataExpires = prefs.sessDataExpires,
@@ -80,7 +81,8 @@ class AppViewModel @Inject constructor(
     // API Key
     fun setApiKeyValue(newValue: String) {
         viewModelScope.launch {
-            val provider = userPreferencesRepository.preferencesFlow.first().activeProvider ?: return@launch
+            val provider =
+                userPreferencesRepository.preferencesFlow.first().activeProvider ?: return@launch
             aiProviderConfigRepository.updateApiKey(provider, newValue.trim())
         }
     }
@@ -89,7 +91,8 @@ class AppViewModel @Inject constructor(
     fun setBaseUrlValue(newValue: String) {
         val baseUrl = normalizeBaseUrl(newValue)
         viewModelScope.launch {
-            val provider = userPreferencesRepository.preferencesFlow.first().activeProvider ?: return@launch
+            val provider =
+                userPreferencesRepository.preferencesFlow.first().activeProvider ?: return@launch
             aiProviderConfigRepository.updateBaseUrl(provider, baseUrl)
         }
     }
@@ -124,7 +127,8 @@ class AppViewModel @Inject constructor(
     // Model
     fun setModel(newValue: String) {
         viewModelScope.launch {
-            val provider = userPreferencesRepository.preferencesFlow.first().activeProvider ?: return@launch
+            val provider =
+                userPreferencesRepository.preferencesFlow.first().activeProvider ?: return@launch
             updateModelForProvider(provider, newValue)
         }
     }
@@ -137,11 +141,12 @@ class AppViewModel @Inject constructor(
 
     private suspend fun updateModelForProvider(provider: String, model: String) {
         val currentConfig = aiProviderConfigRepository.getConfig(provider) ?: ProviderConfig()
-        val models = if (currentConfig.models.isNotEmpty() && !currentConfig.models.contains(model)) {
-            currentConfig.models + model
-        } else {
-            currentConfig.models
-        }
+        val models =
+            if (currentConfig.models.isNotEmpty() && !currentConfig.models.contains(model)) {
+                currentConfig.models + model
+            } else {
+                currentConfig.models
+            }
         aiProviderConfigRepository.saveConfig(
             provider,
             currentConfig.copy(activeModel = model, models = models)
@@ -211,7 +216,8 @@ class AppViewModel @Inject constructor(
         viewModelScope.launch {
             userPreferencesRepository.setIsAppendMode(newValue)
             if (!newValue) {
-                val currentPrompt = userPreferencesRepository.preferencesFlow.first().customBasePrompt
+                val currentPrompt =
+                    userPreferencesRepository.preferencesFlow.first().customBasePrompt
                 if (currentPrompt.isEmpty()) {
                     userPreferencesRepository.setCustomBasePrompt(defaultSystemPromptPlaceholder)
                 }
@@ -248,7 +254,11 @@ class AppViewModel @Inject constructor(
         val trimmed = url.trim()
         return when {
             trimmed.isBlank() -> ""
-            trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true) -> trimmed
+            trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith(
+                "https://",
+                ignoreCase = true
+            ) -> trimmed
+
             else -> "https://$trimmed"
         }
     }

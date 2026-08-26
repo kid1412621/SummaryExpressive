@@ -92,7 +92,17 @@ class LLMHandler(
             articleToolRegistry + youtubeToolRegistry + bilibiliToolRegistry + fileToolRegistry
 
         val agentConfig =
-            createAgentConfig(provider, model, summaryLength, showLength, useContentLanguage, appLanguage, isAppendMode, customBasePrompt, additionalSystemPrompt)
+            createAgentConfig(
+                provider,
+                model,
+                summaryLength,
+                showLength,
+                useContentLanguage,
+                appLanguage,
+                isAppendMode,
+                customBasePrompt,
+                additionalSystemPrompt
+            )
 
         return AIAgent(
             promptExecutor = executor,
@@ -151,7 +161,15 @@ class LLMHandler(
 
         val lang = appLanguage.getDisplayLanguage(Locale.ENGLISH)
         return AIAgentConfig(
-            prompt = createSummarizationPrompt(summaryLength, showLength, useContentLanguage, lang, isAppendMode, customBasePrompt, additionalSystemPrompt),
+            prompt = createSummarizationPrompt(
+                summaryLength,
+                showLength,
+                useContentLanguage,
+                lang,
+                isAppendMode,
+                customBasePrompt,
+                additionalSystemPrompt
+            ),
             model = llmModel,
             maxAgentIterations = 10,
         )
@@ -159,7 +177,13 @@ class LLMHandler(
 
     private fun createOpenAIExecutor(apiKey: String, baseUrl: String?): PromptExecutor {
         val client = baseUrl?.takeIf { it.isNotBlank() }
-            ?.let { OpenAILLMClient(apiKey, settings = OpenAIClientSettings(baseUrl = it), httpClientFactory = koogHttpClientFactory) }
+            ?.let {
+                OpenAILLMClient(
+                    apiKey,
+                    settings = OpenAIClientSettings(baseUrl = it),
+                    httpClientFactory = koogHttpClientFactory
+                )
+            }
             ?: OpenAILLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
 
         return MultiLLMPromptExecutor(client)
@@ -167,7 +191,13 @@ class LLMHandler(
 
     private fun createGeminiExecutor(apiKey: String, baseUrl: String?): PromptExecutor {
         val client = baseUrl?.takeIf { it.isNotBlank() }
-            ?.let { GoogleLLMClient(apiKey, settings = GoogleClientSettings(baseUrl = it), httpClientFactory = geminiKoogHttpClientFactory) }
+            ?.let {
+                GoogleLLMClient(
+                    apiKey,
+                    settings = GoogleClientSettings(baseUrl = it),
+                    httpClientFactory = geminiKoogHttpClientFactory
+                )
+            }
             ?: GoogleLLMClient(apiKey, httpClientFactory = geminiKoogHttpClientFactory)
 
         return MultiLLMPromptExecutor(client)
@@ -175,7 +205,13 @@ class LLMHandler(
 
     private fun createClaudExecutor(apiKey: String, baseUrl: String?): PromptExecutor {
         val client = baseUrl?.takeIf { it.isNotBlank() }
-            ?.let { AnthropicLLMClient(apiKey, settings = AnthropicClientSettings(baseUrl = it), httpClientFactory = koogHttpClientFactory) }
+            ?.let {
+                AnthropicLLMClient(
+                    apiKey,
+                    settings = AnthropicClientSettings(baseUrl = it),
+                    httpClientFactory = koogHttpClientFactory
+                )
+            }
             ?: AnthropicLLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
 
         return MultiLLMPromptExecutor(client)
@@ -183,7 +219,13 @@ class LLMHandler(
 
     private fun createDeepSeekExecutor(apiKey: String, baseUrl: String?): PromptExecutor {
         val client = baseUrl?.takeIf { it.isNotBlank() }
-            ?.let { DeepSeekLLMClient(apiKey, settings = DeepSeekClientSettings(baseUrl = it), httpClientFactory = koogHttpClientFactory) }
+            ?.let {
+                DeepSeekLLMClient(
+                    apiKey,
+                    settings = DeepSeekClientSettings(baseUrl = it),
+                    httpClientFactory = koogHttpClientFactory
+                )
+            }
             ?: DeepSeekLLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
 
         return MultiLLMPromptExecutor(client)
@@ -191,7 +233,13 @@ class LLMHandler(
 
     private fun createMistralExecutor(apiKey: String, baseUrl: String?): PromptExecutor {
         val client = baseUrl?.takeIf { it.isNotBlank() }
-            ?.let { MistralAILLMClient(apiKey, settings = MistralAIClientSettings(baseUrl = it), httpClientFactory = koogHttpClientFactory) }
+            ?.let {
+                MistralAILLMClient(
+                    apiKey,
+                    settings = MistralAIClientSettings(baseUrl = it),
+                    httpClientFactory = koogHttpClientFactory
+                )
+            }
             ?: MistralAILLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
 
         return MultiLLMPromptExecutor(client)
@@ -211,7 +259,13 @@ class LLMHandler(
             baseUrl
         }
         val client = finalBaseUrl?.takeIf { it.isNotBlank() }
-            ?.let { DashscopeLLMClient(apiKey, settings = DashscopeClientSettings(baseUrl = it), httpClientFactory = koogHttpClientFactory) }
+            ?.let {
+                DashscopeLLMClient(
+                    apiKey,
+                    settings = DashscopeClientSettings(baseUrl = it),
+                    httpClientFactory = koogHttpClientFactory
+                )
+            }
             ?: DashscopeLLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
 
         return MultiLLMPromptExecutor(client)
@@ -227,7 +281,13 @@ class LLMHandler(
 
     private fun createOpenRouterExecutor(apiKey: String, baseUrl: String?): PromptExecutor {
         val client = baseUrl?.takeIf { it.isNotBlank() }
-            ?.let { OpenRouterLLMClient(apiKey, settings = OpenRouterClientSettings(baseUrl = it), httpClientFactory = koogHttpClientFactory) }
+            ?.let {
+                OpenRouterLLMClient(
+                    apiKey,
+                    settings = OpenRouterClientSettings(baseUrl = it),
+                    httpClientFactory = koogHttpClientFactory
+                )
+            }
             ?: OpenRouterLLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
 
         return MultiLLMPromptExecutor(client)
@@ -272,30 +332,38 @@ class LLMHandler(
                     nodeStart forwardTo nodeExtractArticle
                             onCondition { it is SummarySource.Article }
                             transformed { source ->
-                                val url = (source as SummarySource.Article).url
-                                sourceLink = url
-                                Article(url)
-                            }
+                        val url = (source as SummarySource.Article).url
+                        sourceLink = url
+                        Article(url)
+                    }
                 )
                 edge(
                     nodeStart forwardTo nodeExtractYoutube
-                            onCondition { it is SummarySource.Video && YouTubeTranscriptTool.isYouTubeLink((it).url) }
+                            onCondition {
+                        it is SummarySource.Video && YouTubeTranscriptTool.isYouTubeLink(
+                            (it).url
+                        )
+                    }
                             transformed { source ->
-                                val url = (source as SummarySource.Video).url
-                                isYoutube = true
-                                sourceLink = url
-                                YouTubeTranscript(url)
-                            }
+                        val url = (source as SummarySource.Video).url
+                        isYoutube = true
+                        sourceLink = url
+                        YouTubeTranscript(url)
+                    }
                 )
                 edge(
                     nodeStart forwardTo nodeExtractBiliBili
-                            onCondition { it is SummarySource.Video && BiliBiliSubtitleTool.isBiliBiliLink((it).url) }
+                            onCondition {
+                        it is SummarySource.Video && BiliBiliSubtitleTool.isBiliBiliLink(
+                            (it).url
+                        )
+                    }
                             transformed { source ->
-                                val url = (source as SummarySource.Video).url
-                                isBiliBili = true
-                                sourceLink = url
-                                BiliBiliVideo(url)
-                            }
+                        val url = (source as SummarySource.Video).url
+                        isBiliBili = true
+                        sourceLink = url
+                        BiliBiliVideo(url)
+                    }
                 )
                 edge(
                     nodeStart forwardTo nodeExtractFile
@@ -308,9 +376,21 @@ class LLMHandler(
                             transformed { (it as SummarySource.Text).content })
 
                 // Tool-based paths
-                edge(nodeExtractArticle forwardTo nodePreLLMRequest transformed { processToolResult(it) })
-                edge(nodeExtractYoutube forwardTo nodePreLLMRequest transformed { processToolResult(it) })
-                edge(nodeExtractBiliBili forwardTo nodePreLLMRequest transformed { processToolResult(it) })
+                edge(nodeExtractArticle forwardTo nodePreLLMRequest transformed {
+                    processToolResult(
+                        it
+                    )
+                })
+                edge(nodeExtractYoutube forwardTo nodePreLLMRequest transformed {
+                    processToolResult(
+                        it
+                    )
+                })
+                edge(nodeExtractBiliBili forwardTo nodePreLLMRequest transformed {
+                    processToolResult(
+                        it
+                    )
+                })
                 edge(nodeExtractFile forwardTo nodePreLLMRequest transformed { processToolResult(it) })
                 edge(nodePreLLMRequest forwardTo nodeFinish)
 

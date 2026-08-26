@@ -44,7 +44,8 @@ open class UserPreferencesRepository @Inject constructor(
     open suspend fun setIsOnboarded(value: Boolean) =
         updatePreferences { it.copy(isOnboarded = value) }
 
-    open suspend fun setShowLength(value: Boolean) = updatePreferences { it.copy(showLength = value) }
+    open suspend fun setShowLength(value: Boolean) =
+        updatePreferences { it.copy(showLength = value) }
 
     open suspend fun setSummaryLength(value: String) =
         updatePreferences { it.copy(summaryLength = value) }
