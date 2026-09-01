@@ -1,4 +1,4 @@
-package me.nanova.summaryexpressive.ui.page.settings
+package me.nanova.summaryexpressive.ui.page.settings.dialog
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable

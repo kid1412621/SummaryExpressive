@@ -71,6 +71,7 @@
     <string name="darkTheme">深色主题</string>
     <string name="deleted">总结已删除</string>
     <string name="search">搜索</string>
+    <string name="searchSettings">搜索设置</string>
     <string name="nothingFound">未找到任何内容</string>
     <string name="welcome">欢迎使用Summary Expressive！</string>
     <string name="welcomeDescription">总结网站、文章和YouTube视频</string>

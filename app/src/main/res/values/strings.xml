@@ -51,6 +51,7 @@
     <string name="darkTheme">Dark</string>
     <string name="deleted">Summary deleted</string>
     <string name="search">Search</string>
+    <string name="searchSettings">Search settings</string>
     <string name="nothingFound">Nothing found</string>
     <string name="welcome">Welcome to Summary Expressive!</string>
     <string name="welcomeDescription">Summarize websites, articles and YouTube-Videos</string>

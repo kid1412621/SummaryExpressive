@@ -1,4 +1,4 @@
-package me.nanova.summaryexpressive.ui.page.settings
+package me.nanova.summaryexpressive.ui.page.settings.dialog
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
