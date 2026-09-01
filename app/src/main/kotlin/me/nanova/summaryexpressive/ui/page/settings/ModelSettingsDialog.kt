@@ -232,7 +232,7 @@ fun ModelSettingsDialog(
                 onClick = {
                     onConfirm(modelsList, selectedModel)
                 },
-                enabled = isChanged && modelsList.isNotEmpty() && selectedModel.isNotBlank()
+                enabled = modelsList.isNotEmpty() && selectedModel.isNotBlank() && selectedModel in modelsList
             ) {
                 Text(stringResource(id = R.string.ok))
             }

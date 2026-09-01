@@ -93,8 +93,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import androidx.compose.animation.core.Animatable as CoreAnimatable
 
-private enum class DialogState {
-    NONE, THEME, AI_PROVIDER, MODEL
+private sealed interface DialogState {
+    data object None : DialogState
+    data object Theme : DialogState
+    data object Provider : DialogState
+    data class Model(val provider: AIProvider? = null) : DialogState
 }
 
 data class SettingsActions(
@@ -141,7 +144,7 @@ fun SettingsScreen(
         onSessDataClear = appViewModel::clearSessData
     )
 
-    var dialogState by remember { mutableStateOf(DialogState.NONE) }
+    var dialogState by remember { mutableStateOf<DialogState>(DialogState.None) }
     var showBiliBiliLoginSheet by remember { mutableStateOf(value = false) }
     var showClearSessDataDialog by remember { mutableStateOf(value = false) }
 
@@ -191,42 +194,45 @@ fun SettingsScreen(
         }
     }
 
-    when (dialogState) {
-        DialogState.NONE -> {}
-        DialogState.THEME -> {
+    when (val currentDialogState = dialogState) {
+        DialogState.None -> {}
+        DialogState.Theme -> {
             ThemeSettingsDialog(
-                onDismissRequest = { dialogState = DialogState.NONE },
+                onDismissRequest = { dialogState = DialogState.None },
                 currentTheme = state.theme,
                 onThemeChange = actions.onThemeChange,
             )
         }
 
-        DialogState.AI_PROVIDER -> {
+        DialogState.Provider -> {
             AIProviderSettingsDialog(
                 initialProvider = state.activeProvider ?: AIProvider.OPENAI,
                 providerConfigs = state.providerConfigs,
                 providerOrder = state.providerOrder,
-                onDismissRequest = { dialogState = DialogState.NONE },
+                onDismissRequest = { dialogState = DialogState.None },
                 onConfirm = { provider, baseUrl, apiKey, order ->
                     actions.onProviderConfigChange(provider.name, baseUrl, apiKey, order)
                 },
                 onNext = { provider, baseUrl, apiKey, order ->
                     actions.onProviderConfigChange(provider.name, baseUrl, apiKey, order)
-                    dialogState = DialogState.MODEL
+                    dialogState = DialogState.Model(provider)
                 }
             )
         }
 
-        DialogState.MODEL -> {
-            val currentProvider = state.activeProvider ?: AIProvider.OPENAI
+        is DialogState.Model -> {
+            val targetProvider =
+                currentDialogState.provider ?: state.activeProvider ?: AIProvider.OPENAI
+            val targetModelId = state.providerConfigs[targetProvider.name]?.activeModel
+                ?: if (targetProvider == state.activeProvider) state.activeModel else null
             ModelSettingsDialog(
-                onDismissRequest = { dialogState = DialogState.NONE },
-                provider = currentProvider,
-                initialModelId = state.activeModel,
+                onDismissRequest = { dialogState = DialogState.None },
+                provider = targetProvider,
+                initialModelId = targetModelId,
                 providerConfigs = state.providerConfigs,
                 onConfirm = { models, selectedModel ->
-                    actions.onSaveProviderModels(currentProvider.name, models, selectedModel)
-                    dialogState = DialogState.NONE
+                    actions.onSaveProviderModels(targetProvider.name, models, selectedModel)
+                    dialogState = DialogState.None
                 },
             )
         }
@@ -263,9 +269,9 @@ fun SettingsScreen(
             state,
             actions,
             onNav = { onNav(it) },
-            onShowThemeDialog = { dialogState = DialogState.THEME },
-            onShowAIProviderDialog = { dialogState = DialogState.AI_PROVIDER },
-            onShowModelDialog = { dialogState = DialogState.MODEL },
+            onShowThemeDialog = { dialogState = DialogState.Theme },
+            onShowAIProviderDialog = { dialogState = DialogState.Provider },
+            onShowModelDialog = { dialogState = DialogState.Model() },
             onShowBiliBiliLoginSheet = { showBiliBiliLoginSheet = true },
             onShowClearSessDataDialog = { showClearSessDataDialog = true },
             highlightSection = highlightSection

@@ -14,6 +14,13 @@ import ai.koog.prompt.llm.LLModel
 import me.nanova.summaryexpressive.R
 import me.nanova.summaryexpressive.model.ProviderConfig
 
+private val openAICompatibleCapabilities = listOf(
+    LLMCapability.Completion,
+    LLMCapability.Schema.JSON.Basic,
+    LLMCapability.Schema.JSON.Standard,
+    LLMCapability.OpenAIEndpoint.Completions,
+)
+
 enum class AIProvider(
     val id: LLMProvider,
     val isMandatoryBaseUrl: Boolean,
@@ -68,7 +75,7 @@ enum class AIProvider(
             .sortedBy { it.id }
     ),
     MISTRAL(
-        LLMProvider.MistralAI,
+        LLMProvider(LLMProvider.MistralAI.id, "Mistral"),
         false,
         true,
         R.drawable.mistral,
@@ -112,6 +119,165 @@ enum class AIProvider(
         false,
         OpenRouterModels.models.filter { it.supports(LLMCapability.Completion) }
             .sortedBy { it.id }
+    ),
+    KIMI(
+        LLMProvider("moonshot", "Moonshot"),
+        false,
+        true,
+        R.drawable.kimi,
+        false,
+        listOf(
+            LLModel(
+                provider = LLMProvider("moonshot", "Moonshot"),
+                id = "kimi-k3",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 1_000_000,
+            ),
+            LLModel(
+                provider = LLMProvider("moonshot", "Moonshot"),
+                id = "kimi-k2.7-code",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 256_000,
+            ),
+            LLModel(
+                provider = LLMProvider("moonshot", "Moonshot"),
+                id = "kimi-k2.7-code-highspeed",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 256_000,
+            ),
+            LLModel(
+                provider = LLMProvider("moonshot", "Moonshot"),
+                id = "kimi-k2.6",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 256_000,
+            ),
+        )
+    ),
+    MINIMAX(
+        LLMProvider("minimax", "MiniMax"),
+        false,
+        true,
+        R.drawable.minimax,
+        false,
+        listOf(
+            LLModel(
+                provider = LLMProvider("minimax", "MiniMax"),
+                id = "MiniMax-M3",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 1_000_000,
+            ),
+            LLModel(
+                provider = LLMProvider("minimax", "MiniMax"),
+                id = "MiniMax-M2.7",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 204_800,
+            ),
+            LLModel(
+                provider = LLMProvider("minimax", "MiniMax"),
+                id = "MiniMax-M2.7-highspeed",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 204_800,
+            ),
+        )
+    ),
+    ZHIPU(
+        LLMProvider("zhipu", "Zhipu"),
+        false,
+        true,
+        R.drawable.zhipu,
+        false,
+        listOf(
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-5.3",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 1_000_000,
+            ),
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-5.3-flash",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 1_000_000,
+            ),
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-5.2",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 1_000_000,
+            ),
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-5.1",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 200_000,
+            ),
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-5",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 200_000,
+            ),
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-4.7",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 200_000,
+            ),
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-4.7-flash",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 200_000,
+            ),
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-4.7-flashx",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 200_000,
+            ),
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-4.6",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 200_000,
+            ),
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-4.5",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 128_000,
+            ),
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-4.5-air",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 128_000,
+            ),
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-4.5-flash",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 128_000,
+            ),
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-4.6v",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 128_000,
+            ),
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-4.6v-flash",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 128_000,
+            ),
+            LLModel(
+                provider = LLMProvider("zhipu", "Zhipu"),
+                id = "glm-4.5v",
+                capabilities = openAICompatibleCapabilities,
+                contextLength = 64_000,
+            ),
+        )
     );
 
     val defaultModelIds: List<String>

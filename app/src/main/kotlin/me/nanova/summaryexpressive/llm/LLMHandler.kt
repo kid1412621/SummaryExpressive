@@ -132,6 +132,9 @@ class LLMHandler(
             AIProvider.QWEN -> createQwenExecutor(apiKey, baseUrl, appLanguage)
             AIProvider.OLLAMA -> createOllamaExecutor(baseUrl)
             AIProvider.OPEN_ROUTER -> createOpenRouterExecutor(apiKey, baseUrl)
+            AIProvider.KIMI -> createKimiExecutor(apiKey, baseUrl, appLanguage)
+            AIProvider.MINIMAX -> createMiniMaxExecutor(apiKey, baseUrl, appLanguage)
+            AIProvider.ZHIPU -> createZhipuExecutor(apiKey, baseUrl, appLanguage)
         }
     }
 
@@ -157,6 +160,9 @@ class LLMHandler(
             AIProvider.QWEN -> DashscopeModels.QWEN_FLASH
             AIProvider.OLLAMA -> OllamaModels.Alibaba.QWQ
             AIProvider.OPEN_ROUTER -> OpenRouterModels.Claude3Sonnet
+            AIProvider.KIMI -> AIProvider.KIMI.models.first()
+            AIProvider.MINIMAX -> AIProvider.MINIMAX.models.first()
+            AIProvider.ZHIPU -> AIProvider.ZHIPU.models.first()
         }
 
         val lang = appLanguage.getDisplayLanguage(Locale.ENGLISH)
@@ -291,6 +297,66 @@ class LLMHandler(
             ?: OpenRouterLLMClient(apiKey, httpClientFactory = koogHttpClientFactory)
 
         return MultiLLMPromptExecutor(client)
+    }
+
+    private fun createKimiExecutor(
+        apiKey: String,
+        baseUrl: String?,
+        appLanguage: Locale,
+    ): PromptExecutor {
+        val isSimplifiedChinese = appLanguage.language == "zh" && appLanguage.script == "Hans"
+        val defaultBaseUrl = if (isSimplifiedChinese) "https://api.moonshot.cn/v1" else "https://api.moonshot.ai/v1"
+        val finalBaseUrl = (baseUrl?.takeIf { it.isNotBlank() } ?: defaultBaseUrl).trimEnd('/')
+
+        val client = OpenAILLMClient(
+            apiKey,
+            settings = OpenAIClientSettings(
+                baseUrl = finalBaseUrl,
+                chatCompletionsPath = "chat/completions",
+            ),
+            httpClientFactory = koogHttpClientFactory
+        )
+        return MultiLLMPromptExecutor(AIProvider.KIMI.id to client)
+    }
+
+    private fun createMiniMaxExecutor(
+        apiKey: String,
+        baseUrl: String?,
+        appLanguage: Locale,
+    ): PromptExecutor {
+        val isSimplifiedChinese = appLanguage.language == "zh" && appLanguage.script == "Hans"
+        val defaultBaseUrl = if (isSimplifiedChinese) "https://api.minimaxi.com/v1" else "https://api.minimax.io/v1"
+        val finalBaseUrl = (baseUrl?.takeIf { it.isNotBlank() } ?: defaultBaseUrl).trimEnd('/')
+
+        val client = OpenAILLMClient(
+            apiKey,
+            settings = OpenAIClientSettings(
+                baseUrl = finalBaseUrl,
+                chatCompletionsPath = "chat/completions",
+            ),
+            httpClientFactory = koogHttpClientFactory
+        )
+        return MultiLLMPromptExecutor(AIProvider.MINIMAX.id to client)
+    }
+
+    private fun createZhipuExecutor(
+        apiKey: String,
+        baseUrl: String?,
+        appLanguage: Locale,
+    ): PromptExecutor {
+        val isSimplifiedChinese = appLanguage.language == "zh" && appLanguage.script == "Hans"
+        val defaultBaseUrl = if (isSimplifiedChinese) "https://open.bigmodel.cn/api/paas/v4" else "https://api.z.ai/api/paas/v4"
+        val finalBaseUrl = (baseUrl?.takeIf { it.isNotBlank() } ?: defaultBaseUrl).trimEnd('/')
+
+        val client = OpenAILLMClient(
+            apiKey,
+            settings = OpenAIClientSettings(
+                baseUrl = finalBaseUrl,
+                chatCompletionsPath = "chat/completions",
+            ),
+            httpClientFactory = koogHttpClientFactory
+        )
+        return MultiLLMPromptExecutor(AIProvider.ZHIPU.id to client)
     }
 
     private fun createSummarizationStrategy(

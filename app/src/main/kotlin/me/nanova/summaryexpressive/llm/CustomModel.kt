@@ -17,8 +17,10 @@ data class CustomLLModel(
             LLMCapability.Completion,
             LLMCapability.Schema.JSON.Basic,
             LLMCapability.Schema.JSON.Standard,
+            if (provider == AIProvider.OPENAI || provider == AIProvider.KIMI || provider == AIProvider.MINIMAX || provider == AIProvider.ZHIPU) {
+                LLMCapability.OpenAIEndpoint.Completions
+            } else null,
             if (provider == AIProvider.OPENAI) LLMCapability.OpenAIEndpoint.Responses else null,
-            if (provider == AIProvider.OPENAI) LLMCapability.OpenAIEndpoint.Completions else null,
         ),
     )
 }

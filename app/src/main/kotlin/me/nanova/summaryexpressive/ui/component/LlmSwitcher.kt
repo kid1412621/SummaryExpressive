@@ -87,7 +87,7 @@ private fun ModelLabel(
     fontSize: TextUnit = 8.sp,
 ) {
     val shortName = model.replaceFirst(
-        Regex("^(gpt|gemini|claude|deepseek|mistral)-", RegexOption.IGNORE_CASE),
+        Regex("^(gpt|gemini|claude|deepseek|mistral|kimi|minimax|glm)-", RegexOption.IGNORE_CASE),
         ""
     )
 
