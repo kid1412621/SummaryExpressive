@@ -151,10 +151,11 @@ Hilt module providing:
   - `FileExtractorTool.kt`: Document parsing
 
 #### ViewModels (`vm/`)
-- **`AppViewModel`**: App-level state, onboarding, settings, deep links
-- **`SummaryViewModel`**: Main summarization logic, content processing
-- **`HistoryViewModel`**: History browsing, searching, deletion
-- **`UiState.kt`**: State classes for UI rendering
+- **`AppViewModel`**: App-level lifecycle, onboarding destination, deep links, intent routing
+- **`SettingsViewModel`**: App configuration, AI provider credentials, model management, prompts, appearance
+- **`SummaryViewModel`**: Main summarization logic, content processing, multi-length result caching
+- **`HistoryViewModel`**: History browsing, debounced searching, filtering, deletion
+- **`UiState.kt`**: State classes for UI rendering (`SettingsUiState`, `SummarizationState`, `AppStartAction`)
 
 #### UI Layer (`ui/`)
 - **`AppNavigation.kt`**: Navigation graph setup

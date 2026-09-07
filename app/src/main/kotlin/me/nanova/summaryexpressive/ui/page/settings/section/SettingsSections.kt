@@ -181,16 +181,16 @@ fun ServicesSettingsGroup(
     actions: SettingsActions,
     highlighted: Boolean,
     onShowBiliBiliLoginSheet: () -> Unit,
-    onShowClearSessDataDialog: () -> Unit,
+    onShowClearBilibiliSessDataDialog: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val sessDataValid =
-        (state.sessData.isNotBlank() && state.sessDataExpires > System.currentTimeMillis())
-    val bilibiliSubtitle = if (sessDataValid) {
+    val bilibiliSessDataValid =
+        (state.bilibiliSessData.isNotBlank() && state.bilibiliSessDataExpires > System.currentTimeMillis())
+    val bilibiliSubtitle = if (bilibiliSessDataValid) {
         val expiryDate = SimpleDateFormat(
             "yyyy-MM-dd",
             LocalLocale.current.platformLocale
-        ).format(Date(state.sessDataExpires))
+        ).format(Date(state.bilibiliSessDataExpires))
         "Logged in, expires on $expiryDate. Long press to clear."
     } else {
         "BiliBili required login to get transcripts which used for video summary"
@@ -211,13 +211,13 @@ fun ServicesSettingsGroup(
             },
             enabled = true,
             onClick = {
-                if (!sessDataValid) {
+                if (!bilibiliSessDataValid) {
                     onShowBiliBiliLoginSheet()
                 }
             },
             onLongClick = {
-                if (sessDataValid) {
-                    onShowClearSessDataDialog()
+                if (bilibiliSessDataValid) {
+                    onShowClearBilibiliSessDataDialog()
                 }
             }
         )

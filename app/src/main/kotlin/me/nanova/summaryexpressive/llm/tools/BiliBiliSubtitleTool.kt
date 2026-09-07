@@ -106,7 +106,7 @@ class BiliBiliSubtitleTool(
             val bvid = extractBvid(args.url)
                 ?: throw SummaryException.InvalidLinkException()
 
-            val sessData = userPreferencesRepository.preferencesFlow.first().sessData
+            val sessData = userPreferencesRepository.preferencesFlow.first().bilibiliSessData
             if (sessData.isBlank()) {
                 throw SummaryException.BiliBiliLoginRequiredException()
             }

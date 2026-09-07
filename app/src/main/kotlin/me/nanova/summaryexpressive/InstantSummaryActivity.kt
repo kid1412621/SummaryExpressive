@@ -53,12 +53,12 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme
-import me.nanova.summaryexpressive.vm.AppViewModel
+import me.nanova.summaryexpressive.vm.SettingsViewModel
 import me.nanova.summaryexpressive.vm.SummaryViewModel
 
 @AndroidEntryPoint
 class InstantSummaryActivity : ComponentActivity() {
-    private val appViewModel: AppViewModel by viewModels()
+    private val settingsViewModel: SettingsViewModel by viewModels()
     private val summaryViewModel: SummaryViewModel by viewModels()
     private val textToSummarizeStateFlow = MutableStateFlow<String?>(null)
 
@@ -69,7 +69,7 @@ class InstantSummaryActivity : ComponentActivity() {
         handleIntent(intent)
 
         setContent {
-            val settings by appViewModel.settingsUiState.collectAsState()
+            val settings by settingsViewModel.settingsUiState.collectAsState()
             val textToSummarize by textToSummarizeStateFlow.collectAsState()
 
 

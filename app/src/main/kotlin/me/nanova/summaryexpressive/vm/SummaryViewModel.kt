@@ -37,8 +37,34 @@ class SummaryViewModel @Inject constructor(
     private val _summarizationState = MutableStateFlow(SummarizationState())
     val summarizationState: StateFlow<SummarizationState> = _summarizationState.asStateFlow()
 
+    private var currentInput: String? = null
+
     fun clearCurrentSummary() {
-        _summarizationState.update { it.copy(summaryResult = null, error = null) }
+        currentInput = null
+        _summarizationState.update {
+            it.copy(
+                summaryResult = null,
+                error = null,
+                lengthResults = emptyMap()
+            )
+        }
+    }
+
+    fun switchLength(length: SummaryLength) {
+        if (_summarizationState.value.isLoading) return
+        val currentResults = _summarizationState.value.lengthResults.ifEmpty {
+            val current = _summarizationState.value.summaryResult
+            if (current?.length != null) mapOf(current.length to current) else emptyMap()
+        }
+        if (currentResults.isEmpty()) return
+        val cachedResult = currentResults[length]
+        _summarizationState.update {
+            it.copy(
+                summaryResult = cachedResult,
+                lengthResults = if (it.lengthResults.isEmpty() && currentResults.isNotEmpty()) currentResults else it.lengthResults,
+                error = null
+            )
+        }
     }
 
     private fun extractHttpUrl(text: String): String {
@@ -56,6 +82,25 @@ class SummaryViewModel @Inject constructor(
 
     fun summarize(text: String, settings: SettingsUiState) {
         viewModelScope.launch {
+            if (currentInput != text) {
+                currentInput = text
+                _summarizationState.update {
+                    it.copy(
+                        isLoading = true,
+                        summaryResult = null,
+                        error = null,
+                        lengthResults = emptyMap()
+                    )
+                }
+            } else {
+                _summarizationState.update {
+                    it.copy(
+                        isLoading = true,
+                        error = null
+                    )
+                }
+            }
+
             val source = if (isFileUri(text)) {
                 val uri = text.toUri()
                 val filename = getFileName(application, uri)
@@ -81,7 +126,6 @@ class SummaryViewModel @Inject constructor(
     }
 
     private suspend fun summarizeInternal(source: SummarySource, settings: SettingsUiState) {
-        _summarizationState.value = SummarizationState(isLoading = true)
         try {
             val currentApiKey = settings.apiKey
             if (currentApiKey.isNullOrEmpty()) {
@@ -115,7 +159,14 @@ class SummaryViewModel @Inject constructor(
                 agent.run(source)
             }
 
-            _summarizationState.update { it.copy(summaryResult = summaryOutput) }
+            _summarizationState.update {
+                val updatedLengthResults =
+                    it.lengthResults + (settings.summaryLength to summaryOutput)
+                it.copy(
+                    summaryResult = summaryOutput,
+                    lengthResults = updatedLengthResults
+                )
+            }
             saveSummaryToHistory(
                 summaryOutput,
                 settings.summaryLength,

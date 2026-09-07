@@ -51,17 +51,17 @@ import androidx.compose.ui.unit.dp
 import me.nanova.summaryexpressive.R
 import me.nanova.summaryexpressive.llm.defaultSystemPromptPlaceholder
 import me.nanova.summaryexpressive.llm.generateFinalPromptString
-import me.nanova.summaryexpressive.vm.AppViewModel
+import me.nanova.summaryexpressive.vm.SettingsViewModel
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdvancedSummarySetupScreen(
     onBack: () -> Unit,
-    appViewModel: AppViewModel,
+    settingsViewModel: SettingsViewModel,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-    val state by appViewModel.settingsUiState.collectAsState()
+    val state by settingsViewModel.settingsUiState.collectAsState()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -107,7 +107,7 @@ fun AdvancedSummarySetupScreen(
                 )
                 OutlinedTextField(
                     value = if (state.isAppendMode) defaultSystemPromptPlaceholder else state.customBasePrompt,
-                    onValueChange = { appViewModel.setCustomBasePrompt(it) },
+                    onValueChange = { settingsViewModel.setCustomBasePrompt(it) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 120.dp, max = 240.dp),
@@ -122,14 +122,14 @@ fun AdvancedSummarySetupScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                     ) {
                         FilledTonalButton(
-                            onClick = { appViewModel.setCustomBasePrompt("") },
+                            onClick = { settingsViewModel.setCustomBasePrompt("") },
                             enabled = state.customBasePrompt.isNotEmpty()
                         ) {
                             Text("Clear")
                         }
                         FilledTonalButton(
                             onClick = {
-                                appViewModel.setCustomBasePrompt(
+                                settingsViewModel.setCustomBasePrompt(
                                     defaultSystemPromptPlaceholder
                                 )
                             },
@@ -161,7 +161,7 @@ fun AdvancedSummarySetupScreen(
                     trailingContent = {
                         Switch(
                             checked = state.isAppendMode,
-                            onCheckedChange = { appViewModel.setIsAppendMode(it) }
+                            onCheckedChange = { settingsViewModel.setIsAppendMode(it) }
                         )
                     }
                 ) { Text(stringResource(id = R.string.appendCustomPrompt)) }
@@ -169,7 +169,7 @@ fun AdvancedSummarySetupScreen(
                 AnimatedVisibility(visible = state.isAppendMode) {
                     OutlinedTextField(
                         value = state.additionalSystemPrompt,
-                        onValueChange = { appViewModel.setAdditionalSystemPrompt(it) },
+                        onValueChange = { settingsViewModel.setAdditionalSystemPrompt(it) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 80.dp, max = 160.dp),
@@ -195,7 +195,7 @@ fun AdvancedSummarySetupScreen(
                     trailingContent = {
                         Switch(
                             checked = state.useOriginalLanguage,
-                            onCheckedChange = { appViewModel.setUseOriginalLanguageValue(it) }
+                            onCheckedChange = { settingsViewModel.setUseOriginalLanguageValue(it) }
                         )
                     },
                     supportingContent = { Text(stringResource(id = R.string.useOriginalLanguageDescription)) },
@@ -216,7 +216,7 @@ fun AdvancedSummarySetupScreen(
                     trailingContent = {
                         Switch(
                             checked = state.showLength,
-                            onCheckedChange = { appViewModel.setShowLengthValue(it) }
+                            onCheckedChange = { settingsViewModel.setShowLengthValue(it) }
                         )
                     }
                 ) { Text(stringResource(id = R.string.useLengthOptions)) }

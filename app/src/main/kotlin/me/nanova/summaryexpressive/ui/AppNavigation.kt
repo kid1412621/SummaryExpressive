@@ -20,6 +20,7 @@ import me.nanova.summaryexpressive.ui.page.home.HomeScreen
 import me.nanova.summaryexpressive.ui.page.settings.AdvancedSummarySetupScreen
 import me.nanova.summaryexpressive.ui.page.settings.SettingsScreen
 import me.nanova.summaryexpressive.vm.AppViewModel
+import me.nanova.summaryexpressive.vm.SettingsViewModel
 
 private val EmphasizedDecelerateEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
 private val EmphasizedAccelerateEasing = CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)
@@ -29,6 +30,7 @@ private val EmphasizedEasing = CubicBezierEasing(0.2f, 0.0f, 0.0f, 1.0f)
 fun AppNavigation(
     backStack: NavBackStack<NavKey>,
     appViewModel: AppViewModel,
+    settingsViewModel: SettingsViewModel,
     modifier: Modifier = Modifier,
 ) {
     val handleOnboardingDone: (Nav?) -> Unit = remember(backStack, appViewModel) {
@@ -55,7 +57,8 @@ fun AppNavigation(
                 HomeScreen(
                     modifier = Modifier,
                     onNav = { route -> backStack.add(route) },
-                    appViewModel = appViewModel
+                    appViewModel = appViewModel,
+                    settingsViewModel = settingsViewModel
                 )
             }
 
@@ -75,7 +78,7 @@ fun AppNavigation(
                     onBack = { backStack.removeLastOrNull() },
                     onNav = { route -> backStack.add(route) },
                     highlightSection = key.highlight,
-                    appViewModel = appViewModel
+                    settingsViewModel = settingsViewModel
                 )
             }
 
@@ -88,7 +91,7 @@ fun AppNavigation(
             entry<Nav.AdvancedSummarySetup> {
                 AdvancedSummarySetupScreen(
                     onBack = { backStack.removeLastOrNull() },
-                    appViewModel = appViewModel
+                    settingsViewModel = settingsViewModel
                 )
             }
         },

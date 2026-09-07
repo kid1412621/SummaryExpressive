@@ -19,10 +19,12 @@ import me.nanova.summaryexpressive.ui.AppNavigation
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme
 import me.nanova.summaryexpressive.vm.AppStartAction
 import me.nanova.summaryexpressive.vm.AppViewModel
+import me.nanova.summaryexpressive.vm.SettingsViewModel
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val viewModel: AppViewModel by viewModels()
+    private val appViewModel: AppViewModel by viewModels()
+    private val settingsViewModel: SettingsViewModel by viewModels()
 
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,8 +36,8 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
 
         setContent {
-            val settingsState by viewModel.settingsUiState.collectAsState()
-            val startDestination by viewModel.startDestination.collectAsState()
+            val settingsState by settingsViewModel.settingsUiState.collectAsState()
+            val startDestination by appViewModel.startDestination.collectAsState()
 
             SummaryExpressiveTheme(
                 darkTheme = when (settingsState.theme) {
@@ -51,7 +53,8 @@ class MainActivity : ComponentActivity() {
                 val backStack = rememberNavBackStack(startDestination!!)
                 AppNavigation(
                     backStack = backStack,
-                    appViewModel = viewModel
+                    appViewModel = appViewModel,
+                    settingsViewModel = settingsViewModel
                 )
             }
         }
@@ -70,10 +73,10 @@ class MainActivity : ComponentActivity() {
                 if (type.startsWith("application/") || type.startsWith("image/")) {
                     val contentUri: Uri? =
                         intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-                    contentUri?.let { viewModel.onEvent(AppStartAction(it.toString())) }
+                    contentUri?.let { appViewModel.onEvent(AppStartAction(it.toString())) }
                 } else if (type == "text/plain") {
                     val content = intent.getStringExtra(Intent.EXTRA_TEXT)
-                    viewModel.onEvent(AppStartAction(content))
+                    appViewModel.onEvent(AppStartAction(content))
                 }
             }
 
@@ -85,7 +88,7 @@ class MainActivity : ComponentActivity() {
                 window.decorView.post {
                     val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                     clipboard.primaryClip?.getItemAt(0)?.text?.let {
-                        viewModel.onEvent(
+                        appViewModel.onEvent(
                             AppStartAction(
                                 content = it.toString(),
                                 autoTrigger = true

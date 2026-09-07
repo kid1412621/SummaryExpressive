@@ -19,8 +19,8 @@ data class SettingsUiState(
     val autoExtractUrl: Boolean = true,
     val showLength: Boolean = true,
     val summaryLength: SummaryLength = SummaryLength.MEDIUM,
-    val sessData: String = "",
-    val sessDataExpires: Long = 0L,
+    val bilibiliSessData: String = "",
+    val bilibiliSessDataExpires: Long = 0L,
     val isAppendMode: Boolean = true,
     val customBasePrompt: String = "",
     val additionalSystemPrompt: String = "",
@@ -31,4 +31,5 @@ data class SummarizationState(
     val isLoading: Boolean = false,
     val summaryResult: SummaryOutput? = null,
     val error: Throwable? = null,
+    val lengthResults: Map<SummaryLength, SummaryOutput> = emptyMap(),
 )

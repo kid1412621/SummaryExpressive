@@ -54,11 +54,11 @@ open class UserPreferencesRepository @Inject constructor(
     open suspend fun setAutoExtractUrl(value: Boolean) =
         updatePreferences { it.copy(autoExtractUrl = value) }
 
-    open suspend fun setSessData(data: String, expires: Long) =
-        updatePreferences { it.copy(sessData = data, sessDataExpires = expires) }
+    open suspend fun setBilibiliSessData(data: String, expires: Long) =
+        updatePreferences { it.copy(bilibiliSessData = data, bilibiliSessDataExpires = expires) }
 
-    open suspend fun clearSessData() =
-        updatePreferences { it.copy(sessData = "", sessDataExpires = 0L) }
+    open suspend fun clearBilibiliSessData() =
+        updatePreferences { it.copy(bilibiliSessData = "", bilibiliSessDataExpires = 0L) }
 
     open suspend fun setIsAppendMode(value: Boolean) =
         updatePreferences { it.copy(isAppendMode = value) }

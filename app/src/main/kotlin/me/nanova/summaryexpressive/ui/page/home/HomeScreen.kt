@@ -24,12 +24,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearWavyProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
@@ -45,7 +42,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
@@ -64,10 +64,16 @@ import me.nanova.summaryexpressive.llm.tools.getFileName
 import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryOutput
 import me.nanova.summaryexpressive.ui.Nav
-import me.nanova.summaryexpressive.ui.component.SummaryCard
+import me.nanova.summaryexpressive.ui.page.home.action.HomeFloatingActionButtons
+import me.nanova.summaryexpressive.ui.page.home.appbar.HomeTopAppBar
+import me.nanova.summaryexpressive.ui.page.home.input.InputSection
+import me.nanova.summaryexpressive.ui.page.home.input.LengthSelector
+import me.nanova.summaryexpressive.ui.page.home.result.SummaryResultSection
+import me.nanova.summaryexpressive.ui.page.home.sheet.ProviderModelBottomSheet
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme
 import me.nanova.summaryexpressive.vm.AppViewModel
 import me.nanova.summaryexpressive.vm.SettingsUiState
+import me.nanova.summaryexpressive.vm.SettingsViewModel
 import me.nanova.summaryexpressive.vm.SummarizationState
 import me.nanova.summaryexpressive.vm.SummaryViewModel
 
@@ -106,6 +112,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     onNav: (dest: Nav) -> Unit = {},
     appViewModel: AppViewModel,
+    settingsViewModel: SettingsViewModel,
     summaryViewModel: SummaryViewModel = hiltViewModel<SummaryViewModel>(),
 ) {
     val context = LocalContext.current
@@ -120,14 +127,16 @@ fun HomeScreen(
     var isPlaying by remember { mutableStateOf(false) }
     var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
     var showProviderModelSheet by rememberSaveable { mutableStateOf(false) }
+    var isScrollingDown by rememberSaveable { mutableStateOf(false) }
 
-    val settings by appViewModel.settingsUiState.collectAsState()
+    val settings by settingsViewModel.settingsUiState.collectAsState()
     val summarizationState by summaryViewModel.summarizationState.collectAsState()
     val appStartAction by appViewModel.appStartAction.collectAsState()
 
     fun summarize() {
         focusManager.clearFocus()
-        summaryViewModel.summarize(urlOrText, settings)
+        isScrollingDown = false
+        summaryViewModel.summarize(urlOrText, settingsViewModel.settingsUiState.value)
     }
 
     fun clearInput() {
@@ -135,6 +144,7 @@ fun HomeScreen(
         summaryViewModel.clearCurrentSummary()
         focusRequester.requestFocus()
         documentFilename = null
+        isScrollingDown = false
     }
 
     val filePickerLauncher =
@@ -196,11 +206,37 @@ fun HomeScreen(
         }
     }
 
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    LaunchedEffect(settings.summaryLength) {
+        summaryViewModel.switchLength(settings.summaryLength)
+    }
+
+    val scrollBehavior =
+        TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val snackBarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
-    val fabVisible by remember { derivedStateOf { !listState.canScrollBackward } }
 
+    val fabNestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < -5f) {
+                    isScrollingDown = true
+                } else if (available.y > 5f) {
+                    isScrollingDown = false
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
+    val fabVisible by remember {
+        derivedStateOf {
+            !isScrollingDown || !listState.canScrollBackward
+        }
+    }
+
+    val hasInput = remember(urlOrText, documentFilename) {
+        documentFilename != null || urlOrText.isNotBlank()
+    }
     val hasResult = summarizationState.summaryResult?.summary?.isNotEmpty() == true
     val isDirty =
         settings.showLength && (summarizationState.summaryResult?.let { it.length != settings.summaryLength }
@@ -213,7 +249,10 @@ fun HomeScreen(
         },
         onClearInput = { clearInput() },
         onUrlChange = { urlOrText = it },
-        onLengthSelect = { appViewModel.setSummaryLength(it) },
+        onLengthSelect = { length ->
+            settingsViewModel.setSummaryLength(length)
+            summaryViewModel.switchLength(length)
+        },
         onPasteFromClipboard = {
             clearInput()
             scope.launch {
@@ -251,8 +290,8 @@ fun HomeScreen(
                 cameraLauncher.launch(it)
             }
         },
-        onSelectProvider = { appViewModel.setAIProviderValue(it.name) },
-        onSelectModel = { appViewModel.setModel(it) },
+        onSelectProvider = { settingsViewModel.setAIProviderValue(it.name) },
+        onSelectModel = { settingsViewModel.setModel(it) },
         onShowProviderModelSheet = { showProviderModelSheet = true },
         onDismissProviderModelSheet = { showProviderModelSheet = false },
     )
@@ -270,7 +309,8 @@ fun HomeScreen(
     Scaffold(
         modifier = modifier
             .fillMaxSize()
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .nestedScroll(fabNestedScrollConnection),
         contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             HomeTopAppBar(
@@ -284,6 +324,7 @@ fun HomeScreen(
         floatingActionButton = {
             HomeFloatingActionButtons(
                 fabVisible = fabVisible,
+                hasInput = hasInput,
                 onPaste = actions.onPasteFromClipboard,
                 onSummarize = actions.onSummarize,
                 isLoading = summarizationState.isLoading,
@@ -346,14 +387,9 @@ private fun HomeContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-
                     InputSection(
                         urlOrText = urlOrText,
                         onUrlChange = actions.onUrlChange,
@@ -375,28 +411,15 @@ private fun HomeContent(
                         )
                     }
 
-                    if (summarizationState.isLoading) {
-                        LinearWavyProgressIndicator(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 5.dp)
-                        )
-                    } else {
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
+                    SummaryResultSection(
+                        summarizationState = summarizationState,
+                        isPlaying = isPlaying,
+                        onCopySummary = actions.onCopySummary,
+                        onShowSnackBar = actions.onShowSnackBar,
+                        onPlaySummary = actions.onPlaySummary
+                    )
 
-                    summarizationState.summaryResult?.takeIf { it.summary.isNotEmpty() }
-                        ?.let { summaryOutput ->
-                            SummaryCard(
-                                modifier = Modifier.padding(vertical = 15.dp),
-                                isExpandedByDefault = true,
-                                summary = summaryOutput,
-                                onLongClick = { actions.onCopySummary(summaryOutput.summary) },
-                                onShowSnackbar = actions.onShowSnackBar,
-                                isPlaying = isPlaying,
-                                onPlayRequest = actions.onPlaySummary
-                            )
-                        }
+                    Spacer(modifier = Modifier.height(88.dp))
                 }
             }
         }

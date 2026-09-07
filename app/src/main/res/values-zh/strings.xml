@@ -97,4 +97,5 @@
     <string name="instant_summarize">即时总结</string>
     <string name="useAutoExtractLink">自动提取链接</string>
     <string name="undo">撤销</string>
+    <string name="selected_item">已选择</string>
 </resources>

@@ -1,4 +1,4 @@
-package me.nanova.summaryexpressive.ui.page.home
+package me.nanova.summaryexpressive.ui.page.home.sheet
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.outlined.Settings
@@ -83,7 +84,7 @@ fun ProviderModelBottomSheet(
         sheetState = sheetState,
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
     ) {
         ProviderModelSheetContent(
             settings = settings,
@@ -98,11 +99,11 @@ fun ProviderModelBottomSheet(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ProviderModelSheetContent(
-    modifier: Modifier = Modifier,
     settings: SettingsUiState,
     onProviderSelect: (AIProvider) -> Unit,
     onModelSelect: (String) -> Unit,
     onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
     onGoToSettings: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -200,7 +201,7 @@ fun ProviderModelSheetContent(
                             }
                         )
                     },
-                    shape = MaterialTheme.shapes.medium,
+                    shape = RoundedCornerShape(12.dp),
                     colors = FilterChipDefaults.filterChipColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer,
                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -238,14 +239,14 @@ fun ProviderModelSheetContent(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.large)
+                            .clip(RoundedCornerShape(16.dp))
                             .clickable {
                                 haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                                 onModelSelect(modelId)
                                 onDismiss()
                             }
                             .semantics { role = Role.RadioButton },
-                        shape = MaterialTheme.shapes.large,
+                        shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = if (isSelected) {
                                 MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
@@ -284,7 +285,7 @@ fun ProviderModelSheetContent(
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Check,
-                                    contentDescription = "Selected",
+                                    contentDescription = stringResource(id = R.string.selected_item),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -298,7 +299,7 @@ fun ProviderModelSheetContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
-                shape = MaterialTheme.shapes.large,
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
                 )
@@ -348,24 +349,6 @@ private fun ProviderModelSheetContentPreview() {
                 providerConfigs = mapOf(
                     AIProvider.OPENAI.name to ProviderConfig(apiKey = "mock_key")
                 )
-            ),
-            onProviderSelect = {},
-            onModelSelect = {},
-            onDismiss = {},
-            onGoToSettings = {}
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun ProviderModelSheetContentEmptyPreview() {
-    SummaryExpressiveTheme {
-        ProviderModelSheetContent(
-            settings = SettingsUiState(
-                activeProvider = AIProvider.OPENAI,
-                activeModel = "",
-                providerConfigs = emptyMap()
             ),
             onProviderSelect = {},
             onModelSelect = {},

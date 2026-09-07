@@ -1,4 +1,4 @@
-package me.nanova.summaryexpressive.ui.page.home
+package me.nanova.summaryexpressive.ui.page.home.input
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -11,17 +11,22 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,11 +38,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import me.nanova.summaryexpressive.R
 import me.nanova.summaryexpressive.exception.SummaryException
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme
 
@@ -61,34 +68,79 @@ fun InputSection(
     val isExpandable = !isDocument && (urlOrText.length >= 100 || urlOrText.contains('\n'))
     var isExpanded by rememberSaveable(isExpandable) { mutableStateOf(isExpandable) }
 
-    val hasText = remember(urlOrText) { urlOrText.isNotBlank() }
+    val hasText = remember(urlOrText, documentFilename) {
+        documentFilename != null || urlOrText.isNotBlank()
+    }
     val textToShow = documentFilename ?: urlOrText
+
+    val (badgeContainerColor, badgeContentColor) = HomeBadges.badgeColorsFor(
+        urlOrText = urlOrText,
+        documentFilename = documentFilename
+    )
 
     OutlinedTextField(
         value = textToShow,
         onValueChange = onUrlChange,
-        label = { Text("URL/Text") },
+        label = { Text(stringResource(id = R.string.url_or_text)) },
         enabled = !isLoading,
         readOnly = isDocument,
         isError = error != null,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { onSummarize() }),
+        leadingIcon = {
+            HomeIconBadge(
+                containerColor = badgeContainerColor,
+                contentColor = badgeContentColor,
+                modifier = Modifier.padding(start = 6.dp, end = 2.dp)
+            ) {
+                val lower = urlOrText.trim().lowercase()
+                when {
+                    isDocument -> Icon(
+                        imageVector = Icons.Rounded.Description,
+                        contentDescription = stringResource(id = R.string.document),
+                        modifier = Modifier.size(20.dp)
+                    )
+
+                    lower.contains("youtube.com") || lower.contains("youtu.be") -> Icon(
+                        painter = painterResource(id = R.drawable.youtube),
+                        contentDescription = "YouTube",
+                        modifier = Modifier.size(20.dp)
+                    )
+
+                    lower.contains("bilibili.com") || lower.contains("b23.tv") -> Icon(
+                        painter = painterResource(id = R.drawable.bilibili),
+                        contentDescription = "BiliBili",
+                        modifier = Modifier.size(20.dp)
+                    )
+
+                    isUrl -> Icon(
+                        imageVector = Icons.Rounded.Language,
+                        contentDescription = "Web Article",
+                        modifier = Modifier.size(20.dp)
+                    )
+
+                    else -> Icon(
+                        imageVector = Icons.Rounded.AutoAwesome,
+                        contentDescription = "Text",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        },
         supportingText = {
             if (error != null) {
                 ErrorMessage(error = error, apiKey = apiKey)
             } else if (hasText && !isDocument && !isUrl) {
-                Column {
-                    // Based on the rule of thumb that 100 tokens is about 75 words.
-                    // ref: https://platform.openai.com/tokenizer
-                    val wordCount = urlOrText.trim().split(Regex("\\s+")).size
-                    val tokenCount = (wordCount * 4) / 3
-                    Text(
-                        text = "Approximate tokens: $tokenCount",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.End,
-                        color = MaterialTheme.colorScheme.tertiaryFixedDim
-                    )
-                }
+                // Based on the rule of thumb that 100 tokens is about 75 words.
+                // ref: https://platform.openai.com/tokenizer
+                val wordCount = urlOrText.trim().split(Regex("\\s+")).size
+                val tokenCount = (wordCount * 4) / 3
+                Text(
+                    text = stringResource(id = R.string.approximate_tokens, tokenCount),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.End,
+                    color = MaterialTheme.colorScheme.tertiaryFixedDim
+                )
             }
         },
         trailingIcon = {
@@ -101,7 +153,7 @@ fun InputSection(
                     IconButton(onClick = onClear, enabled = !isLoading) {
                         Icon(
                             imageVector = Icons.Outlined.Cancel,
-                            contentDescription = "Clear",
+                            contentDescription = stringResource(id = R.string.clear),
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -118,8 +170,14 @@ fun InputSection(
                         enabled = !isLoading
                     ) {
                         Icon(
-                            imageVector = if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                            contentDescription = if (isExpanded) "Collapse" else "Expand",
+                            imageVector = if (isExpanded) {
+                                Icons.Rounded.KeyboardArrowUp
+                            } else {
+                                Icons.Rounded.KeyboardArrowDown
+                            },
+                            contentDescription = stringResource(
+                                if (isExpanded) R.string.collapse else R.string.expand
+                            ),
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -151,10 +209,14 @@ fun InputSection(
         },
         maxLines = if (isExpanded) 7 else 1,
         singleLine = !isExpanded,
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = RoundedCornerShape(24.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        ),
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 20.dp)
             .focusRequester(focusRequester)
             .animateContentSize()
     )
@@ -171,7 +233,6 @@ fun ErrorMessage(
             val resId = error.getUserMessageResId(apiKey)
             if (resId != null) stringResource(id = resId) else error.message ?: "unknown error"
         }
-
         else -> error?.message ?: "unknown error"
     }
     Text(
@@ -189,7 +250,7 @@ private fun InputSectionPreview() {
     SummaryExpressiveTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             InputSection(
-                urlOrText = "A very long text to test the multiline feature. This text is intentionally made long to exceed the one hundred character limit that is used to trigger the visibility of the expand and collapse button. It also includes\na line break.",
+                urlOrText = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 onUrlChange = {},
                 onSummarize = {},
                 error = null,

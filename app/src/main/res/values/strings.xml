@@ -91,4 +91,19 @@
     <string name="noModelsConfigured">No models configured. Please configure in Settings.</string>
     <string name="configureInSettings">Configure in Settings</string>
     <string name="providerNotConfiguredPrompt">Please configure %1$s in Settings before use</string>
+    <string name="paste_from_clipboard">Paste from clipboard</string>
+    <string name="summarize">Summarize</string>
+    <string name="url_or_text">URL / Text</string>
+    <string name="clear">Clear</string>
+    <string name="expand">Expand</string>
+    <string name="collapse">Collapse</string>
+    <string name="image">Image</string>
+    <string name="camera">Camera</string>
+    <string name="document">Document</string>
+    <string name="more_actions">More actions</string>
+    <string name="toggle_attachments_menu">Toggle attachments menu</string>
+    <string name="approximate_tokens">Approximate tokens: %1$d</string>
+    <string name="selected_item">Selected</string>
+    <string name="show_more">Show More</string>
+    <string name="show_less">Show Less</string>
 </resources>

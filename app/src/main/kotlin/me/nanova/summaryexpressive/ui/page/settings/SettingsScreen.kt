@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -64,8 +65,8 @@ import me.nanova.summaryexpressive.ui.page.settings.section.SettingItem
 import me.nanova.summaryexpressive.ui.page.settings.section.SettingsFooter
 import me.nanova.summaryexpressive.ui.page.settings.section.SettingsGroup
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme
-import me.nanova.summaryexpressive.vm.AppViewModel
 import me.nanova.summaryexpressive.vm.SettingsUiState
+import me.nanova.summaryexpressive.vm.SettingsViewModel
 
 private sealed interface DialogState {
     data object None : DialogState
@@ -86,8 +87,8 @@ data class SettingsActions(
     val onDynamicColorChange: (Boolean) -> Unit,
     val onShowLengthChange: (Boolean) -> Unit,
     val onAutoExtractUrlChange: (Boolean) -> Unit,
-    val onSessDataChange: (String, Long) -> Unit,
-    val onSessDataClear: () -> Unit,
+    val onBilibiliSessDataChange: (String, Long) -> Unit,
+    val onBilibiliSessDataClear: () -> Unit,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,32 +96,32 @@ data class SettingsActions(
 fun SettingsScreen(
     onBack: () -> Unit = {},
     onNav: (Nav) -> Unit = {},
-    appViewModel: AppViewModel,
+    settingsViewModel: SettingsViewModel,
     highlightSection: String?,
 ) {
     val scrollBehavior =
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
-    val state by appViewModel.settingsUiState.collectAsState()
+    val state by settingsViewModel.settingsUiState.collectAsState()
     val actions = SettingsActions(
-        onThemeChange = appViewModel::setTheme,
-        onApiKeyChange = appViewModel::setApiKeyValue,
-        onProviderChange = appViewModel::setAIProviderValue,
-        onModelChange = appViewModel::setModel,
-        onProviderConfigChange = appViewModel::setProviderConfig,
-        onSaveProviderModels = appViewModel::setProviderModels,
-        onResetProviderModels = appViewModel::resetProviderModelsToDefault,
-        onUseOriginalLanguageChange = appViewModel::setUseOriginalLanguageValue,
-        onDynamicColorChange = appViewModel::setDynamicColorValue,
-        onShowLengthChange = appViewModel::setShowLengthValue,
-        onAutoExtractUrlChange = appViewModel::setAutoExtractUrlValue,
-        onSessDataChange = appViewModel::setSessData,
-        onSessDataClear = appViewModel::clearSessData
+        onThemeChange = settingsViewModel::setTheme,
+        onApiKeyChange = settingsViewModel::setApiKeyValue,
+        onProviderChange = settingsViewModel::setAIProviderValue,
+        onModelChange = settingsViewModel::setModel,
+        onProviderConfigChange = settingsViewModel::setProviderConfig,
+        onSaveProviderModels = settingsViewModel::setProviderModels,
+        onResetProviderModels = settingsViewModel::resetProviderModelsToDefault,
+        onUseOriginalLanguageChange = settingsViewModel::setUseOriginalLanguageValue,
+        onDynamicColorChange = settingsViewModel::setDynamicColorValue,
+        onShowLengthChange = settingsViewModel::setShowLengthValue,
+        onAutoExtractUrlChange = settingsViewModel::setAutoExtractUrlValue,
+        onBilibiliSessDataChange = settingsViewModel::setBilibiliSessData,
+        onBilibiliSessDataClear = settingsViewModel::clearBilibiliSessData
     )
 
     var dialogState by remember { mutableStateOf<DialogState>(DialogState.None) }
     var showBiliBiliLoginSheet by remember { mutableStateOf(value = false) }
-    var showClearSessDataDialog by remember { mutableStateOf(value = false) }
+    var showClearBilibiliSessDataDialog by remember { mutableStateOf(value = false) }
 
     val sheetState = rememberBottomSheetState(
         initialValue = SheetValue.Hidden,
@@ -128,21 +129,21 @@ fun SettingsScreen(
     )
     val scope = rememberCoroutineScope()
 
-    if (showClearSessDataDialog) {
+    if (showClearBilibiliSessDataDialog) {
         AlertDialog(
-            onDismissRequest = { showClearSessDataDialog = false },
+            onDismissRequest = { showClearBilibiliSessDataDialog = false },
             title = { Text("Clear BiliBili Login") },
             text = { Text("Are you sure you want to clear your BiliBili login information?") },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        actions.onSessDataClear()
-                        showClearSessDataDialog = false
+                        actions.onBilibiliSessDataClear()
+                        showClearBilibiliSessDataDialog = false
                     }
                 ) { Text("Clear") }
             },
             dismissButton = {
-                TextButton(onClick = { showClearSessDataDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showClearBilibiliSessDataDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -150,7 +151,8 @@ fun SettingsScreen(
     if (showBiliBiliLoginSheet) {
         ModalBottomSheet(
             onDismissRequest = { showBiliBiliLoginSheet = false },
-            sheetState = sheetState
+            sheetState = sheetState,
+            modifier = Modifier.fillMaxHeight()
         ) {
             fun hide() {
                 scope.launch { sheetState.hide() }.invokeOnCompletion {
@@ -162,7 +164,7 @@ fun SettingsScreen(
             BiliBiliLoginSheetContent(
                 onDismiss = { hide() }
             ) { sessData, expires ->
-                actions.onSessDataChange(sessData, expires)
+                actions.onBilibiliSessDataChange(sessData, expires)
                 hide()
             }
         }
@@ -245,7 +247,7 @@ fun SettingsScreen(
             onShowAIProviderDialog = { dialogState = DialogState.Provider },
             onShowModelDialog = { dialogState = DialogState.Model() },
             onShowBiliBiliLoginSheet = { showBiliBiliLoginSheet = true },
-            onShowClearSessDataDialog = { showClearSessDataDialog = true },
+            onShowClearBilibiliSessDataDialog = { showClearBilibiliSessDataDialog = true },
             highlightSection = highlightSection
         )
     }
@@ -261,7 +263,7 @@ private fun SettingsContent(
     onShowAIProviderDialog: () -> Unit,
     onShowModelDialog: () -> Unit,
     onShowBiliBiliLoginSheet: () -> Unit,
-    onShowClearSessDataDialog: () -> Unit,
+    onShowClearBilibiliSessDataDialog: () -> Unit,
     highlightSection: String?,
 ) {
     val context = LocalContext.current
@@ -277,7 +279,7 @@ private fun SettingsContent(
         onShowAIProviderDialog = onShowAIProviderDialog,
         onShowModelDialog = onShowModelDialog,
         onShowBiliBiliLoginSheet = onShowBiliBiliLoginSheet,
-        onShowClearSessDataDialog = onShowClearSessDataDialog
+        onShowClearBilibiliSessDataDialog = onShowClearBilibiliSessDataDialog
     )
 
     LaunchedEffect(highlightSection) {
@@ -361,7 +363,7 @@ private fun SettingsContent(
                         actions = actions,
                         highlighted = highlightSection == "3rd-party-service",
                         onShowBiliBiliLoginSheet = onShowBiliBiliLoginSheet,
-                        onShowClearSessDataDialog = onShowClearSessDataDialog
+                        onShowClearBilibiliSessDataDialog = onShowClearBilibiliSessDataDialog
                     )
                 }
 
@@ -424,8 +426,8 @@ private fun ScrollContentPreview() {
             onDynamicColorChange = {},
             onShowLengthChange = {},
             onAutoExtractUrlChange = {},
-            onSessDataChange = { _, _ -> },
-            onSessDataClear = {}
+            onBilibiliSessDataChange = { _, _ -> },
+            onBilibiliSessDataClear = {}
         )
         Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
             SettingsContent(
@@ -438,7 +440,7 @@ private fun ScrollContentPreview() {
                 highlightSection = null,
                 onNav = {},
                 onShowBiliBiliLoginSheet = {},
-                onShowClearSessDataDialog = {}
+                onShowClearBilibiliSessDataDialog = {}
             )
         }
     }

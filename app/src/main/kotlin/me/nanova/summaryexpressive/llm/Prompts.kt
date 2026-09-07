@@ -40,14 +40,33 @@ fun generateFinalPromptString(
         """
         **Mandatory Procedure:**
         1.  **Identify Content Language:** First, determine the original language of the 'content' field in the user's request. This is the SOLE source for language identification. Ignore tool call details for this step.
-        2.  **Use the identified language for summarization**".
-        """
-    } else "The summary should be written in $appLanguage."
+        2.  **Use the identified language for summarization**.
+        """.trimIndent()
+    } else {
+        "The summary should be written in $appLanguage."
+    }
 
-    val baseToUse = if (!isAppendMode && customBasePrompt.isNotBlank()) {
+    var baseToUse = if (!isAppendMode && customBasePrompt.isNotBlank()) {
         customBasePrompt
     } else {
         defaultSystemPromptPlaceholder
+    }
+
+    val hasLanguagePlaceholder = baseToUse.contains("[Language instructions]")
+    val hasLengthPlaceholder = baseToUse.contains("[Length instructions]")
+
+    if (hasLanguagePlaceholder) {
+        baseToUse = baseToUse.replace("[Language instructions]", languageInstruction)
+    }
+
+    if (hasLengthPlaceholder) {
+        if (showLength) {
+            baseToUse = baseToUse.replace("[Length instructions]", lengthInstruction)
+        } else {
+            baseToUse = baseToUse.lines()
+                .filterNot { it.contains("[Length instructions]") }
+                .joinToString("\n")
+        }
     }
 
     return buildString {
@@ -58,10 +77,12 @@ fun generateFinalPromptString(
             append(additionalSystemPrompt)
         }
 
-        append("\n\n")
-        append(languageInstruction)
+        if (!hasLanguagePlaceholder) {
+            append("\n\n")
+            append(languageInstruction)
+        }
 
-        if (showLength) {
+        if (showLength && !hasLengthPlaceholder) {
             append("\n")
             append("The summary should be about $lengthInstruction long, and must not exceed the length of the original content.")
         }
