@@ -1,5 +1,6 @@
 package me.nanova.summaryexpressive.vm
 
+import me.nanova.summaryexpressive.exception.SummaryException
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.model.ProviderConfig
 import me.nanova.summaryexpressive.model.SummaryLength
@@ -30,6 +31,6 @@ data class SettingsUiState(
 data class SummarizationState(
     val isLoading: Boolean = false,
     val summaryResult: SummaryOutput? = null,
-    val error: Throwable? = null,
+    val error: SummaryException? = null,
     val lengthResults: Map<SummaryLength, SummaryOutput> = emptyMap(),
 )

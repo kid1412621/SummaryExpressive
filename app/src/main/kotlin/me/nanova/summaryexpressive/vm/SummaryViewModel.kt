@@ -1,37 +1,21 @@
 package me.nanova.summaryexpressive.vm
 
-import android.app.Application
-import android.util.Log
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import me.nanova.summaryexpressive.data.repository.HistoryRepository
+import me.nanova.summaryexpressive.domain.usecase.SummarizeContentUseCase
 import me.nanova.summaryexpressive.exception.SummaryException
-import me.nanova.summaryexpressive.llm.LLMHandler
-import me.nanova.summaryexpressive.llm.tools.BiliBiliSubtitleTool
-import me.nanova.summaryexpressive.llm.tools.YouTubeTranscriptTool
-import me.nanova.summaryexpressive.llm.tools.getFileName
-import me.nanova.summaryexpressive.model.HistorySummary
 import me.nanova.summaryexpressive.model.SummaryLength
-import me.nanova.summaryexpressive.model.SummaryOutput
-import me.nanova.summaryexpressive.model.SummarySource
-import me.nanova.summaryexpressive.model.SummaryType
-import me.nanova.summaryexpressive.model.VideoSubtype
 import javax.inject.Inject
 
 @HiltViewModel
 class SummaryViewModel @Inject constructor(
-    private val llmHandler: LLMHandler,
-    private val application: Application,
-    private val historyRepository: HistoryRepository,
+    private val summarizeContentUseCase: SummarizeContentUseCase,
 ) : ViewModel() {
 
     private val _summarizationState = MutableStateFlow(SummarizationState())
@@ -67,20 +51,7 @@ class SummaryViewModel @Inject constructor(
         }
     }
 
-    private fun extractHttpUrl(text: String): String {
-        val urlRegex = Regex(
-            "(?:^|\\W)((http|https)://)" + // Protocol
-                    "([\\w\\-]+\\.)+" + // Domain name
-                    "([\\w\\-]+)" + // Top-level domain
-                    "([^\\s<>\"#%{}|\\\\^`]*)" // Path, query, and fragment
-        )
-        return urlRegex.find(text)?.value?.trim() ?: text
-    }
-
-    private val isFileUri =
-        { input: String -> input.startsWith("content://") || input.startsWith("file://") }
-
-    fun summarize(text: String, settings: SettingsUiState) {
+    fun summarize(text: String, overrideLength: SummaryLength? = null) {
         viewModelScope.launch {
             if (currentInput != text) {
                 currentInput = text
@@ -101,150 +72,30 @@ class SummaryViewModel @Inject constructor(
                 }
             }
 
-            val source = if (isFileUri(text)) {
-                val uri = text.toUri()
-                val filename = getFileName(application, uri)
-                SummarySource.Document(filename, text)
-            } else {
-                val processedText = if (settings.autoExtractUrl) extractHttpUrl(text) else text
-                when {
-                    processedText.startsWith("http://", ignoreCase = true)
-                            || processedText.startsWith("https://", ignoreCase = true) ->
-                        if (YouTubeTranscriptTool.isYouTubeLink(processedText)
-                            || BiliBiliSubtitleTool.isBiliBiliLink(processedText)
+            summarizeContentUseCase(text, overrideLength)
+                .onSuccess { output ->
+                    _summarizationState.update {
+                        val updatedLengthResults = it.lengthResults + (output.length to output)
+                        it.copy(
+                            summaryResult = output,
+                            lengthResults = updatedLengthResults,
+                            isLoading = false,
+                            error = null,
                         )
-                            SummarySource.Video(processedText)
-                        else SummarySource.Article(processedText)
-
-                    processedText.isNotBlank() -> SummarySource.Text(processedText)
-                    else -> SummarySource.None
+                    }
                 }
-            }
-
-            summarizeInternal(source, settings)
-        }
-    }
-
-    private suspend fun summarizeInternal(source: SummarySource, settings: SettingsUiState) {
-        try {
-            val currentApiKey = settings.apiKey
-            if (currentApiKey.isNullOrEmpty()) {
-                throw SummaryException.NoKeyException()
-            }
-            if (source is SummarySource.None) {
-                throw SummaryException.NoContentException()
-            }
-
-            val appLanguage = application.resources.configuration.locales[0]
-
-            if (settings.activeProvider == null) {
-                throw SummaryException.NoKeyException()
-            }
-
-            val agent = llmHandler.getSummarizationAgent(
-                provider = settings.activeProvider,
-                apiKey = currentApiKey,
-                baseUrl = settings.baseUrl,
-                model = settings.activeModel,
-                summaryLength = settings.summaryLength,
-                showLength = settings.showLength,
-                useContentLanguage = settings.useOriginalLanguage,
-                appLanguage = appLanguage,
-                isAppendMode = settings.isAppendMode,
-                customBasePrompt = settings.customBasePrompt,
-                additionalSystemPrompt = settings.additionalSystemPrompt
-            )
-
-            val summaryOutput = withContext(Dispatchers.IO) {
-                agent.run(source)
-            }
-
-            _summarizationState.update {
-                val updatedLengthResults =
-                    it.lengthResults + (settings.summaryLength to summaryOutput)
-                it.copy(
-                    summaryResult = summaryOutput,
-                    lengthResults = updatedLengthResults
-                )
-            }
-            saveSummaryToHistory(
-                summaryOutput,
-                settings.summaryLength,
-                source,
-                settings.activeProvider.name,
-                settings.activeModel
-            )
-
-        } catch (e: Exception) {
-            Log.e("LLMViewModel", "Failed to summarize", e)
-            val error =
-                e as? SummaryException
-                    ?: SummaryException.UnknownException(
-                        e.message ?: "An unknown error occurred."
-                    )
-            _summarizationState.update { it.copy(error = error) }
-        } finally {
-            _summarizationState.update { it.copy(isLoading = false) }
-        }
-    }
-
-    private suspend fun saveSummaryToHistory(
-        summaryOutput: SummaryOutput,
-        summaryLength: SummaryLength,
-        source: SummarySource,
-        provider: String,
-        model: String?,
-    ) {
-        if (source is SummarySource.None) return
-
-        val type: SummaryType
-        var subtype: VideoSubtype? = null
-        var sourceLink: String? = null
-        var sourceText: String? = null
-
-        when (source) {
-            is SummarySource.Article -> {
-                type = SummaryType.ARTICLE
-                sourceLink = source.url
-            }
-
-            is SummarySource.Document -> {
-                type = SummaryType.DOCUMENT
-                sourceLink = source.uri
-            }
-
-            is SummarySource.Text -> {
-                type = SummaryType.TEXT
-                sourceText = source.content
-            }
-
-            is SummarySource.Video -> {
-                type = SummaryType.VIDEO
-                sourceLink = source.url
-                subtype = when {
-                    YouTubeTranscriptTool.isYouTubeLink(source.url) -> VideoSubtype.YOUTUBE
-                    source.url.contains("bilibili.com") -> VideoSubtype.BILIBILI
-                    else -> null
+                .onFailure { throwable ->
+                    val error = throwable as? SummaryException
+                        ?: SummaryException.UnknownException(
+                            throwable.message ?: "An unknown error occurred."
+                        )
+                    _summarizationState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = error,
+                        )
+                    }
                 }
-            }
-
-            is SummarySource.None -> return
-        }
-
-        val summary = HistorySummary(
-            title = summaryOutput.title,
-            author = summaryOutput.author,
-            summary = summaryOutput.summary.trim(),
-            length = summaryLength,
-            type = type,
-            subtype = subtype,
-            sourceLink = sourceLink,
-            sourceText = sourceText,
-            provider = provider,
-            model = model
-        )
-        if (summary.summary.isNotBlank() && summary.summary != "invalid link") {
-            historyRepository.addSummary(summary)
         }
     }
 }

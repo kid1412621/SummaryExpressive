@@ -7,21 +7,20 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import me.nanova.summaryexpressive.data.repository.AIProviderConfigRepository
-import me.nanova.summaryexpressive.data.repository.UserPreferencesRepository
+import me.nanova.summaryexpressive.domain.usecase.GetUserSettingsUseCase
+import me.nanova.summaryexpressive.domain.usecase.UpdateProviderConfigUseCase
+import me.nanova.summaryexpressive.domain.usecase.UpdateUserPreferencesUseCase
 import me.nanova.summaryexpressive.llm.AIProvider
-import me.nanova.summaryexpressive.llm.defaultSystemPromptPlaceholder
-import me.nanova.summaryexpressive.model.ProviderConfig
 import me.nanova.summaryexpressive.model.SummaryLength
 import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val userPreferencesRepository: UserPreferencesRepository,
-    private val aiProviderConfigRepository: AIProviderConfigRepository,
+    getUserSettingsUseCase: GetUserSettingsUseCase,
+    private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
+    private val updateProviderConfigUseCase: UpdateProviderConfigUseCase,
 ) : ViewModel() {
 
     private val _summaryLength = MutableStateFlow<SummaryLength?>(null)
@@ -29,12 +28,13 @@ class SettingsViewModel @Inject constructor(
     private val _activeModel = MutableStateFlow<String?>(null)
 
     val settingsUiState: StateFlow<SettingsUiState> = combine(
-        userPreferencesRepository.preferencesFlow,
-        aiProviderConfigRepository.providerConfigsFlow,
+        getUserSettingsUseCase(),
         _summaryLength,
         _activeProvider,
         _activeModel,
-    ) { prefs, providerConfigs, immediateLength, immediateProvider, immediateModel ->
+    ) { userSettings, immediateLength, immediateProvider, immediateModel ->
+        val prefs = userSettings.preferences
+        val providerConfigs = userSettings.providerConfigs
         val effectiveProvider = immediateProvider
             ?: prefs.activeProvider?.let { AIProvider.entries.find { p -> p.name == it } }
         val providerConfig = effectiveProvider?.name?.let { providerConfigs[it] }
@@ -71,15 +71,15 @@ class SettingsViewModel @Inject constructor(
 
     // Original Language in summary
     fun setUseOriginalLanguageValue(newValue: Boolean) =
-        savePreference(userPreferencesRepository::setUseOriginalLanguage, newValue)
+        savePreference(updateUserPreferencesUseCase::setUseOriginalLanguage, newValue)
 
     // Dynamic color
     fun setDynamicColorValue(newValue: Boolean) =
-        savePreference(userPreferencesRepository::setDynamicColor, newValue)
+        savePreference(updateUserPreferencesUseCase::setDynamicColor, newValue)
 
     // Theme for Dark, Light or System
     fun setTheme(newValue: Int) =
-        savePreference(userPreferencesRepository::setTheme, newValue)
+        savePreference(updateUserPreferencesUseCase::setTheme, newValue)
 
     // API Key
     fun setApiKeyValue(newValue: String, provider: String? = null) {
@@ -87,22 +87,17 @@ class SettingsViewModel @Inject constructor(
             val targetProvider = provider
                 ?: _activeProvider.value?.name
                 ?: settingsUiState.value.activeProvider?.name
-                ?: userPreferencesRepository.preferencesFlow.first().activeProvider
-                ?: return@launch
-            aiProviderConfigRepository.updateApiKey(targetProvider, newValue.trim())
+            updateProviderConfigUseCase.updateApiKey(targetProvider, newValue)
         }
     }
 
     // API base url
     fun setBaseUrlValue(newValue: String, provider: String? = null) {
-        val baseUrl = normalizeBaseUrl(newValue)
         viewModelScope.launch {
             val targetProvider = provider
                 ?: _activeProvider.value?.name
                 ?: settingsUiState.value.activeProvider?.name
-                ?: userPreferencesRepository.preferencesFlow.first().activeProvider
-                ?: return@launch
-            aiProviderConfigRepository.updateBaseUrl(targetProvider, baseUrl)
+            updateProviderConfigUseCase.updateBaseUrl(targetProvider, newValue)
         }
     }
 
@@ -111,11 +106,11 @@ class SettingsViewModel @Inject constructor(
         val providerEnum = AIProvider.entries.find { it.name == newValue }
         _activeProvider.value = providerEnum
         _activeModel.value = null
-        savePreference(userPreferencesRepository::setActiveProvider, newValue)
+        savePreference(updateUserPreferencesUseCase::setActiveProvider, newValue)
     }
 
     fun setProviderOrder(order: List<String>) =
-        savePreference(userPreferencesRepository::setProviderOrder, order)
+        savePreference(updateUserPreferencesUseCase::setProviderOrder, order)
 
     fun setProviderConfig(
         provider: String,
@@ -123,20 +118,16 @@ class SettingsViewModel @Inject constructor(
         apiKey: String,
         providerOrder: List<String>? = null,
     ) {
-        val normalizedBaseUrl = normalizeBaseUrl(baseUrl)
         val providerEnum = AIProvider.entries.find { it.name == provider }
         _activeProvider.value = providerEnum
         _activeModel.value = null
         viewModelScope.launch {
-            val currentConfig = aiProviderConfigRepository.getConfig(provider) ?: ProviderConfig()
-            aiProviderConfigRepository.saveConfig(
-                provider,
-                currentConfig.copy(apiKey = apiKey.trim(), baseUrl = normalizedBaseUrl)
+            updateProviderConfigUseCase.setProviderConfig(
+                provider = provider,
+                baseUrl = baseUrl,
+                apiKey = apiKey,
+                providerOrder = providerOrder,
             )
-            userPreferencesRepository.setActiveProvider(provider)
-            if (providerOrder != null) {
-                userPreferencesRepository.setProviderOrder(providerOrder)
-            }
         }
     }
 
@@ -147,11 +138,7 @@ class SettingsViewModel @Inject constructor(
             val targetProvider = provider
                 ?: _activeProvider.value
                 ?: settingsUiState.value.activeProvider
-                ?: userPreferencesRepository.preferencesFlow.first().activeProvider?.let { name ->
-                    AIProvider.entries.find { it.name == name }
-                }
-                ?: return@launch
-            updateModelForProvider(targetProvider.name, newValue)
+            updateModelForProvider(targetProvider?.name, newValue)
         }
     }
 
@@ -166,113 +153,66 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private suspend fun updateModelForProvider(provider: String, model: String) {
-        val currentConfig = aiProviderConfigRepository.getConfig(provider) ?: ProviderConfig()
-        val models =
-            if (currentConfig.models.isNotEmpty() && !currentConfig.models.contains(model)) {
-                currentConfig.models + model
-            } else {
-                currentConfig.models
-            }
-        aiProviderConfigRepository.saveConfig(
-            provider,
-            currentConfig.copy(activeModel = model, models = models)
-        )
+    private suspend fun updateModelForProvider(provider: String?, model: String) {
+        updateProviderConfigUseCase.updateModelForProvider(provider, model)
     }
 
     fun setProviderModels(provider: String, models: List<String>, selectedModel: String? = null) {
         viewModelScope.launch {
-            val currentConfig = aiProviderConfigRepository.getConfig(provider) ?: ProviderConfig()
-            val targetModel =
-                selectedModel ?: currentConfig.activeModel.takeIf { it in models }
-                ?: models.firstOrNull()
-                ?: ""
-            aiProviderConfigRepository.saveConfig(
-                provider,
-                currentConfig.copy(models = models, activeModel = targetModel)
-            )
+            updateProviderConfigUseCase.setProviderModels(provider, models, selectedModel)
         }
     }
 
     fun resetProviderModelsToDefault(provider: String) {
         viewModelScope.launch {
-            val aiProvider =
-                AIProvider.entries.find { it.name == provider } ?: return@launch
-            val defaultModels = aiProvider.defaultModelIds
-            val currentConfig =
-                aiProviderConfigRepository.getConfig(provider) ?: ProviderConfig()
-            val defaultModel = defaultModels.firstOrNull() ?: ""
-            aiProviderConfigRepository.saveConfig(
-                provider,
-                currentConfig.copy(models = defaultModels, activeModel = defaultModel)
-            )
+            updateProviderConfigUseCase.resetProviderModelsToDefault(provider)
         }
     }
 
     // Show length
     fun setShowLengthValue(newValue: Boolean) =
-        savePreference(userPreferencesRepository::setShowLength, newValue)
+        savePreference(updateUserPreferencesUseCase::setShowLength, newValue)
 
     // Summary Length
     fun setSummaryLength(newValue: SummaryLength) {
         _summaryLength.value = newValue
-        savePreference(userPreferencesRepository::setSummaryLength, newValue.name)
+        savePreference(updateUserPreferencesUseCase::setSummaryLength, newValue.name)
     }
 
     // Auto extract url
     fun setAutoExtractUrlValue(newValue: Boolean) =
-        savePreference(userPreferencesRepository::setAutoExtractUrl, newValue)
+        savePreference(updateUserPreferencesUseCase::setAutoExtractUrl, newValue)
 
     // BiliBili SESSDATA
     fun setBilibiliSessData(data: String, expires: Long) {
         viewModelScope.launch {
-            userPreferencesRepository.setBilibiliSessData(data, expires)
+            updateUserPreferencesUseCase.setBilibiliSessData(data, expires)
         }
     }
 
     fun clearBilibiliSessData() {
         viewModelScope.launch {
-            userPreferencesRepository.clearBilibiliSessData()
+            updateUserPreferencesUseCase.clearBilibiliSessData()
         }
     }
 
     // Advanced Setup
     fun setIsAppendMode(newValue: Boolean) {
         viewModelScope.launch {
-            userPreferencesRepository.setIsAppendMode(newValue)
-            if (!newValue) {
-                val currentPrompt =
-                    userPreferencesRepository.preferencesFlow.first().customBasePrompt
-                if (currentPrompt.isEmpty()) {
-                    userPreferencesRepository.setCustomBasePrompt(defaultSystemPromptPlaceholder)
-                }
-            }
+            updateUserPreferencesUseCase.setIsAppendMode(newValue)
         }
     }
 
     fun setCustomBasePrompt(newValue: String) =
-        savePreference(userPreferencesRepository::setCustomBasePrompt, newValue)
+        savePreference(updateUserPreferencesUseCase::setCustomBasePrompt, newValue)
 
     fun setAdditionalSystemPrompt(newValue: String) =
-        savePreference(userPreferencesRepository::setAdditionalSystemPrompt, newValue)
+        savePreference(updateUserPreferencesUseCase::setAdditionalSystemPrompt, newValue)
 
     // --- Preference Handling Helpers ---
     private fun <T> savePreference(setter: suspend (T) -> Unit, value: T) {
         viewModelScope.launch {
             setter(value)
-        }
-    }
-
-    private fun normalizeBaseUrl(url: String): String {
-        val trimmed = url.trim()
-        return when {
-            trimmed.isBlank() -> ""
-            trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith(
-                "https://",
-                ignoreCase = true
-            ) -> trimmed
-
-            else -> "https://$trimmed"
         }
     }
 }

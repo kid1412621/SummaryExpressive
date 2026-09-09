@@ -5,7 +5,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import me.nanova.summaryexpressive.model.HistorySummary
+import me.nanova.summaryexpressive.data.local.database.entity.HistoryEntity
 import me.nanova.summaryexpressive.model.SummaryType
 
 @Dao
@@ -18,10 +18,10 @@ interface HistoryDao {
          ORDER BY createdOn DESC
     """
     )
-    fun getSummaries(query: String, type: SummaryType?): PagingSource<Int, HistorySummary>
+    fun getSummaries(query: String, type: SummaryType?): PagingSource<Int, HistoryEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(summary: HistorySummary)
+    suspend fun insert(summary: HistoryEntity)
 
     @Query("DELETE FROM history WHERE id = :id")
     suspend fun deleteById(id: String)

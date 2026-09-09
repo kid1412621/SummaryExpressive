@@ -24,7 +24,7 @@ class HistorySearchState(
 @Composable
 fun rememberHistorySearchState(viewModel: HistoryViewModel): HistorySearchState {
     val selectedFilter by viewModel.filterType.collectAsState()
-    val query = viewModel.searchState.text.toString()
+    val query by viewModel.searchQuery.collectAsState()
 
     return remember(query, selectedFilter, viewModel) {
         HistorySearchState(

@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import me.nanova.summaryexpressive.model.SummaryType
+import me.nanova.summaryexpressive.ui.component.icon
 
 /**
  * Filter chips for history summary types

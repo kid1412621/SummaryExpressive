@@ -96,11 +96,11 @@ package previously.
 
 The app follows Google's [official Android Architecture Recommendations](https://developer.android.com/topic/architecture/recommendations) and [Modern Android Development (MAD)](https://developer.android.com/courses/pathways/android-architecture) best practices:
 
-- **Layered Architecture**:
-  - **UI Layer**: Built with Jetpack Compose and Material 3 Expressive, powered by ViewModels exposing reactive `StateFlow` and following Unidirectional Data Flow (UDF).
-  - **Domain & Model Layer (`model/`, `exception/`)**: Pure domain models and centralized custom exceptions decoupled from UI and data layers.
-  - **Data Layer (`data/`)**: Repositories act as the Single Source of Truth (SSOT), encapsulating Room SQLite DB, ProtoBuf DataStore, Ktor network client, and Koog LLM engine.
-- **Dependency Injection**: Powered by Dagger Hilt for loose coupling and testability.
+- **Clean Layered Architecture**:
+  - **UI Layer (`ui/`, `vm/`)**: Built with Jetpack Compose and Material 3 Expressive, powered by ViewModels exposing reactive `StateFlow` and following Unidirectional Data Flow (UDF).
+  - **Domain Layer (`domain/`, `model/`, `exception/`)**: Pure Kotlin business operations (`domain/usecase/`), data contracts (`domain/repository/`), system providers (`domain/provider/`), pure domain models (`model/`), and centralized exceptions (`exception/`).
+  - **Data Layer (`data/`)**: Repository implementations acting as Single Source of Truth (SSOT), encapsulating Room database with dedicated entities and mappers, ProtoBuf DataStore, and Ktor network client.
+- **Dependency Injection**: Powered by Dagger Hilt with `@Binds` for domain repository contracts.
 - **Asynchronous Operations**: Kotlin Coroutines + Flow for reactive, main-safe async streams.
 
 ## 🌟 Credits

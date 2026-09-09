@@ -1,15 +1,18 @@
 package me.nanova.summaryexpressive.vm
 
-import androidx.paging.PagingSource
-import androidx.paging.PagingState
+import androidx.paging.PagingData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import me.nanova.summaryexpressive.data.HistoryDao
-import me.nanova.summaryexpressive.data.repository.HistoryRepository
+import me.nanova.summaryexpressive.domain.repository.HistoryRepository
+import me.nanova.summaryexpressive.domain.usecase.DeleteHistorySummaryUseCase
+import me.nanova.summaryexpressive.domain.usecase.GetHistorySummariesUseCase
+import me.nanova.summaryexpressive.domain.usecase.RestoreHistorySummaryUseCase
 import me.nanova.summaryexpressive.model.HistorySummary
 import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryType
@@ -25,52 +28,36 @@ class HistoryViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
 
-    private class FakeHistoryDao : HistoryDao {
+    private class FakeHistoryRepository : HistoryRepository {
         val items = mutableListOf<HistorySummary>()
 
         override fun getSummaries(
             query: String,
             type: SummaryType?,
-        ): PagingSource<Int, HistorySummary> {
-            val filtered = items.filter { summary ->
-                (type == null || summary.type == type) &&
-                        (query.isBlank() || summary.title.contains(query, ignoreCase = true)
-                                || summary.author.contains(query, ignoreCase = true)
-                                || summary.summary.contains(query, ignoreCase = true))
-            }
-            return object : PagingSource<Int, HistorySummary>() {
-                override suspend fun load(params: LoadParams<Int>): LoadResult<Int, HistorySummary> {
-                    return LoadResult.Page(
-                        data = filtered,
-                        prevKey = null,
-                        nextKey = null
-                    )
-                }
+        ): Flow<PagingData<HistorySummary>> = emptyFlow()
 
-                override fun getRefreshKey(state: PagingState<Int, HistorySummary>): Int? = null
-            }
-        }
-
-        override suspend fun insert(summary: HistorySummary) {
+        override suspend fun addSummary(summary: HistorySummary) {
             items.removeAll { it.id == summary.id }
             items.add(summary)
         }
 
-        override suspend fun deleteById(id: String) {
+        override suspend fun deleteSummary(id: String) {
             items.removeAll { it.id == id }
         }
     }
 
-    private lateinit var fakeDao: FakeHistoryDao
-    private lateinit var historyRepository: HistoryRepository
+    private lateinit var fakeRepository: FakeHistoryRepository
     private lateinit var viewModel: HistoryViewModel
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        fakeDao = FakeHistoryDao()
-        historyRepository = HistoryRepository(fakeDao)
-        viewModel = HistoryViewModel(historyRepository)
+        fakeRepository = FakeHistoryRepository()
+        viewModel = HistoryViewModel(
+            getHistorySummariesUseCase = GetHistorySummariesUseCase(fakeRepository),
+            deleteHistorySummaryUseCase = DeleteHistorySummaryUseCase(fakeRepository),
+            restoreHistorySummaryUseCase = RestoreHistorySummaryUseCase(fakeRepository),
+        )
     }
 
     @AfterEach
@@ -96,18 +83,18 @@ class HistoryViewModelTest {
     }
 
     @Test
-    fun `test onSearchTextChanged updates searchState`() {
-        assertEquals("", viewModel.searchState.text.toString())
+    fun `test onSearchTextChanged updates searchQuery`() {
+        assertEquals("", viewModel.searchQuery.value)
 
         viewModel.onSearchTextChanged("compose")
-        assertEquals("compose", viewModel.searchState.text.toString())
+        assertEquals("compose", viewModel.searchQuery.value)
 
         viewModel.onSearchTextChanged("kotlin multiplatform")
-        assertEquals("kotlin multiplatform", viewModel.searchState.text.toString())
+        assertEquals("kotlin multiplatform", viewModel.searchQuery.value)
     }
 
     @Test
-    fun `test addHistorySummary and removeHistorySummary delegates to repository`() =
+    fun `test restoreSummary and deleteSummary delegates to repository`() =
         runTest(testDispatcher) {
             val summary1 = HistorySummary(
                 id = "id-1",
@@ -128,15 +115,15 @@ class HistoryViewModelTest {
                 provider = "GEMINI"
             )
 
-            viewModel.addHistorySummary(summary1)
-            viewModel.addHistorySummary(summary2)
+            viewModel.restoreSummary(summary1)
+            viewModel.restoreSummary(summary2)
 
-            assertEquals(2, fakeDao.items.size)
-            assertTrue(fakeDao.items.contains(summary1))
-            assertTrue(fakeDao.items.contains(summary2))
+            assertEquals(2, fakeRepository.items.size)
+            assertTrue(fakeRepository.items.contains(summary1))
+            assertTrue(fakeRepository.items.contains(summary2))
 
-            viewModel.removeHistorySummary("id-1")
-            assertEquals(1, fakeDao.items.size)
-            assertEquals("id-2", fakeDao.items.first().id)
+            viewModel.deleteSummary("id-1")
+            assertEquals(1, fakeRepository.items.size)
+            assertEquals("id-2", fakeRepository.items.first().id)
         }
 }

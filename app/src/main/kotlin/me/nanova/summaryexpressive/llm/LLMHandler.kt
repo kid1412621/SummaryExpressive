@@ -39,7 +39,7 @@ import ai.koog.prompt.executor.ollama.client.OllamaModels
 import ai.koog.prompt.message.Message
 import android.content.Context
 import io.ktor.client.HttpClient
-import me.nanova.summaryexpressive.data.repository.UserPreferencesRepository
+import me.nanova.summaryexpressive.domain.repository.UserPreferencesRepository
 import me.nanova.summaryexpressive.exception.SummaryException
 import me.nanova.summaryexpressive.llm.tools.Article
 import me.nanova.summaryexpressive.llm.tools.ArticleExtractorTool

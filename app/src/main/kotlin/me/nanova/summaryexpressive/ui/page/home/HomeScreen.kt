@@ -136,7 +136,7 @@ fun HomeScreen(
     fun summarize() {
         focusManager.clearFocus()
         isScrollingDown = false
-        summaryViewModel.summarize(urlOrText, settingsViewModel.settingsUiState.value)
+        summaryViewModel.summarize(urlOrText)
     }
 
     fun clearInput() {

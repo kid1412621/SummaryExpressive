@@ -16,6 +16,7 @@ import androidx.core.view.WindowCompat
 import androidx.navigation3.runtime.rememberNavBackStack
 import dagger.hilt.android.AndroidEntryPoint
 import me.nanova.summaryexpressive.ui.AppNavigation
+import me.nanova.summaryexpressive.ui.Nav
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme
 import me.nanova.summaryexpressive.vm.AppStartAction
 import me.nanova.summaryexpressive.vm.AppViewModel
@@ -37,7 +38,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val settingsState by settingsViewModel.settingsUiState.collectAsState()
-            val startDestination by appViewModel.startDestination.collectAsState()
+            val isOnboarded by appViewModel.isOnboarded.collectAsState()
 
             SummaryExpressiveTheme(
                 darkTheme = when (settingsState.theme) {
@@ -47,10 +48,11 @@ class MainActivity : ComponentActivity() {
                 },
                 dynamicColor = settingsState.dynamicColor
             ) {
-                if (startDestination == null) {
+                if (isOnboarded == null) {
                     return@SummaryExpressiveTheme
                 }
-                val backStack = rememberNavBackStack(startDestination!!)
+                val startDestination = if (isOnboarded == true) Nav.Home else Nav.Onboarding
+                val backStack = rememberNavBackStack(startDestination)
                 AppNavigation(
                     backStack = backStack,
                     appViewModel = appViewModel,

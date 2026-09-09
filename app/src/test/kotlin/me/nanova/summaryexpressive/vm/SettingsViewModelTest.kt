@@ -10,8 +10,11 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import me.nanova.summaryexpressive.data.repository.AIProviderConfigRepository
-import me.nanova.summaryexpressive.data.repository.UserPreferencesRepository
+import me.nanova.summaryexpressive.domain.repository.AIProviderConfigRepository
+import me.nanova.summaryexpressive.domain.repository.UserPreferencesRepository
+import me.nanova.summaryexpressive.domain.usecase.GetUserSettingsUseCase
+import me.nanova.summaryexpressive.domain.usecase.UpdateProviderConfigUseCase
+import me.nanova.summaryexpressive.domain.usecase.UpdateUserPreferencesUseCase
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.defaultSystemPromptPlaceholder
 import me.nanova.summaryexpressive.model.ProviderConfig
@@ -31,7 +34,7 @@ class SettingsViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
 
-    private class FakeAIProviderConfigRepository : AIProviderConfigRepository(null) {
+    private class FakeAIProviderConfigRepository : AIProviderConfigRepository {
         val configs = MutableStateFlow<Map<String, ProviderConfig>>(emptyMap())
 
         override val providerConfigsFlow: Flow<Map<String, ProviderConfig>> = configs
@@ -62,7 +65,7 @@ class SettingsViewModelTest {
         }
     }
 
-    private class FakeUserPreferencesRepository : UserPreferencesRepository(null) {
+    private class FakeUserPreferencesRepository : UserPreferencesRepository {
         val prefs = MutableStateFlow(UserPreferences())
 
         override val preferencesFlow: Flow<UserPreferences> = prefs
@@ -127,13 +130,22 @@ class SettingsViewModelTest {
 
     private lateinit var fakePrefsRepo: FakeUserPreferencesRepository
     private lateinit var fakeConfigRepo: FakeAIProviderConfigRepository
+    private lateinit var getUserSettingsUseCase: GetUserSettingsUseCase
+    private lateinit var updateUserPreferencesUseCase: UpdateUserPreferencesUseCase
+    private lateinit var updateConfigUseCase: UpdateProviderConfigUseCase
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         fakePrefsRepo = FakeUserPreferencesRepository()
         fakeConfigRepo = FakeAIProviderConfigRepository()
+        getUserSettingsUseCase = GetUserSettingsUseCase(fakePrefsRepo, fakeConfigRepo)
+        updateUserPreferencesUseCase = UpdateUserPreferencesUseCase(fakePrefsRepo)
+        updateConfigUseCase = UpdateProviderConfigUseCase(fakeConfigRepo, fakePrefsRepo)
     }
+
+    private fun createViewModel(): SettingsViewModel =
+        SettingsViewModel(getUserSettingsUseCase, updateUserPreferencesUseCase, updateConfigUseCase)
 
     @AfterEach
     fun tearDown() {
@@ -160,7 +172,7 @@ class SettingsViewModelTest {
                 )
             )
 
-            val viewModel = SettingsViewModel(fakePrefsRepo, fakeConfigRepo)
+            val viewModel = createViewModel()
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
                 viewModel.settingsUiState.collect {}
             }
@@ -179,7 +191,7 @@ class SettingsViewModelTest {
     @Test
     fun `test setApiKeyValue and setBaseUrlValue with normalization`() = runTest(testDispatcher) {
         fakePrefsRepo.prefs.value = UserPreferences(activeProvider = "OPENAI")
-        val viewModel = SettingsViewModel(fakePrefsRepo, fakeConfigRepo)
+        val viewModel = createViewModel()
 
         viewModel.setApiKeyValue("  sk-test-key  ")
         assertEquals("sk-test-key", fakeConfigRepo.getConfig("OPENAI")?.apiKey)
@@ -210,7 +222,7 @@ class SettingsViewModelTest {
                 )
             )
 
-            val viewModel = SettingsViewModel(fakePrefsRepo, fakeConfigRepo)
+            val viewModel = createViewModel()
             val newOrder = listOf("DEEPSEEK", "OPENAI", "GEMINI")
 
             viewModel.setProviderConfig(
@@ -244,7 +256,7 @@ class SettingsViewModelTest {
                 )
             )
 
-            val viewModel = SettingsViewModel(fakePrefsRepo, fakeConfigRepo)
+            val viewModel = createViewModel()
 
             viewModel.setModel("gemini-2.0-flash-exp")
 
@@ -268,7 +280,7 @@ class SettingsViewModelTest {
                 )
             )
 
-            val viewModel = SettingsViewModel(fakePrefsRepo, fakeConfigRepo)
+            val viewModel = createViewModel()
 
             // Explicit selectedModel
             viewModel.setProviderModels("OPENAI", listOf("gpt-4o", "o1"), selectedModel = "o1")
@@ -284,7 +296,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `test resetProviderModelsToDefault restores default models`() = runTest(testDispatcher) {
-        val viewModel = SettingsViewModel(fakePrefsRepo, fakeConfigRepo)
+        val viewModel = createViewModel()
         val defaultModels = AIProvider.CLAUDE.defaultModelIds
 
         viewModel.resetProviderModelsToDefault("CLAUDE")
@@ -299,7 +311,7 @@ class SettingsViewModelTest {
     fun `test setIsAppendMode sets default prompt when customBasePrompt is empty`() =
         runTest(testDispatcher) {
             fakePrefsRepo.prefs.value = UserPreferences(isAppendMode = true, customBasePrompt = "")
-            val viewModel = SettingsViewModel(fakePrefsRepo, fakeConfigRepo)
+            val viewModel = createViewModel()
 
             viewModel.setIsAppendMode(false)
 
@@ -310,7 +322,7 @@ class SettingsViewModelTest {
     @Test
     fun `test setSummaryLength updates settingsUiState immediately`() = runTest(testDispatcher) {
         fakePrefsRepo.prefs.value = UserPreferences(summaryLength = "MEDIUM")
-        val viewModel = SettingsViewModel(fakePrefsRepo, fakeConfigRepo)
+        val viewModel = createViewModel()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.settingsUiState.collect {}
         }
@@ -334,7 +346,7 @@ class SettingsViewModelTest {
                 ProviderConfig(apiKey = "key-gemini", activeModel = "gemini-1.5-pro")
             )
 
-            val viewModel = SettingsViewModel(fakePrefsRepo, fakeConfigRepo)
+            val viewModel = createViewModel()
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
                 viewModel.settingsUiState.collect {}
             }
@@ -356,7 +368,7 @@ class SettingsViewModelTest {
     fun `test setApiKeyValue and setBaseUrlValue target immediate activeProvider`() =
         runTest(testDispatcher) {
             fakePrefsRepo.prefs.value = UserPreferences(activeProvider = "OPENAI")
-            val viewModel = SettingsViewModel(fakePrefsRepo, fakeConfigRepo)
+            val viewModel = createViewModel()
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
                 viewModel.settingsUiState.collect {}
             }

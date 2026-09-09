@@ -2,10 +2,10 @@ package me.nanova.summaryexpressive.data
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import me.nanova.summaryexpressive.model.HistorySummary
+import me.nanova.summaryexpressive.data.local.database.entity.HistoryEntity
 
 @Database(
-    entities = [HistorySummary::class, AIProviderConfigEntity::class],
+    entities = [HistoryEntity::class, AIProviderConfigEntity::class],
     version = 2,
     exportSchema = false
 )

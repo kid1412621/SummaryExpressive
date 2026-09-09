@@ -18,21 +18,13 @@ import io.ktor.serialization.kotlinx.json.json
 import me.nanova.summaryexpressive.data.AIProviderConfigDao
 import me.nanova.summaryexpressive.data.AppDatabase
 import me.nanova.summaryexpressive.data.HistoryDao
-import me.nanova.summaryexpressive.data.repository.AIProviderConfigRepository
-import me.nanova.summaryexpressive.data.repository.HistoryRepository
-import me.nanova.summaryexpressive.data.repository.UserPreferencesRepository
+import me.nanova.summaryexpressive.domain.repository.UserPreferencesRepository
 import me.nanova.summaryexpressive.llm.LLMHandler
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
-
-    @Provides
-    @Singleton
-    fun provideUserPreferencesRepository(@ApplicationContext context: Context): UserPreferencesRepository {
-        return UserPreferencesRepository(context)
-    }
 
     @Provides
     @Singleton
@@ -64,18 +56,6 @@ object AppModule {
     @Singleton
     fun provideAIProviderConfigDao(appDatabase: AppDatabase): AIProviderConfigDao {
         return appDatabase.aiProviderConfigDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideHistoryRepository(historyDao: HistoryDao): HistoryRepository {
-        return HistoryRepository(historyDao)
-    }
-
-    @Provides
-    @Singleton
-    fun provideAIProviderConfigRepository(aiProviderConfigDao: AIProviderConfigDao): AIProviderConfigRepository {
-        return AIProviderConfigRepository(aiProviderConfigDao)
     }
 
     @Provides

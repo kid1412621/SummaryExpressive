@@ -62,18 +62,24 @@ SummaryExpressive is an AI/LLM summarizer FOSS Android app that summarizes YouTu
 ## Architecture
 
 ### Architectural Patterns
-- **Layered Architecture & UDF**:
-  - **UI Layer**: Compose + ViewModels exposing reactive `StateFlow`, adhering to Unidirectional Data Flow (UDF).
-  - **Domain / Model Layer (`model/`, `exception/`)**: Pure domain models and centralized exceptions decoupled from UI and Data layers.
-  - **Data Layer (`data/`)**: Repositories act as the Single Source of Truth (SSOT). ViewModels never interact directly with DAOs, DataStores, or raw network clients.
+- **Clean Layered Architecture & UDF**:
+  - **UI Layer (`ui/`, `vm/`)**: Compose + ViewModels exposing reactive `StateFlow`, adhering to Unidirectional Data Flow (UDF). ViewModels encapsulate coroutines within `viewModelScope` and consume domain UseCases exclusively (ViewModels never interact directly with repository interfaces). ViewModels never accept another ViewModel's UI state.
+  - **Domain Layer (`domain/`, `model/`, `exception/`)**: Pure Kotlin domain logic completely decoupled from UI, Room, and Android framework classes:
+    - **UseCases (`domain/usecase/`)**: Discrete business operations (`SummarizeContentUseCase`, `GetHistorySummariesUseCase`, `DeleteHistorySummaryUseCase`, `RestoreHistorySummaryUseCase`, `UpdateProviderConfigUseCase`, `GetOnboardingStatusUseCase`, `SetOnboardingStatusUseCase`, `GetUserSettingsUseCase`, `UpdateUserPreferencesUseCase`).
+    - **Repository Interfaces (`domain/repository/`)**: Contracts for data access (`HistoryRepository`, `UserPreferencesRepository`, `AIProviderConfigRepository`).
+    - **Provider Interfaces (`domain/provider/`)**: Abstractions for system capabilities (`DocumentMetadataProvider`, `AppLocaleProvider`).
+    - **Domain Models (`model/`)**: Pure Kotlin data classes and enums (`HistorySummary`, `SummaryType`, `SummaryOutput`, `SummarySource`, `ProviderConfig`, `UserPreferences`, `UserSettings`).
+    - **Centralized Exceptions (`exception/`)**: Centralized custom exceptions (`SummaryException`) with string resource localization support.
+  - **Data Layer (`data/`)**: Implements domain repository interfaces as the Single Source of Truth (SSOT). Coordinates between local Room database, ProtoBuf DataStore, Ktor network client, and LLM engines. Room entities (`HistoryEntity`, `AIProviderConfigEntity`) and mappers live in `data/local/database/`.
 - **Component Placement Conventions**:
   - **Global Reusable Components**: Place in `ui/component/` (e.g. `SummaryCard`, `LlmSwitcher`, `LlmIndicator`, `LogoIcon`, `ClickablePasteIcon`).
   - **Page-Specific Components**: Place alongside the screen in `ui/page/` (or `ui/page/<feature>/`) scoped to that specific screen/feature (e.g. `BilibiliLoginScreen.kt` sheet).
 - **Dependency Injection (Hilt)**:
-  - All major dependencies are Hilt-injectable using `@Singleton` for app-wide dependencies or `@ActivityScoped` for activity-level dependencies.
+  - Repository interfaces are bound to implementations in `di/RepositoryModule.kt` via `@Binds`.
+  - App-wide infrastructure (Database, DAOs, HTTP client, LLM handler) is provided in `di/AppModule.kt`.
 - **Database (Room)**:
   - Database name: `summary_expressive_db`.
-  - Main entity: `HistorySummary` with `HistoryDao`.
+  - Main entity: `HistoryEntity` with `HistoryDao`. Mapped to pure domain `HistorySummary` via extension mappers.
   - Custom type converters reside in `data/converters/`.
 - **Custom Exceptions**:
   - Centralized in `exception/SummaryException.kt` with string resource localization support.
@@ -106,37 +112,44 @@ The app defines two product flavors under the `distribution` dimension (`app/bui
 - **`MainActivity.kt`**: Main activity handling deep links, share intents, and navigation
 - **`InstantSummaryActivity.kt`**: Overlay activity for instant summarization via share sheet or text selection
 
-#### Dependency Injection (`di/AppModule.kt`)
-Hilt module providing:
-- Repositories (`UserPreferencesRepository`, `AIProviderConfigRepository`, `HistoryRepository`)
-- Room database and DAOs (`HistoryDao`, `AIProviderConfigDao`)
-- LLM handler
-- Ktor HTTP client with cookies and JSON serialization
+#### Dependency Injection (`di/`)
+- **`AppModule.kt`**: Provides Room database, DAOs, LLM handler, and Ktor HTTP client
+- **`RepositoryModule.kt`**: `@Binds` domain repository interfaces to data layer implementations
+
+#### Domain Layer (`domain/`, `model/`, `exception/`)
+- **`domain/usecase/`**: Discrete business operations
+  - `SummarizeContentUseCase.kt`: Content resolution, provider selection, LLM execution, history persistence
+  - `GetHistorySummariesUseCase.kt`: Filtered and searched history streams
+  - `DeleteHistorySummaryUseCase.kt`: History entry deletion
+  - `RestoreHistorySummaryUseCase.kt`: History entry restoration
+  - `UpdateProviderConfigUseCase.kt`: URL normalization, model management
+  - `GetOnboardingStatusUseCase.kt`: Onboarding status observation stream
+  - `SetOnboardingStatusUseCase.kt`: Onboarding completion persistence
+  - `GetUserSettingsUseCase.kt`: Reactive user preferences and provider configs stream
+  - `UpdateUserPreferencesUseCase.kt`: User settings mutations and prompt defaults
+- **`domain/repository/`**: Domain contracts for data access
+  - `HistoryRepository.kt`: History repository contract
+  - `UserPreferencesRepository.kt`: User settings contract
+  - `AIProviderConfigRepository.kt`: AI provider credentials contract
+- **`domain/provider/`**: System capability abstractions
+  - `DocumentMetadataProvider.kt`: File name resolution
+  - `AppLocaleProvider.kt`: Locale resolution
+- **`model/`**: Pure domain models without framework annotations
+  - `ExtractedContent.kt`, `HistorySummary.kt`, `ProviderConfig.kt`, `SummaryData.kt`, `SummaryLength.kt`, `SummaryOutput.kt`, `SummarySource.kt`, `SummaryType.kt`, `UserPreferences.kt`, `UserSettings.kt`, `VideoSubtype.kt`
+- **`exception/`**: Custom exceptions hierarchy (`SummaryException.kt`)
 
 #### Data Layer (`data/`)
-- **`local/database/`**: Room database, DAOs, entities, and type converters
-  - `AppDatabase.kt`, `HistoryDao.kt`, `AIProviderConfigDao.kt`, `AIProviderConfigEntity.kt`, `converters/`
+- **`local/database/`**: Room database, DAOs, entities, and mappers
+  - `AppDatabase.kt`, `HistoryDao.kt`, `AIProviderConfigDao.kt`
+  - `entity/`: `HistoryEntity.kt`, `AIProviderConfigEntity.kt`
+  - `mapper/`: `HistoryMapper.kt`
+- **`converters/`**: Room type converters
 - **`local/datastore/`**: User preferences ProtoBuf DataStore and serializer
-  - `UserPreferencesSerializer.kt`
-- **`repository/`**: Single sources of truth for data access
-  - `AIProviderConfigRepository.kt`: AI provider credentials and configurations
-  - `HistoryRepository.kt`: Summarization history repository
-  - `UserPreferencesRepository.kt`: User settings and preferences repository
-
-#### Domain & Data Models (`model/`)
-- `ExtractedContent.kt`: Content extraction model
-- `HistorySummary.kt`: History entry entity/model
-- `ProviderConfig.kt`: AI provider configuration model
-- `SummaryData.kt`: Core summary data model interface
-- `SummaryLength.kt`: Summarization length enum
-- `SummaryOutput.kt`: LLM output model
-- `SummarySource.kt`: Input source model (Video, Article, Text, Document)
-- `SummaryType.kt`: Supported content types (YouTube, BiliBili, article, image, document, text)
-- `UserPreferences.kt`: User preferences state and settings model
-- `VideoSubtype.kt`: Video platform classifications
-
-#### Custom Exceptions (`exception/`)
-- **`SummaryException.kt`**: Custom exception hierarchy with localization support
+- **`provider/`**: Android-backed system providers (`AndroidDocumentMetadataProvider.kt`, `AndroidAppLocaleProvider.kt`)
+- **`repository/`**: Implementations of domain repository interfaces
+  - `HistoryRepositoryImpl.kt`
+  - `UserPreferencesRepositoryImpl.kt`
+  - `AIProviderConfigRepositoryImpl.kt`
 
 #### LLM Integration (`llm/`)
 - **`LLMHandler.kt`**: Core handler for LLM interactions, supports multiple providers
@@ -151,10 +164,10 @@ Hilt module providing:
   - `FileExtractorTool.kt`: Document parsing
 
 #### ViewModels (`vm/`)
-- **`AppViewModel`**: App-level lifecycle, onboarding destination, deep links, intent routing
-- **`SettingsViewModel`**: App configuration, AI provider credentials, model management, prompts, appearance
-- **`SummaryViewModel`**: Main summarization logic, content processing, multi-length result caching
-- **`HistoryViewModel`**: History browsing, debounced searching, filtering, deletion
+- **`AppViewModel`**: App-level lifecycle, onboarding status (`isOnboarded`), intent routing
+- **`SettingsViewModel`**: App configuration, AI provider credentials, model management, appearance
+- **`SummaryViewModel`**: Summarization state, length result caching, invokes `SummarizeContentUseCase`
+- **`HistoryViewModel`**: Reactive search query, history filtering, deletion and restore
 - **`UiState.kt`**: State classes for UI rendering (`SettingsUiState`, `SummarizationState`, `AppStartAction`)
 
 #### UI Layer (`ui/`)

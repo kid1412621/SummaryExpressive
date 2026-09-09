@@ -92,10 +92,8 @@ fun HistoryScreen(
     val deletedMessage = stringResource(id = R.string.deleted)
     val undoMessage = stringResource(id = R.string.undo)
 
-    LaunchedEffect(historySummaries.loadState.refresh, historySummaries.itemCount) {
-        if (historySummaries.loadState.refresh is LoadState.NotLoading && historySummaries.itemCount > 0) {
-            lazyListState.animateScrollToItem(0)
-        }
+    LaunchedEffect(searchState.query, searchState.selectedFilter) {
+        lazyListState.scrollToItem(0)
     }
 
     Scaffold(
@@ -249,10 +247,10 @@ fun HistoryScreen(
                                 position = position,
                                 onClick = { selectedSummary = summary },
                                 onDismiss = {
-                                    scope.launch {
-                                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        viewModel.removeHistorySummary(summary.id)
+                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    viewModel.deleteSummary(summary.id)
 
+                                    scope.launch {
                                         val result = snackbarHostState.showSnackbar(
                                             message = deletedMessage,
                                             actionLabel = undoMessage,
@@ -260,7 +258,7 @@ fun HistoryScreen(
                                         )
                                         when (result) {
                                             SnackbarResult.ActionPerformed -> {
-                                                viewModel.addHistorySummary(summary)
+                                                viewModel.restoreSummary(summary)
                                                 snackbarHostState.currentSnackbarData?.dismiss()
                                             }
 

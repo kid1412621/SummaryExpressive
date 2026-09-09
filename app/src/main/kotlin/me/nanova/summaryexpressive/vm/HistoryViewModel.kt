@@ -1,7 +1,5 @@
 package me.nanova.summaryexpressive.vm
 
-import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
@@ -16,7 +14,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
-import me.nanova.summaryexpressive.data.repository.HistoryRepository
+import kotlinx.coroutines.launch
+import me.nanova.summaryexpressive.domain.usecase.DeleteHistorySummaryUseCase
+import me.nanova.summaryexpressive.domain.usecase.GetHistorySummariesUseCase
+import me.nanova.summaryexpressive.domain.usecase.RestoreHistorySummaryUseCase
 import me.nanova.summaryexpressive.model.HistorySummary
 import me.nanova.summaryexpressive.model.SummaryType
 import javax.inject.Inject
@@ -26,42 +27,46 @@ private const val SEARCH_DEBOUNCE_MILLIS = 300L
 
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
-    private val historyRepository: HistoryRepository,
+    private val getHistorySummariesUseCase: GetHistorySummariesUseCase,
+    private val deleteHistorySummaryUseCase: DeleteHistorySummaryUseCase,
+    private val restoreHistorySummaryUseCase: RestoreHistorySummaryUseCase,
 ) : ViewModel() {
 
-    val searchState = TextFieldState()
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     private val _filterType = MutableStateFlow<SummaryType?>(null)
     val filterType: StateFlow<SummaryType?> = _filterType.asStateFlow()
 
-    @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-    private val debouncedSearchText = snapshotFlow { searchState.text }
+    @OptIn(FlowPreview::class)
+    private val debouncedSearchText = _searchQuery
         .debounce(SEARCH_DEBOUNCE_MILLIS.milliseconds)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val historySummaries: Flow<PagingData<HistorySummary>> =
         combine(debouncedSearchText, _filterType) { text, type ->
-            Pair(text.toString(), type)
+            Pair(text, type)
         }.flatMapLatest { (text, type) ->
-            historyRepository.getSummaries(text, type)
+            getHistorySummariesUseCase(text, type)
         }.cachedIn(viewModelScope)
 
-
     fun onSearchTextChanged(text: String) {
-        searchState.edit {
-            replace(0, length, text)
-        }
+        _searchQuery.value = text
     }
 
     fun onFilterChanged(type: SummaryType) {
         _filterType.value = if (_filterType.value == type) null else type
     }
 
-    suspend fun addHistorySummary(summary: HistorySummary) {
-        historyRepository.addSummary(summary)
+    fun deleteSummary(id: String) {
+        viewModelScope.launch {
+            deleteHistorySummaryUseCase(id)
+        }
     }
 
-    suspend fun removeHistorySummary(id: String) {
-        historyRepository.deleteSummary(id)
+    fun restoreSummary(summary: HistorySummary) {
+        viewModelScope.launch {
+            restoreHistorySummaryUseCase(summary)
+        }
     }
 }

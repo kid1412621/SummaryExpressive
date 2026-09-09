@@ -73,10 +73,10 @@ class InstantSummaryActivity : ComponentActivity() {
             val textToSummarize by textToSummarizeStateFlow.collectAsState()
 
 
-            LaunchedEffect(textToSummarize, settings) {
+            LaunchedEffect(textToSummarize) {
                 textToSummarize?.let {
                     if (it.isNotBlank()) {
-                        summaryViewModel.summarize(it, settings)
+                        summaryViewModel.summarize(it)
                     }
                 }
             }
