@@ -46,6 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import me.nanova.summaryexpressive.R
 import me.nanova.summaryexpressive.exception.SummaryException
+import me.nanova.summaryexpressive.ui.component.ErrorMessage
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme
 
 @Composable
@@ -222,25 +223,7 @@ fun InputSection(
     )
 }
 
-@Composable
-fun ErrorMessage(
-    error: Throwable?,
-    apiKey: String?,
-    modifier: Modifier = Modifier,
-) {
-    val errMsg = when (error) {
-        is SummaryException -> {
-            val resId = error.getUserMessageResId(apiKey)
-            if (resId != null) stringResource(id = resId) else error.message ?: "unknown error"
-        }
-        else -> error?.message ?: "unknown error"
-    }
-    Text(
-        text = errMsg,
-        color = MaterialTheme.colorScheme.error,
-        modifier = modifier.fillMaxWidth()
-    )
-}
+
 
 @Preview
 @Composable

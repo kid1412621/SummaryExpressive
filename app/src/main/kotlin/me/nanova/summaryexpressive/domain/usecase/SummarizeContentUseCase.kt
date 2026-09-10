@@ -9,6 +9,7 @@ import me.nanova.summaryexpressive.domain.repository.AIProviderConfigRepository
 import me.nanova.summaryexpressive.domain.repository.HistoryRepository
 import me.nanova.summaryexpressive.domain.repository.UserPreferencesRepository
 import me.nanova.summaryexpressive.exception.SummaryException
+import me.nanova.summaryexpressive.exception.toSummaryException
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.LLMHandler
 import me.nanova.summaryexpressive.llm.tools.BiliBiliSubtitleTool
@@ -86,7 +87,10 @@ class SummarizeContentUseCaseImpl @Inject constructor(
             )
 
             summaryOutput
-        }
+        }.fold(
+            onSuccess = { Result.success(it) },
+            onFailure = { Result.failure(it.toSummaryException()) }
+        )
     }
 
     private suspend fun resolveSummarySource(text: String, autoExtractUrl: Boolean): SummarySource {

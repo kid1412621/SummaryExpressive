@@ -92,4 +92,21 @@ class PromptsTest {
         assertTrue(prompt.contains("Additional Instructions:"))
         assertTrue(prompt.contains("Focus on financial statistics."))
     }
+
+    @Test
+    fun `test default prompt contains video transcript sponsor filtering and objective style guidelines`() {
+        val prompt = generateFinalPromptString(
+            length = SummaryLength.MEDIUM,
+            showLength = true,
+            useContentLanguage = true,
+            appLanguage = "English",
+            isAppendMode = true,
+            customBasePrompt = "",
+            additionalSystemPrompt = ""
+        )
+
+        assertTrue(prompt.contains("Completely ignore sponsorships, self-promotions, advertisements"))
+        assertTrue(prompt.contains("Jump directly into the summary without introductory meta-phrases"))
+        assertTrue(prompt.contains("Maintain an objective, neutral tone"))
+    }
 }

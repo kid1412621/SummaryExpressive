@@ -52,6 +52,7 @@ SummaryExpressive is an AI/LLM summarizer FOSS Android app that summarizes YouTu
 - **Simple structure**: Keep the code structure as simple and readable as possible.
 - **Imports**: Never use fully-qualified class names inline; always use import statements.
 - **Style guide**: Follow the [Kotlin Android Style Guide](https://developer.android.com/kotlin/style-guide).
+- Modifier parameter should be the first optional parameter.
 
 ### Material 3 Expressive UI
 - **Expressive Compliance**: Use the `material-3` skill to check and ensure that any newly added or updated UI complies with Material Design 3 Expressive guidelines (expressive shapes, spring motion physics, tonal elevation, dynamic color, and tokens).
@@ -83,6 +84,31 @@ SummaryExpressive is an AI/LLM summarizer FOSS Android app that summarizes YouTu
   - Custom type converters reside in `data/converters/`.
 - **Custom Exceptions**:
   - Centralized in `exception/SummaryException.kt` with string resource localization support.
+
+### Koog LLM Integration Architecture
+
+The app uses the [Koog Agents library](https://docs.koog.ai/) for orchestrating LLMs and multi-source tool extraction.
+
+- **Modular Components (`me.nanova.summaryexpressive.llm`)**:
+  - **`LLMHandler`**: Slim entry-point facade injected into `SummarizeContentUseCase`. Coordinates tools, caches, and delegates agent construction.
+  - **`LLMExecutorFactory`**: Manages instantiation and bounded LRU caching (`MAX_EXECUTOR_CACHE_SIZE = 10`) of Koog `PromptExecutor` instances across supported providers (OpenAI, Gemini with sanitizing engine, Anthropic, DeepSeek, Mistral, Qwen, Ollama, OpenRouter, Kimi, MiniMax, Zhipu).
+  - **`AgentConfigFactory`**: Resolves model IDs (`resolveModel`) and constructs `AIAgentConfig` with model capability detection.
+  - **`SummarizationStrategy`**: Houses the Koog execution graph (`summarization_router_strategy`), extraction subgraph, structured output execution, and fallback strategies.
+- **Session & State Management**:
+  - **Stateless Execution**: Graph strategies avoid mutable closure state; data flows through typed routing models (`ExtractedPayload`, `SummarizationResult`).
+  - **1 Session Per Request**: Each summarization operation executes an isolated agent session, ensuring concurrency safety.
+  - **Thread-Safe Caching**: `AIAgent` and `PromptExecutor` instances are cached using bounded `ConcurrentHashMap` structures keyed by provider, endpoint, model, and system prompt.
+- **Structured Output & Fallback**:
+  - **Schema Model (`LlmSummaryResponse`)**: `@Serializable` data class with `@LLMDescription` field metadata (`title`, `author`, `overview`, `keyPoints`, `bodySummary`, `tags`, etc.).
+  - **Capability Detection**: Checks `model.supports(LLMCapability.Schema.JSON.Standard)` and `model.supports(LLMCapability.Schema.JSON.Basic)`.
+  - **Parsing Resilience**: Employs `StructureFixingParser(model, retries = 2)`. If schema parsing fails or the model lacks JSON schema support, it automatically falls back to plain-text `requestLLMWithoutTools()`.
+  - **Missing Data Handling**: UI and mappers handle missing titles and unknown authors gracefully.
+- **LLM Error Handling Pipeline**:
+  - **`LlmErrorParser`**: Sanitizes raw client responses and extracts nested JSON errors from various providers (OpenRouter, OpenAI, Anthropic, Gemini, Ollama), removing technical prefixes like `Error from client:`, `Status code: -1`, and internal routing metadata.
+  - **Domain Mapping**: Converts parsed errors into typed `SummaryException` subclasses (`AccessDeniedException`, `ModelNotFoundException`, `IncorrectKeyException`, `RateLimitException`, `LlmServerException`).
+  - **Presentation Layer**: UI layers consume `ErrorMessage` composable and `resolveUserErrorMessage()` extension for clean, human-readable error banners while logging full tracebacks to Logcat.
+- **Prompt Architecture**:
+  - Default prompt in `Prompts.kt` (`defaultSystemPromptPlaceholder`) prunes transcript noise (sponsors, subscribe/like appeals, conversational filler), enforces objective reporting without meta-announcements, and preserves interpolation tokens (`[Language instructions]`, `[Length instructions]`).
 
 ### Technology Stack & Key Dependencies
 - **Language**: Kotlin 2.4.x
@@ -135,8 +161,8 @@ The app defines two product flavors under the `distribution` dimension (`app/bui
   - `DocumentMetadataProvider.kt`: File name resolution
   - `AppLocaleProvider.kt`: Locale resolution
 - **`model/`**: Pure domain models without framework annotations
-  - `ExtractedContent.kt`, `HistorySummary.kt`, `ProviderConfig.kt`, `SummaryData.kt`, `SummaryLength.kt`, `SummaryOutput.kt`, `SummarySource.kt`, `SummaryType.kt`, `UserPreferences.kt`, `UserSettings.kt`, `VideoSubtype.kt`
-- **`exception/`**: Custom exceptions hierarchy (`SummaryException.kt`)
+  - `ExtractedContent.kt`, `HistorySummary.kt`, `LlmSummaryResponse.kt`, `ProviderConfig.kt`, `SummaryData.kt`, `SummaryLength.kt`, `SummaryOutput.kt`, `SummarySource.kt`, `SummaryType.kt`, `UserPreferences.kt`, `UserSettings.kt`, `VideoSubtype.kt`
+- **`exception/`**: Custom exceptions hierarchy (`SummaryException.kt`) and error parsing (`LlmErrorParser.kt`)
 
 #### Data Layer (`data/`)
 - **`local/database/`**: Room database, DAOs, entities, and mappers
@@ -152,9 +178,12 @@ The app defines two product flavors under the `distribution` dimension (`app/bui
   - `AIProviderConfigRepositoryImpl.kt`
 
 #### LLM Integration (`llm/`)
-- **`LLMHandler.kt`**: Core handler for LLM interactions, supports multiple providers
+- **`LLMHandler.kt`**: Slim facade coordinating executor caching, configuration, tool registration, and agent invocation
+- **`LLMExecutorFactory.kt`**: Factory and LRU cache (`MAX_EXECUTOR_CACHE_SIZE`) for Koog `PromptExecutor` instances
+- **`AgentConfigFactory.kt`**: Model ID resolution and `AIAgentConfig` construction
+- **`SummarizationStrategy.kt`**: Koog strategy graph (`summarization_router_strategy`), tool extraction dispatch, structured output execution, and fallback
 - **`AIProvider.kt`**: Provider definitions (OpenAI, Gemini, Claude, DeepSeek, etc.)
-- **`Prompts.kt`**: Prompt templates for different content types
+- **`Prompts.kt`**: Prompt templates with transcript noise and sponsor filtering
 - **`CustomModel.kt`**: Custom model configuration
 - **`GeminiSanitizingHttpClientEngine.kt`**: Engine decorator for Google Gemini compatibility
 - **`tools/`**: Extraction tools
@@ -180,7 +209,7 @@ The app defines two product flavors under the `distribution` dimension (`app/bui
   - `AdvancedSetupScreen.kt`: Advanced prompt setup
   - `OnboardingScreen.kt`: First-run setup
   - `BilibiliLoginScreen.kt`: BiliBili authentication sheet
-- **`component/`**: Global reusable UI components (`SummaryCard`, `LlmSwitcher`, `LlmIndicator`, `LogoIcon`, `ClickablePasteIcon`)
+- **`component/`**: Global reusable UI components (`SummaryCard`, `ErrorMessage`, `LlmSwitcher`, `LlmIndicator`, `LogoIcon`, `ClickablePasteIcon`)
 - **`theme/`**: Material 3 theming (colors, typography, theme)
 
 ---

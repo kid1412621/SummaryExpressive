@@ -1,5 +1,6 @@
 package me.nanova.summaryexpressive.vm
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.domain.usecase.SummarizeContentUseCase
 import me.nanova.summaryexpressive.exception.SummaryException
+import me.nanova.summaryexpressive.exception.toSummaryException
 import me.nanova.summaryexpressive.model.SummaryLength
 import javax.inject.Inject
 
@@ -85,10 +87,8 @@ class SummaryViewModel @Inject constructor(
                     }
                 }
                 .onFailure { throwable ->
-                    val error = throwable as? SummaryException
-                        ?: SummaryException.UnknownException(
-                            throwable.message ?: "An unknown error occurred."
-                        )
+                    Log.e(TAG, "Summarization failed", throwable)
+                    val error = throwable.toSummaryException()
                     _summarizationState.update {
                         it.copy(
                             isLoading = false,
@@ -97,5 +97,9 @@ class SummaryViewModel @Inject constructor(
                     }
                 }
         }
+    }
+
+    companion object {
+        private const val TAG = "SummaryViewModel"
     }
 }

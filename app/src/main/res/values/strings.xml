@@ -106,4 +106,8 @@
     <string name="selected_item">Selected</string>
     <string name="show_more">Show More</string>
     <string name="show_less">Show Less</string>
+    <string name="access_denied">Access denied: The model or service cannot be accessed.</string>
+    <string name="model_not_found">Model not found. Please check your model configuration in Settings.</string>
+    <string name="server_error">AI service is currently unavailable. Please try again later.</string>
+    <string name="unknown_error">An unknown error occurred.</string>
 </resources>

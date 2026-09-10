@@ -13,4 +13,9 @@ data class SummaryOutput(
     val length: SummaryLength,
     val provider: String? = null,
     val model: String? = null,
+    val overview: String? = null,
+    val keyPoints: List<String> = emptyList(),
+    val tags: List<String> = emptyList(),
+    val detectedLanguage: String? = null,
+    val errorReason: String? = null,
 ) : SummaryData

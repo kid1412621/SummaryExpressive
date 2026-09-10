@@ -52,6 +52,7 @@ import androidx.compose.ui.window.DialogProperties
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import me.nanova.summaryexpressive.ui.component.resolveUserErrorMessage
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme
 import me.nanova.summaryexpressive.vm.SettingsViewModel
 import me.nanova.summaryexpressive.vm.SummaryViewModel
@@ -186,10 +187,15 @@ fun InstantSummaryDialog(viewModel: SummaryViewModel, onDismiss: () -> Unit) {
                             Text(
                                 text = "Error",
                                 style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = error.message ?: "An unknown error occurred.")
+                            Text(
+                                text = error.resolveUserErrorMessage(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
                         }
 
                         summaryResult != null -> {

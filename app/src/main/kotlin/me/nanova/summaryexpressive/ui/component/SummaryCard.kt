@@ -10,7 +10,9 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.PauseCircleFilled
 import androidx.compose.material.icons.outlined.PlayCircleFilled
 import androidx.compose.material.icons.outlined.Share
@@ -29,6 +32,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -116,7 +120,11 @@ fun SummaryCard(
         Column(
             modifier = Modifier.animateContentSize()
         ) {
-            if (summary.title.isNotBlank()) {
+            val hasTitle = summary.title.isNotBlank()
+            val knownAuthor = summary.author.takeIf { isKnownAuthor(it) }
+            val hasMeta = knownAuthor != null || summary.isYoutubeLink || summary.isBiliBiliLink || summary.provider != null
+
+            if (hasTitle) {
                 Text(
                     text = summary.title,
                     style = MaterialTheme.typography.titleLarge,
@@ -124,15 +132,26 @@ fun SummaryCard(
                     modifier = Modifier
                         .padding(top = 12.dp, start = 12.dp, end = 12.dp)
                 )
+            }
+
+            if (hasMeta) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            start = 12.dp,
+                            end = 12.dp,
+                            top = if (hasTitle) 4.dp else 12.dp,
+                            bottom = 4.dp
+                        )
                 ) {
-                    if (summary.author.isNotBlank()) {
+                    if (knownAuthor != null) {
                         Text(
-                            text = summary.author,
+                            text = knownAuthor,
                             style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier.padding(horizontal = 12.dp)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = 8.dp)
                         )
                     }
 
@@ -161,8 +180,122 @@ fun SummaryCard(
                             model = summary.model,
                             boxSize = 22.dp,
                             fontSize = 6.sp,
-                            modifier = Modifier.padding(end = 12.dp)
+                            modifier = Modifier.padding(end = 4.dp)
                         )
+                    }
+                }
+            }
+
+            if (summary.tags.isNotEmpty()) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(
+                        start = 12.dp,
+                        end = 12.dp,
+                        top = if (hasTitle || hasMeta) 4.dp else 12.dp,
+                        bottom = 4.dp
+                    )
+                ) {
+                    summary.tags.forEach { tag ->
+                        Surface(
+                            shape = MaterialTheme.shapes.extraSmall,
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                        ) {
+                            Text(
+                                text = "#$tag",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (!summary.errorReason.isNullOrBlank()) {
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Info,
+                            contentDescription = "Caveat",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = summary.errorReason,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
+            }
+
+            if (!summary.overview.isNullOrBlank()) {
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text(
+                            text = "Overview",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = summary.overview,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                }
+            }
+
+            if (summary.keyPoints.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "Key Points",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 2.dp)
+                    )
+                    summary.keyPoints.forEach { point ->
+                        Row(
+                            modifier = Modifier.padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text(
+                                text = "• ",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = point,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             }
@@ -180,7 +313,7 @@ fun SummaryCard(
                     .padding(
                         start = 12.dp,
                         end = 12.dp,
-                        top = 10.dp,
+                        top = if (!hasTitle && !hasMeta && summary.tags.isEmpty() && summary.errorReason.isNullOrBlank() && summary.overview.isNullOrBlank() && summary.keyPoints.isEmpty()) 12.dp else 6.dp,
                         bottom = if (isTextOverflowing) 0.dp else 12.dp
                     )
             )
@@ -206,12 +339,25 @@ fun SummaryCard(
     }
 }
 
+private fun isKnownAuthor(author: String?): Boolean {
+    if (author.isNullOrBlank()) return false
+    val trimmed = author.trim().lowercase(Locale.ROOT)
+    return trimmed != "unknown" &&
+            trimmed != "unknown author" &&
+            trimmed != "n/a" &&
+            trimmed != "none" &&
+            trimmed != "null"
+}
+
 @Preview
 @Composable
 fun SummaryCardPreview() {
     val summary = SummaryOutput(
         title = "Sample Title",
         author = "Sample Author",
+        overview = "A quick overview of what this sample summary contains.",
+        keyPoints = listOf("First key point", "Second key point with more details"),
+        tags = listOf("Android", "AI", "Koog"),
         summary = "This is a sample summary for preview purposes. It should be long enough to test the TTS functionality and also the layout of the card.",
         isYoutubeLink = true,
         length = SummaryLength.SHORT,
