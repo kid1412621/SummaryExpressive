@@ -4,9 +4,11 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
+import me.nanova.summaryexpressive.data.converters.HistoryLengthResultsConverter
 import me.nanova.summaryexpressive.data.converters.SummaryLengthConverter
 import me.nanova.summaryexpressive.data.converters.SummaryTypeConverter
 import me.nanova.summaryexpressive.data.converters.VideoSubtypeConverter
+import me.nanova.summaryexpressive.model.HistoryLengthResult
 import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryType
 import me.nanova.summaryexpressive.model.VideoSubtype
@@ -15,7 +17,8 @@ import me.nanova.summaryexpressive.model.VideoSubtype
 @TypeConverters(
     SummaryLengthConverter::class,
     SummaryTypeConverter::class,
-    VideoSubtypeConverter::class
+    VideoSubtypeConverter::class,
+    HistoryLengthResultsConverter::class,
 )
 data class HistoryEntity(
     @PrimaryKey
@@ -33,4 +36,6 @@ data class HistoryEntity(
     val provider: String? = null,
     @ColumnInfo(defaultValue = "NULL")
     val model: String? = null,
+    @ColumnInfo(defaultValue = "NULL")
+    val lengthResults: Map<SummaryLength, HistoryLengthResult>? = null,
 )

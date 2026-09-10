@@ -17,7 +17,13 @@ data class HistorySummary(
     val sourceText: String? = null,
     val provider: String? = null,
     val model: String? = null,
+    val lengthResults: Map<SummaryLength, HistoryLengthResult> = emptyMap(),
 ) {
+    val allLengthResults: Map<SummaryLength, HistoryLengthResult>
+        get() = lengthResults.ifEmpty {
+            mapOf(length to HistoryLengthResult(length, summary, provider, model))
+        }
+
     val isYoutubeLink: Boolean
         get() = type == SummaryType.VIDEO && subtype == VideoSubtype.YOUTUBE
 

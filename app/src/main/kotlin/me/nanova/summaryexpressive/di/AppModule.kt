@@ -33,6 +33,7 @@ object AppModule {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE history ADD COLUMN provider TEXT DEFAULT NULL")
                 db.execSQL("ALTER TABLE history ADD COLUMN model TEXT DEFAULT NULL")
+                db.execSQL("ALTER TABLE history ADD COLUMN lengthResults TEXT DEFAULT NULL")
                 db.execSQL("CREATE TABLE IF NOT EXISTS `ai_provider_config` (`provider` TEXT NOT NULL, `apiKey` TEXT NOT NULL, `baseUrl` TEXT NOT NULL, `active_model` TEXT NOT NULL, `models` TEXT DEFAULT NULL, PRIMARY KEY(`provider`))")
             }
         }
@@ -43,6 +44,7 @@ object AppModule {
             "summary_expressive_db"
         )
             .addMigrations(migrationV2)
+            .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = false)
             .build()
     }
 

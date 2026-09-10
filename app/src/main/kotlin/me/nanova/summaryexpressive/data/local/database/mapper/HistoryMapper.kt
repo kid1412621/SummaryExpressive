@@ -16,6 +16,7 @@ fun HistoryEntity.toDomain(): HistorySummary = HistorySummary(
     sourceText = sourceText,
     provider = provider,
     model = model,
+    lengthResults = lengthResults ?: emptyMap(),
 )
 
 fun HistorySummary.toEntity(): HistoryEntity = HistoryEntity(
@@ -31,4 +32,5 @@ fun HistorySummary.toEntity(): HistoryEntity = HistoryEntity(
     sourceText = sourceText,
     provider = provider,
     model = model,
+    lengthResults = lengthResults.takeIf { it.isNotEmpty() },
 )

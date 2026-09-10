@@ -22,7 +22,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import me.nanova.summaryexpressive.model.HistorySummary
+import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryOutput
+import me.nanova.summaryexpressive.ui.component.LengthSelector
 import me.nanova.summaryexpressive.ui.component.SummaryCard
 
 /**
@@ -42,6 +44,20 @@ fun HistoryDetailSheet(
 ) {
     if (summary == null) return
 
+    val availableLengths = remember(summary) {
+        summary.allLengthResults.keys.sortedBy { it.ordinal }
+    }
+    var selectedLength by remember(summary) {
+        mutableStateOf(
+            if (summary.allLengthResults.containsKey(summary.length)) {
+                summary.length
+            } else {
+                availableLengths.firstOrNull() ?: summary.length
+            }
+        )
+    }
+    val currentResult = summary.allLengthResults[selectedLength]
+
     var isPlaying by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
@@ -60,18 +76,35 @@ fun HistoryDetailSheet(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
             ) {
+                if (availableLengths.size > 1) {
+                    val selectedIndex = availableLengths.indexOf(selectedLength).coerceAtLeast(0)
+                    LengthSelector(
+                        selectedIndex = selectedIndex,
+                        onSelectedIndexChange = { index ->
+                            selectedLength = availableLengths[index]
+                            isPlaying = false
+                        },
+                        options = availableLengths.map { length ->
+                            length.name.lowercase().replaceFirstChar { it.titlecase() }
+                        },
+                        enabled = true,
+                        useContainerBackground = false,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                }
+
                 SummaryCard(
                     modifier = Modifier.fillMaxWidth(),
                     summary = SummaryOutput(
                         title = summary.title,
-                        summary = summary.summary,
+                        summary = currentResult?.summary ?: summary.summary,
                         author = summary.author,
                         sourceLink = summary.sourceLink,
                         isYoutubeLink = summary.isYoutubeLink,
                         isBiliBiliLink = summary.isBiliBiliLink,
-                        length = summary.length,
-                        provider = summary.provider,
-                        model = summary.model,
+                        length = currentResult?.length ?: summary.length,
+                        provider = currentResult?.provider ?: summary.provider,
+                        model = currentResult?.model ?: summary.model,
                     ),
                     cardColors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer

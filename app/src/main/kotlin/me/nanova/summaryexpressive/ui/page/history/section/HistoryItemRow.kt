@@ -4,6 +4,7 @@ import android.text.format.DateUtils
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.SmartToy
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +55,7 @@ import coil.request.ImageRequest
 import me.nanova.summaryexpressive.R
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.model.HistorySummary
+import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryType
 import me.nanova.summaryexpressive.ui.component.icon
 
@@ -360,6 +364,43 @@ private fun HistoryItemContent(
     }
 }
 
+private data class ModelBadgeItem(
+    val provider: AIProvider?,
+    val model: String?,
+)
+
+@Composable
+private fun OverlappingRow(
+    modifier: Modifier = Modifier,
+    overlapOffset: Dp = 6.dp,
+    content: @Composable () -> Unit,
+) {
+    Layout(
+        modifier = modifier,
+        content = content
+    ) { measurables, constraints ->
+        if (measurables.isEmpty()) {
+            return@Layout layout(0, 0) {}
+        }
+        val placeables = measurables.map { it.measure(constraints) }
+        val overlapPx = overlapOffset.roundToPx()
+        val totalWidth = placeables.first().width + (placeables.size - 1) * (placeables.first().width - overlapPx).coerceAtLeast(0)
+        val maxHeight = placeables.maxOfOrNull { it.height } ?: 0
+
+        layout(totalWidth, maxHeight) {
+            var xPosition = 0
+            placeables.forEachIndexed { index, placeable ->
+                placeable.placeRelative(
+                    x = xPosition,
+                    y = (maxHeight - placeable.height) / 2,
+                    zIndex = index.toFloat()
+                )
+                xPosition += (placeable.width - overlapPx).coerceAtLeast(0)
+            }
+        }
+    }
+}
+
 @Composable
 private fun HistoryItemMetadataRow(
     summary: HistorySummary,
@@ -384,32 +425,61 @@ private fun HistoryItemMetadataRow(
             )
         }
 
-        if (aiProvider != null || !summary.model.isNullOrBlank()) {
+        val distinctModels = remember(summary.allLengthResults, summary.provider, summary.model, aiProvider) {
+            val fromLengths = summary.allLengthResults.values.mapNotNull { res ->
+                val prov = res.provider?.let { name ->
+                    AIProvider.entries.find { it.name.equals(name, ignoreCase = true) }
+                } ?: aiProvider
+                val mdl = res.model?.takeIf { it.isNotBlank() } ?: summary.model
+                if (prov != null || mdl != null) {
+                    ModelBadgeItem(prov, mdl)
+                } else null
+            }
+
+            if (fromLengths.isNotEmpty()) {
+                fromLengths.distinct()
+            } else {
+                val prov = aiProvider ?: summary.provider?.let { name ->
+                    AIProvider.entries.find { it.name.equals(name, ignoreCase = true) }
+                }
+                val mdl = summary.model?.takeIf { it.isNotBlank() }
+                if (prov != null || mdl != null) {
+                    listOf(ModelBadgeItem(prov, mdl))
+                } else {
+                    emptyList()
+                }
+            }
+        }
+
+        if (distinctModels.size == 1) {
+            val single = distinctModels.first()
             Surface(
-                shape = RoundedCornerShape(4.dp),
+                shape = RoundedCornerShape(6.dp),
                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
-                modifier = Modifier.widthIn(max = 140.dp)
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .widthIn(max = 130.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
-                    if (aiProvider != null) {
+                    if (single.provider != null) {
                         Icon(
-                            painter = painterResource(id = aiProvider.icon),
-                            contentDescription = aiProvider.name,
+                            painter = painterResource(id = single.provider.icon),
+                            contentDescription = single.provider.name,
                             modifier = Modifier.size(13.dp),
-                            tint = if (aiProvider.isMonochromeIcon) {
+                            tint = if (single.provider.isMonochromeIcon) {
                                 MaterialTheme.colorScheme.onPrimaryContainer
                             } else {
                                 Color.Unspecified
                             }
                         )
                     }
-                    if (!summary.model.isNullOrBlank()) {
+                    if (!single.model.isNullOrBlank()) {
                         Text(
-                            text = summary.model,
+                            text = single.model,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             maxLines = 1,
@@ -419,19 +489,116 @@ private fun HistoryItemMetadataRow(
                     }
                 }
             }
+        } else if (distinctModels.size > 1) {
+            OverlappingRow(
+                overlapOffset = 6.dp,
+                modifier = Modifier.padding(vertical = 1.dp)
+            ) {
+                distinctModels.forEach { item ->
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.75f),
+                                shape = CircleShape
+                            )
+                            .border(
+                                width = 1.5.dp,
+                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (item.provider != null) {
+                            Icon(
+                                painter = painterResource(id = item.provider.icon),
+                                contentDescription = item.provider.name,
+                                modifier = Modifier.size(12.dp),
+                                tint = if (item.provider.isMonochromeIcon) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    Color.Unspecified
+                                }
+                            )
+                        } else if (!item.model.isNullOrBlank()) {
+                            Text(
+                                text = item.model.take(1).uppercase(),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Outlined.SmartToy,
+                                contentDescription = null,
+                                modifier = Modifier.size(11.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+            }
         }
 
-        Surface(
-            shape = RoundedCornerShape(4.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHighest
-        ) {
-            Text(
-                text = summary.length.name.lowercase()
-                    .replaceFirstChar { it.titlecase() },
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-            )
+        val lengths = remember(summary.allLengthResults, summary.length) {
+            val fromAll = summary.allLengthResults.keys.sortedBy { it.ordinal }
+            if (fromAll.isNotEmpty()) fromAll else listOf(summary.length)
+        }
+
+        if (lengths.size > 1) {
+            OverlappingRow(
+                overlapOffset = 6.dp,
+                modifier = Modifier.padding(vertical = 1.dp)
+            ) {
+                lengths.forEach { length ->
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f),
+                                shape = CircleShape
+                            )
+                            .border(
+                                width = 1.5.dp,
+                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = when (length) {
+                                SummaryLength.SHORT -> "S"
+                                SummaryLength.MEDIUM -> "M"
+                                SummaryLength.LONG -> "L"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+            }
+        } else {
+            val single = lengths.first()
+            val text = when (single) {
+                SummaryLength.SHORT -> "Short"
+                SummaryLength.MEDIUM -> "Mid"
+                SummaryLength.LONG -> "Long"
+            }
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+            ) {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
         }
     }
 }

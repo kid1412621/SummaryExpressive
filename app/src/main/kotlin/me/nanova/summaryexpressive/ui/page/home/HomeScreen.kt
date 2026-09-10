@@ -67,7 +67,7 @@ import me.nanova.summaryexpressive.ui.Nav
 import me.nanova.summaryexpressive.ui.page.home.action.HomeFloatingActionButtons
 import me.nanova.summaryexpressive.ui.page.home.appbar.HomeTopAppBar
 import me.nanova.summaryexpressive.ui.page.home.input.InputSection
-import me.nanova.summaryexpressive.ui.page.home.input.LengthSelector
+import me.nanova.summaryexpressive.ui.component.LengthSelector
 import me.nanova.summaryexpressive.ui.page.home.result.SummaryResultSection
 import me.nanova.summaryexpressive.ui.page.home.sheet.ProviderModelBottomSheet
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme

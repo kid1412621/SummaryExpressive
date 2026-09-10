@@ -1,4 +1,4 @@
-package me.nanova.summaryexpressive.ui.page.home.input
+package me.nanova.summaryexpressive.ui.component
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandHorizontally
