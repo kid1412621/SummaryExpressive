@@ -111,4 +111,8 @@
     <string name="model_not_found">Model not found. Please check your model configuration in Settings.</string>
     <string name="server_error">AI service is currently unavailable. Please try again later.</string>
     <string name="unknown_error">An unknown error occurred.</string>
+    <string name="quick_switch_title">Quick Switch</string>
+    <string name="drag_horizontal_provider">↔ Provider</string>
+    <string name="drag_vertical_model">↕ Model</string>
+    <string name="release_to_switch">Release to switch</string>
 </resources>

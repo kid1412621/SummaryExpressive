@@ -16,6 +16,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -37,7 +38,18 @@ fun HomeTopAppBar(
     onNav: (dest: Nav) -> Unit,
     onIndicatorClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onConfirmSwitch: ((AIProvider, String) -> Unit)? = null,
 ) {
+    val effectiveProviders = remember(settings.providerOrder, settings.providerConfigs) {
+        val providers = AIProvider.getEffectiveProviders(settings.providerOrder)
+        val configured = providers.filter { provider ->
+            settings.providerConfigs[provider.name]?.let {
+                it.apiKey.isNotBlank() || it.baseUrl.isNotBlank()
+            } ?: false
+        }
+        configured.ifEmpty { providers }
+    }
+
     LargeTopAppBar(
         modifier = modifier,
         title = {
@@ -63,7 +75,12 @@ fun HomeTopAppBar(
                 LlmSwitcher(
                     provider = settings.activeProvider,
                     model = settings.activeModel,
-                    onClick = onIndicatorClick
+                    onClick = onIndicatorClick,
+                    availableProviders = effectiveProviders,
+                    getModelsForProvider = { provider ->
+                        provider.getEffectiveModels(settings.providerConfigs[provider.name])
+                    },
+                    onConfirmSwitch = onConfirmSwitch
                 )
             }
         },
@@ -101,7 +118,8 @@ private fun HomeTopAppBarPreview() {
                 activeModel = "gpt-4o"
             ),
             onNav = {},
-            onIndicatorClick = {}
+            onIndicatorClick = {},
+            onConfirmSwitch = { _, _ -> }
         )
     }
 }

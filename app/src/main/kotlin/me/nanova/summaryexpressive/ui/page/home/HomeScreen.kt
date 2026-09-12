@@ -64,10 +64,10 @@ import me.nanova.summaryexpressive.llm.tools.getFileName
 import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryOutput
 import me.nanova.summaryexpressive.ui.Nav
+import me.nanova.summaryexpressive.ui.component.LengthSelector
 import me.nanova.summaryexpressive.ui.page.home.action.HomeFloatingActionButtons
 import me.nanova.summaryexpressive.ui.page.home.appbar.HomeTopAppBar
 import me.nanova.summaryexpressive.ui.page.home.input.InputSection
-import me.nanova.summaryexpressive.ui.component.LengthSelector
 import me.nanova.summaryexpressive.ui.page.home.result.SummaryResultSection
 import me.nanova.summaryexpressive.ui.page.home.sheet.ProviderModelBottomSheet
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme
@@ -104,6 +104,7 @@ data class HomeActions(
     val onSelectModel: (String) -> Unit,
     val onShowProviderModelSheet: () -> Unit,
     val onDismissProviderModelSheet: () -> Unit,
+    val onSelectProviderAndModel: (AIProvider, String) -> Unit = { _, _ -> },
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -292,6 +293,9 @@ fun HomeScreen(
         },
         onSelectProvider = { settingsViewModel.setAIProviderValue(it.name) },
         onSelectModel = { settingsViewModel.setModel(it) },
+        onSelectProviderAndModel = { provider, model ->
+            settingsViewModel.setProviderAndModel(provider, model)
+        },
         onShowProviderModelSheet = { showProviderModelSheet = true },
         onDismissProviderModelSheet = { showProviderModelSheet = false },
     )
@@ -317,7 +321,8 @@ fun HomeScreen(
                 scrollBehavior = scrollBehavior,
                 settings = settings,
                 onNav = onNav,
-                onIndicatorClick = actions.onShowProviderModelSheet
+                onIndicatorClick = actions.onShowProviderModelSheet,
+                onConfirmSwitch = actions.onSelectProviderAndModel
             )
         },
         snackbarHost = { SnackbarHost(snackBarHostState) },

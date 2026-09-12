@@ -109,6 +109,15 @@ class SettingsViewModel @Inject constructor(
         savePreference(updateUserPreferencesUseCase::setActiveProvider, newValue)
     }
 
+    fun setProviderAndModel(provider: AIProvider, model: String) {
+        _activeProvider.value = provider
+        _activeModel.value = model
+        savePreference(updateUserPreferencesUseCase::setActiveProvider, provider.name)
+        viewModelScope.launch {
+            updateModelForProvider(provider.name, model)
+        }
+    }
+
     fun setProviderOrder(order: List<String>) =
         savePreference(updateUserPreferencesUseCase::setProviderOrder, order)
 
