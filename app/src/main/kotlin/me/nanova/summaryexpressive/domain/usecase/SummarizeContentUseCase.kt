@@ -12,8 +12,6 @@ import me.nanova.summaryexpressive.exception.SummaryException
 import me.nanova.summaryexpressive.exception.toSummaryException
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.LLMHandler
-import me.nanova.summaryexpressive.llm.tools.BiliBiliSubtitleTool
-import me.nanova.summaryexpressive.llm.tools.YouTubeTranscriptTool
 import me.nanova.summaryexpressive.model.HistorySummary
 import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryOutput
@@ -103,9 +101,7 @@ class SummarizeContentUseCaseImpl @Inject constructor(
         return when {
             processedText.startsWith("http://", ignoreCase = true) ||
                     processedText.startsWith("https://", ignoreCase = true) -> {
-                if (YouTubeTranscriptTool.isYouTubeLink(processedText) ||
-                    BiliBiliSubtitleTool.isBiliBiliLink(processedText)
-                ) {
+                if (VideoSubtype.fromUrl(processedText) != null) {
                     SummarySource.Video(processedText)
                 } else {
                     SummarySource.Article(processedText)
@@ -156,11 +152,7 @@ class SummarizeContentUseCaseImpl @Inject constructor(
             is SummarySource.Video -> {
                 type = SummaryType.VIDEO
                 sourceLink = source.url
-                subtype = when {
-                    YouTubeTranscriptTool.isYouTubeLink(source.url) -> VideoSubtype.YOUTUBE
-                    source.url.contains("bilibili.com") -> VideoSubtype.BILIBILI
-                    else -> null
-                }
+                subtype = VideoSubtype.fromUrl(source.url)
             }
             is SummarySource.None -> return
         }

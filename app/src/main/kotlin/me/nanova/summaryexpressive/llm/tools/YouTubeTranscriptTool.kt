@@ -27,6 +27,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import me.nanova.summaryexpressive.model.ExtractedContent
+import me.nanova.summaryexpressive.model.VideoSubtype
 
 @Serializable
 data class YouTubeTranscript(
@@ -56,9 +57,7 @@ class YouTubeTranscriptTool(client: HttpClient) : Tool<YouTubeTranscript, Extrac
     }
 
     companion object {
-        fun isYouTubeLink(input: String): Boolean {
-            return YouTubeExtractor.isYouTubeLink(input)
-        }
+        fun isYouTubeLink(input: String): Boolean = VideoSubtype.isYouTube(input)
     }
 }
 
@@ -130,19 +129,6 @@ private class YouTubeExtractor(private val client: HttpClient) {
             } catch (e: Exception) {
                 Log.e(TAG, "Error parsing URL to extract video ID: $urlInput", e)
                 return null
-            }
-        }
-
-        fun isYouTubeLink(input: String): Boolean {
-            try {
-                val urlString = ensureScheme(input)
-                val url = Url(urlString)
-                val host = url.host.lowercase()
-                // Valid hosts: youtu.be, youtube.com, or any subdomain of youtube.com (e.g., www.youtube.com, m.youtube.com)
-                return host == "youtu.be" || host == "youtube.com" || host.endsWith(".youtube.com")
-            } catch (e: Exception) {
-                Log.e(TAG, "Exception in isYouTubeLink", e)
-                return false
             }
         }
     }

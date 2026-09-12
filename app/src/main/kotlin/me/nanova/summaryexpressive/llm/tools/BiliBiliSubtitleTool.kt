@@ -22,6 +22,7 @@ import kotlinx.serialization.json.Json
 import me.nanova.summaryexpressive.domain.repository.UserPreferencesRepository
 import me.nanova.summaryexpressive.exception.SummaryException
 import me.nanova.summaryexpressive.model.ExtractedContent
+import me.nanova.summaryexpressive.model.VideoSubtype
 
 @Serializable
 private data class BiliVideoInfoResponse(
@@ -88,17 +89,7 @@ class BiliBiliSubtitleTool(
             return if (!url.matches(Regex("^https?://.*"))) "https://$url" else url
         }
 
-        fun isBiliBiliLink(input: String): Boolean {
-            try {
-                val urlString = ensureScheme(input)
-                val url = Url(urlString)
-                val host = url.host.lowercase()
-                return host == "b23.tv" || host == "bilibili.com" || host.endsWith(".bilibili.com")
-            } catch (e: Exception) {
-                Log.e(TAG, "Exception in isBiliBiliLink", e)
-                return false
-            }
-        }
+        fun isBiliBiliLink(input: String): Boolean = VideoSubtype.isBiliBili(input)
     }
 
     override suspend fun execute(args: BiliBiliVideo): ExtractedContent {

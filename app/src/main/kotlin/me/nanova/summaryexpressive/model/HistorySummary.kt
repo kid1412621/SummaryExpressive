@@ -25,8 +25,10 @@ data class HistorySummary(
         }
 
     val isYoutubeLink: Boolean
-        get() = type == SummaryType.VIDEO && subtype == VideoSubtype.YOUTUBE
+        get() = (type == SummaryType.VIDEO && subtype == VideoSubtype.YOUTUBE) ||
+                isYouTubeLink(sourceLink)
 
     val isBiliBiliLink: Boolean
-        get() = type == SummaryType.VIDEO && subtype == VideoSubtype.BILIBILI
+        get() = (type == SummaryType.VIDEO && subtype == VideoSubtype.BILIBILI) ||
+                isBiliBiliLink(sourceLink)
 }

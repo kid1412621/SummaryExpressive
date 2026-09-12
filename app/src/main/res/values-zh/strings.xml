@@ -81,6 +81,8 @@
     <string name="finishButton">完成</string>
     <string name="continueButton">继续</string>
     <string name="skip">跳过</string>
+    <string name="next">下一步</string>
+    <string name="previous">上一步</string>
     <string name="googlePlay">Google Play 应用商城</string>
     <string name="googlePlayDescription">评分</string>
     <string name="tutorial">教程</string>

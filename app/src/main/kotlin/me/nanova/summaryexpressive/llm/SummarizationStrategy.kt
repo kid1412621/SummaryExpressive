@@ -18,12 +18,15 @@ import me.nanova.summaryexpressive.llm.tools.File
 import me.nanova.summaryexpressive.llm.tools.FileExtractorTool
 import me.nanova.summaryexpressive.llm.tools.YouTubeTranscript
 import me.nanova.summaryexpressive.llm.tools.YouTubeTranscriptTool
+import me.nanova.summaryexpressive.llm.tools.extractAuthorFromUrl
+import me.nanova.summaryexpressive.llm.tools.extractTitleFromUrl
+import me.nanova.summaryexpressive.llm.tools.isUnknownAuthor
+import me.nanova.summaryexpressive.llm.tools.isValidTitle
 import me.nanova.summaryexpressive.model.ExtractedContent
 import me.nanova.summaryexpressive.model.LlmSummaryResponse
 import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryOutput
 import me.nanova.summaryexpressive.model.SummarySource
-import java.util.Locale
 
 data class ExtractedPayload(
     val content: ExtractedContent,
@@ -146,12 +149,22 @@ fun createSummarizationStrategy(
             }
 
             val structuredResult = result.structured
-            val finalTitle = structuredResult?.title?.takeIf { it.isNotBlank() }
+            val finalTitle = structuredResult?.title?.takeIf { isValidTitle(it) }
+                ?: payload.content.title.takeIf {
+                    isValidTitle(it) && !it.equals(
+                        "Text Input",
+                        ignoreCase = true
+                    )
+                }
+                ?: payload.sourceLink?.let { extractTitleFromUrl(it) }?.takeIf { isValidTitle(it) }
                 ?: payload.content.title.takeIf { it.isNotBlank() && !it.equals("Text Input", ignoreCase = true) }
                 ?: ""
 
-            val rawAuthor = structuredResult?.author ?: payload.content.author
-            val finalAuthor = if (isUnknownAuthor(rawAuthor)) "" else rawAuthor.trim()
+            val rawAuthor = structuredResult?.author?.takeIf { !isUnknownAuthor(it) }
+                ?: payload.content.author.takeIf { !isUnknownAuthor(it) }
+                ?: payload.sourceLink?.let { extractAuthorFromUrl(it) }
+                    ?.takeIf { !isUnknownAuthor(it) }
+            val finalAuthor = if (isUnknownAuthor(rawAuthor)) "" else rawAuthor?.trim().orEmpty()
 
             SummaryOutput(
                 title = finalTitle,
@@ -211,10 +224,4 @@ private suspend fun requestPlainTextSummary(
         requestLLMWithoutTools()
     }
     return SummarizationResult(summaryText = response.textContent())
-}
-
-private fun isUnknownAuthor(author: String?): Boolean {
-    if (author.isNullOrBlank()) return true
-    val trimmed = author.trim().lowercase(Locale.ROOT)
-    return trimmed == "unknown" || trimmed == "unknown author" || trimmed == "n/a" || trimmed == "none"
 }

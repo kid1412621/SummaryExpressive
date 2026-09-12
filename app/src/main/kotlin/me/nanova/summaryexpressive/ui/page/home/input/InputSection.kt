@@ -16,11 +16,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cancel
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,7 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -46,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import me.nanova.summaryexpressive.R
 import me.nanova.summaryexpressive.exception.SummaryException
+import me.nanova.summaryexpressive.ui.component.ContentBadge
 import me.nanova.summaryexpressive.ui.component.ErrorMessage
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme
 
@@ -74,11 +71,6 @@ fun InputSection(
     }
     val textToShow = documentFilename ?: urlOrText
 
-    val (badgeContainerColor, badgeContentColor) = HomeBadges.badgeColorsFor(
-        urlOrText = urlOrText,
-        documentFilename = documentFilename
-    )
-
     OutlinedTextField(
         value = textToShow,
         onValueChange = onUrlChange,
@@ -89,44 +81,11 @@ fun InputSection(
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { onSummarize() }),
         leadingIcon = {
-            HomeIconBadge(
-                containerColor = badgeContainerColor,
-                contentColor = badgeContentColor,
-                modifier = Modifier.padding(start = 6.dp, end = 2.dp)
-            ) {
-                val lower = urlOrText.trim().lowercase()
-                when {
-                    isDocument -> Icon(
-                        imageVector = Icons.Rounded.Description,
-                        contentDescription = stringResource(id = R.string.document),
-                        modifier = Modifier.size(20.dp)
-                    )
-
-                    lower.contains("youtube.com") || lower.contains("youtu.be") -> Icon(
-                        painter = painterResource(id = R.drawable.youtube),
-                        contentDescription = "YouTube",
-                        modifier = Modifier.size(20.dp)
-                    )
-
-                    lower.contains("bilibili.com") || lower.contains("b23.tv") -> Icon(
-                        painter = painterResource(id = R.drawable.bilibili),
-                        contentDescription = "BiliBili",
-                        modifier = Modifier.size(20.dp)
-                    )
-
-                    isUrl -> Icon(
-                        imageVector = Icons.Rounded.Language,
-                        contentDescription = "Web Article",
-                        modifier = Modifier.size(20.dp)
-                    )
-
-                    else -> Icon(
-                        imageVector = Icons.Rounded.AutoAwesome,
-                        contentDescription = "Text",
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
+            ContentBadge(
+                urlOrText = urlOrText,
+                modifier = Modifier.padding(start = 6.dp, end = 2.dp),
+                documentFilename = documentFilename,
+            )
         },
         supportingText = {
             if (error != null) {

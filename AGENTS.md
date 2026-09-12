@@ -202,14 +202,14 @@ The app defines two product flavors under the `distribution` dimension (`app/bui
 #### UI Layer (`ui/`)
 - **`AppNavigation.kt`**: Navigation graph setup
 - **`Nav.kt`**: Route definitions
-- **`page/`**: Screen composables & page-specific subcomponents
+- **`page/`**: Screen composables & page-specific subcomponents (`home/`, `history/`, `settings/`, `onboarding/`)
   - `HomeScreen.kt`: Main summary screen
   - `HistoryScreen.kt`: History browser with paging
   - `SettingsScreen.kt`: App configuration
   - `AdvancedSetupScreen.kt`: Advanced prompt setup
   - `OnboardingScreen.kt`: First-run setup
   - `BilibiliLoginScreen.kt`: BiliBili authentication sheet
-- **`component/`**: Global reusable UI components (`SummaryCard`, `ErrorMessage`, `LlmSwitcher`, `LlmIndicator`, `LogoIcon`, `ClickablePasteIcon`)
+- **`component/`**: Global reusable UI components (`SummaryCard`, `ContentBadge`, `ErrorMessage`, `LlmSwitcher`, `LlmIndicator`, `LogoIcon`, `ClickablePasteIcon`)
 - **`theme/`**: Material 3 theming (colors, typography, theme)
 
 ---

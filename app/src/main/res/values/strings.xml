@@ -76,6 +76,7 @@
     <string name="discord">Discord Group</string>
     <string name="discordDescription">Join our community</string>
     <string name="next">Next</string>
+    <string name="previous">Previous</string>
     <string name="undo">Undo</string>
     <string name="advancedSummarySetup">Advanced Summary Setup</string>
     <string name="advancedSummarySetupDescription">Configure base prompt and language constraints</string>

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,23 +42,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
-import coil.compose.SubcomposeAsyncImage
-import coil.request.ImageRequest
-import me.nanova.summaryexpressive.R
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.model.HistorySummary
 import me.nanova.summaryexpressive.model.SummaryLength
-import me.nanova.summaryexpressive.model.SummaryType
-import me.nanova.summaryexpressive.ui.component.icon
+import me.nanova.summaryexpressive.ui.component.ContentBadge
+import me.nanova.summaryexpressive.ui.component.extractDomain
 
 /**
  * Item position in an Android 16 expressive grouped list
@@ -129,20 +124,7 @@ fun HistoryItemRow(
     }
 
     val domain = remember(summary.sourceLink) {
-        summary.sourceLink?.let { link ->
-            runCatching {
-                val uri = link.toUri()
-                uri.host?.removePrefix("www.")
-            }.getOrNull()?.takeIf { it.isNotBlank() }
-        }
-    }
-
-    val faviconUrl = remember(domain, summary.type) {
-        if (summary.type == SummaryType.ARTICLE && !domain.isNullOrBlank()) {
-            "https://www.google.com/s2/favicons?domain=$domain&sz=128"
-        } else {
-            null
-        }
+        extractDomain(summary.sourceLink)
     }
 
     SwipeToDismissBox(
@@ -173,10 +155,9 @@ fun HistoryItemRow(
                     .padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                HistoryItemBadge(
+                ContentBadge(
                     summary = summary,
                     domain = domain,
-                    faviconUrl = faviconUrl
                 )
 
                 Spacer(modifier = Modifier.width(14.dp))
@@ -228,78 +209,6 @@ private fun DismissBackground(
             contentDescription = "Delete",
             tint = MaterialTheme.colorScheme.onErrorContainer
         )
-    }
-}
-
-@Composable
-private fun HistoryItemBadge(
-    summary: HistorySummary,
-    domain: String?,
-    faviconUrl: String?,
-    modifier: Modifier = Modifier,
-) {
-    val (badgeContainer, badgeContent) = HistoryBadges.badgeColorsFor(
-        summary.type,
-        summary.subtype
-    )
-    HistoryIconBadge(
-        containerColor = badgeContainer,
-        contentColor = badgeContent,
-        modifier = modifier
-    ) {
-        when {
-            summary.isYoutubeLink -> {
-                Icon(
-                    painter = painterResource(id = R.drawable.youtube),
-                    contentDescription = "YouTube",
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            summary.isBiliBiliLink -> {
-                Icon(
-                    painter = painterResource(id = R.drawable.bilibili),
-                    contentDescription = "BiliBili",
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            summary.type == SummaryType.ARTICLE && faviconUrl != null -> {
-                SubcomposeAsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(faviconUrl)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = domain,
-                    modifier = Modifier
-                        .size(22.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Fit,
-                    loading = {
-                        Icon(
-                            imageVector = summary.type.icon,
-                            contentDescription = summary.type.name,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    error = {
-                        Icon(
-                            imageVector = summary.type.icon,
-                            contentDescription = summary.type.name,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                )
-            }
-
-            else -> {
-                Icon(
-                    imageVector = summary.type.icon,
-                    contentDescription = summary.type.name,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
     }
 }
 
@@ -408,48 +317,34 @@ private fun HistoryItemMetadataRow(
     aiProvider: AIProvider?,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        val authorOrDomain = summary.author.ifBlank { domain ?: "" }
-        if (authorOrDomain.isNotBlank()) {
-            Text(
-                text = authorOrDomain,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false)
-            )
-        }
-
-        val distinctModels = remember(summary.allLengthResults, summary.provider, summary.model, aiProvider) {
-            val fromLengths = summary.allLengthResults.values.mapNotNull { res ->
-                val prov = res.provider?.let { name ->
-                    AIProvider.entries.find { it.name.equals(name, ignoreCase = true) }
-                } ?: aiProvider
-                val mdl = res.model?.takeIf { it.isNotBlank() } ?: summary.model
-                if (prov != null || mdl != null) {
-                    ModelBadgeItem(prov, mdl)
-                } else null
-            }
-
-            if (fromLengths.isNotEmpty()) {
-                fromLengths.distinct()
-            } else {
-                val prov = aiProvider ?: summary.provider?.let { name ->
-                    AIProvider.entries.find { it.name.equals(name, ignoreCase = true) }
+    @Composable
+    fun RowScope.Models() {
+        val distinctModels =
+            remember(summary.allLengthResults, summary.provider, summary.model, aiProvider) {
+                val fromLengths = summary.allLengthResults.values.mapNotNull { res ->
+                    val prov = res.provider?.let { name ->
+                        AIProvider.entries.find { it.name.equals(name, ignoreCase = true) }
+                    } ?: aiProvider
+                    val mdl = res.model?.takeIf { it.isNotBlank() } ?: summary.model
+                    if (prov != null || mdl != null) {
+                        ModelBadgeItem(prov, mdl)
+                    } else null
                 }
-                val mdl = summary.model?.takeIf { it.isNotBlank() }
-                if (prov != null || mdl != null) {
-                    listOf(ModelBadgeItem(prov, mdl))
+
+                if (fromLengths.isNotEmpty()) {
+                    fromLengths.distinct()
                 } else {
-                    emptyList()
+                    val prov = aiProvider ?: summary.provider?.let { name ->
+                        AIProvider.entries.find { it.name.equals(name, ignoreCase = true) }
+                    }
+                    val mdl = summary.model?.takeIf { it.isNotBlank() }
+                    if (prov != null || mdl != null) {
+                        listOf(ModelBadgeItem(prov, mdl))
+                    } else {
+                        emptyList()
+                    }
                 }
             }
-        }
 
         if (distinctModels.size == 1) {
             val single = distinctModels.first()
@@ -539,10 +434,13 @@ private fun HistoryItemMetadataRow(
                 }
             }
         }
+    }
 
+    @Composable
+    fun Length() {
         val lengths = remember(summary.allLengthResults, summary.length) {
             val fromAll = summary.allLengthResults.keys.sortedBy { it.ordinal }
-            if (fromAll.isNotEmpty()) fromAll else listOf(summary.length)
+            fromAll.ifEmpty { listOf(summary.length) }
         }
 
         if (lengths.size > 1) {
@@ -600,5 +498,27 @@ private fun HistoryItemMetadataRow(
                 )
             }
         }
+    }
+
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        val authorOrDomain = summary.author.ifBlank { domain ?: "" }
+        if (authorOrDomain.isNotBlank()) {
+            Text(
+                text = authorOrDomain,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+        }
+
+        Models()
+
+        Length()
     }
 }
