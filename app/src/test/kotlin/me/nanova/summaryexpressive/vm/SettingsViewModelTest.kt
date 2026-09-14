@@ -46,7 +46,7 @@ class SettingsViewModelTest {
             configs.value[provider]
 
         override suspend fun saveConfig(provider: String, config: ProviderConfig) {
-            configs.value = configs.value + (provider to config)
+            configs.value += (provider to config)
         }
 
         override suspend fun updateApiKey(provider: String, apiKey: String) {

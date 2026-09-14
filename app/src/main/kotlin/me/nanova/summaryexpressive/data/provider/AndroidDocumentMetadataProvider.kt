@@ -12,7 +12,7 @@ import javax.inject.Singleton
 class AndroidDocumentMetadataProvider @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : DocumentMetadataProvider {
-    override suspend fun getFileName(uriString: String): String? {
+    override suspend fun getFileName(uriString: String): String {
         return getFileName(context, uriString.toUri())
     }
 }

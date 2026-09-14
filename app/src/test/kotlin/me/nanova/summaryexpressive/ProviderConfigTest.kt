@@ -93,7 +93,10 @@ class AIProviderConfigTest {
         assertTrue(kimi.defaultModelIds.contains("kimi-k3"))
         assertFalse(kimi.defaultModelIds.contains("moonshot-v1-8k"))
         assertFalse(kimi.defaultModelIds.contains("kimi-k2.5"))
-        assertEquals(listOf("kimi-k3", "kimi-k2.7-code", "kimi-k2.7-code-highspeed", "kimi-k2.6"), kimi.defaultModelIds)
+        assertEquals(
+            listOf("kimi-k3", "kimi-k2.7-code", "kimi-k2.7-code-highspeed", "kimi-k2.6"),
+            kimi.defaultModelIds
+        )
         assertEquals("kimi-k3", kimi.getEffectiveModel(null))
 
         val minimax = AIProvider.MINIMAX
@@ -101,7 +104,10 @@ class AIProviderConfigTest {
         assertTrue(minimax.defaultModelIds.contains("MiniMax-M3"))
         assertFalse(minimax.defaultModelIds.contains("MiniMax-M2.5"))
         assertFalse(minimax.defaultModelIds.contains("MiniMax-M2.1"))
-        assertEquals(listOf("MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7-highspeed"), minimax.defaultModelIds)
+        assertEquals(
+            listOf("MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7-highspeed"),
+            minimax.defaultModelIds
+        )
         assertEquals("MiniMax-M3", minimax.getEffectiveModel(null))
 
         val zhipu = AIProvider.ZHIPU
@@ -119,7 +125,9 @@ class AIProviderConfigTest {
                     "Model ${model.id} in ${provider.name} must support OpenAIEndpoint.Completions"
                 )
             }
-            val customModel = me.nanova.summaryexpressive.llm.CustomLLModel(provider, "custom-test-model").toLLModel()
+            val customModel =
+                me.nanova.summaryexpressive.llm.CustomLLModel(provider, "custom-test-model")
+                    .toLLModel()
             assertTrue(
                 customModel.supports(ai.koog.prompt.llm.LLMCapability.OpenAIEndpoint.Completions),
                 "Custom model in ${provider.name} must support OpenAIEndpoint.Completions"

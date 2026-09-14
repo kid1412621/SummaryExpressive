@@ -8,12 +8,17 @@
 [![GitHub Release](https://img.shields.io/github/v/release/kid1412621/SummaryExpressive)](https://github.com/kid1412621/SummaryExpressive/releases)
 [![Google Play Store](https://img.shields.io/badge/Google_Play-414141?logo=google-play)](https://play.google.com/store/apps/details?id=me.nanova.summaryexpressive)
 
-[![ChatGPT](https://img.shields.io/badge/ChatGPT-74aa9c?logo=openai&logoColor=white)](#)
-[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-886FBF?logo=googlegemini&logoColor=fff)](#)
-[![Claude](https://img.shields.io/badge/Claude-D97757?logo=claude&logoColor=fff)](#)
-[![Ollama](https://img.shields.io/badge/Ollama-fff?logo=ollama&logoColor=000)](#)
-[![Mistral AI](https://img.shields.io/badge/Mistral%20AI-FA520F?logo=mistral-ai&logoColor=fff)](#)
-[![Deepseek](https://custom-icon-badges.demolab.com/badge/Deepseek-4D6BFF?logo=deepseek&logoColor=fff)](#)
+[![ChatGPT](https://custom-icon-badges.demolab.com/badge/ChatGPT-74aa9c?logo=openai&logoColor=white)](https://platform.openai.com)
+[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-886FBF?logo=googlegemini&logoColor=fff)](https://aistudio.google.com)
+[![Claude](https://img.shields.io/badge/Claude-D97757?logo=claude&logoColor=fff)](https://platform.claude.com/)
+[![Ollama](https://img.shields.io/badge/Ollama-fff?logo=ollama&logoColor=000)](https://ollama.com/)
+[![OpenRouter](https://img.shields.io/badge/OpenRouter-94A3B8?logo=openrouter&logoColor=fff)](https://openrouter.ai)
+[![Mistral AI](https://img.shields.io/badge/Mistral%20AI-FA520F?logo=mistral-ai&logoColor=fff)](https://mistral.ai/pricing/api/)
+[![Deepseek](https://custom-icon-badges.demolab.com/badge/Deepseek-4D6BFF?logo=deepseek&logoColor=fff)](https://platform.deepseek.com)
+[![Kimi](https://img.shields.io/badge/Kimi-002F5B?logo=kimi)](https://platform.kimi.ai)
+[![MiniMax](https://img.shields.io/badge/Minimax-E73562?logo=minimax&color=ffffff)](https://platform.minimax.io)
+[![Zhipu](https://img.shields.io/badge/Zhipu-2D2D2D?logo=z.ai)](https://z.ai/model-api)
+[![Qwen](https://img.shields.io/badge/Qwen-605CEC?logo=qwen&logoColor=fff)](https://qwen.ai/apiplatform)
 
 </div>
 

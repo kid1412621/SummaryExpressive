@@ -74,7 +74,7 @@ fun InputSection(
     OutlinedTextField(
         value = textToShow,
         onValueChange = onUrlChange,
-        label = { Text(stringResource(id = R.string.url_or_text)) },
+        placeholder = { Text(stringResource(id = R.string.url_or_text)) },
         enabled = !isLoading,
         readOnly = isDocument,
         isError = error != null,
@@ -191,6 +191,20 @@ private fun InputSectionPreview() {
 
     SummaryExpressiveTheme {
         Column(modifier = Modifier.padding(16.dp)) {
+            InputSection(
+                urlOrText = "",
+                onUrlChange = {},
+                onSummarize = {},
+                error = null,
+                apiKey = "test_api_key",
+                onClear = {},
+                focusRequester = focusRequester,
+                documentFilename = null,
+                isLoading = false,
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
             InputSection(
                 urlOrText = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 onUrlChange = {},

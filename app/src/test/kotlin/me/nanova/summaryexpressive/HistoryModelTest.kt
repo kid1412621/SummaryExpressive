@@ -184,7 +184,11 @@ class HistoryModelTest {
         for (url in ytUrls) {
             assertTrue(isYouTubeLink(url), "Expected $url to be detected as YouTube")
             assertFalse(isBiliBiliLink(url), "Expected $url not to be detected as BiliBili")
-            assertEquals(VideoSubtype.YOUTUBE, VideoSubtype.fromUrl(url), "Expected $url to resolve to YOUTUBE")
+            assertEquals(
+                VideoSubtype.YOUTUBE,
+                VideoSubtype.fromUrl(url),
+                "Expected $url to resolve to YOUTUBE"
+            )
         }
 
         // BiliBili positive cases
@@ -202,7 +206,11 @@ class HistoryModelTest {
         for (url in biliUrls) {
             assertTrue(isBiliBiliLink(url), "Expected $url to be detected as BiliBili")
             assertFalse(isYouTubeLink(url), "Expected $url not to be detected as YouTube")
-            assertEquals(VideoSubtype.BILIBILI, VideoSubtype.fromUrl(url), "Expected $url to resolve to BILIBILI")
+            assertEquals(
+                VideoSubtype.BILIBILI,
+                VideoSubtype.fromUrl(url),
+                "Expected $url to resolve to BILIBILI"
+            )
         }
 
         // Negative cases (articles, lookalikes, false domains)

@@ -1,7 +1,6 @@
 package me.nanova.summaryexpressive.data.converters
 
 import androidx.room.TypeConverter
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import me.nanova.summaryexpressive.model.HistoryLengthResult
 import me.nanova.summaryexpressive.model.SummaryLength

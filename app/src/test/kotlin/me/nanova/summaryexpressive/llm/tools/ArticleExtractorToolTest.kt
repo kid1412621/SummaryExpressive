@@ -62,7 +62,8 @@ class ArticleExtractorToolTest {
 
     @Test
     fun `extractTitle should fall back to URL slug for Medium article with hex post ID`() {
-        val url = "https://medium.com/@visrow/comprehensive-guide-to-spec-driven-development-kiro-github-spec-kit-and-bmad-method-5d28ff61b9b1"
+        val url =
+            "https://medium.com/@visrow/comprehensive-guide-to-spec-driven-development-kiro-github-spec-kit-and-bmad-method-5d28ff61b9b1"
         val html = """
             <html>
             <head>
@@ -81,7 +82,8 @@ class ArticleExtractorToolTest {
 
     @Test
     fun `extractTitle should fall back to URL slug for Medium subdomain article`() {
-        val url = "https://cloudwithazeem.medium.com/java-just-got-its-biggest-upgrade-in-decades-459fa70f991a"
+        val url =
+            "https://cloudwithazeem.medium.com/java-just-got-its-biggest-upgrade-in-decades-459fa70f991a"
         val html = """
             <html>
             <head>

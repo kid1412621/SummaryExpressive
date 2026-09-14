@@ -96,7 +96,8 @@ class SummaryExceptionTest {
 
     @Test
     fun `test LLMClientException maps 429 to RateLimitException`() {
-        val clientEx = LLMClientException("Error from client: 429 Too Many Requests: quota exceeded")
+        val clientEx =
+            LLMClientException("Error from client: 429 Too Many Requests: quota exceeded")
         val result = clientEx.toSummaryException()
         assertTrue(result is SummaryException.RateLimitException)
         assertEquals(R.string.rateLimit, result.getUserMessageResId())

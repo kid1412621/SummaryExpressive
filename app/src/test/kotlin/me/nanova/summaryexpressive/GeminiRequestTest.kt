@@ -36,7 +36,8 @@ class GeminiRequestTest {
         val rawMockEngine = object : HttpClientEngineBase("raw-mock-engine") {
             override val config: HttpClientEngineConfig = HttpClientEngineConfig()
             override val supportedCapabilities = setOf(io.ktor.client.plugins.HttpTimeoutCapability)
-            override val coroutineContext: CoroutineContext = kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO
+            override val coroutineContext: CoroutineContext =
+                kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO
 
             override suspend fun execute(data: HttpRequestData): HttpResponseData {
                 val body = data.body
@@ -90,8 +91,14 @@ class GeminiRequestTest {
         println(capturedWireBody)
 
         assertFalse(capturedWireBody.contains("toolConfig"), "toolConfig should be removed")
-        assertFalse(capturedWireBody.contains("generationConfig"), "empty generationConfig should be removed")
+        assertFalse(
+            capturedWireBody.contains("generationConfig"),
+            "empty generationConfig should be removed"
+        )
         assertTrue(capturedWireBody.contains("contents"), "contents should remain")
-        assertTrue(capturedWireBody.contains("systemInstruction"), "systemInstruction should remain")
+        assertTrue(
+            capturedWireBody.contains("systemInstruction"),
+            "systemInstruction should remain"
+        )
     }
 }

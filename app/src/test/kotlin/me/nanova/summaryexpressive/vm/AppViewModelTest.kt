@@ -4,7 +4,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -40,6 +39,7 @@ class AppViewModelTest {
         override suspend fun setIsOnboarded(value: Boolean) {
             prefs.value = prefs.value.copy(isOnboarded = value)
         }
+
         override suspend fun setShowLength(value: Boolean) {}
         override suspend fun setSummaryLength(value: String) {}
         override suspend fun setAutoExtractUrl(value: Boolean) {}

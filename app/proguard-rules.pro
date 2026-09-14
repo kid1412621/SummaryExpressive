@@ -25,11 +25,8 @@
 -keep class ai.koog.agents.core.tools.Tool { *; }
 -keep class ai.koog.prompt.executor.model.PromptExecutor { *; }
 -keep class ai.koog.prompt.llm.LLMProvider { *; }
--keep class * extends ai.koog.agents.core.tools.Tool { *; }
 -keep class * implements ai.koog.agents.core.tools.Tool { *; }
--keep class * extends ai.koog.prompt.executor.model.PromptExecutor { *; }
 -keep class * implements ai.koog.prompt.executor.model.PromptExecutor { *; }
--keep class * extends ai.koog.prompt.llm.LLMProvider { *; }
 -keep class * implements ai.koog.prompt.llm.LLMProvider { *; }
 
 # Preserve ServiceLoader implementations for KoogHttpClient
@@ -49,7 +46,6 @@
 
 # 3. Ktor & Networking
 # Recommended rules for Ktor on Android to prevent deadlocks and ensure coroutine safety.
--keepclassmembers class kotlinx.** { volatile <fields>; }
 -keepclassmembers class io.ktor.** { volatile <fields>; }
 -keep class io.ktor.client.engine.android.** { *; }
 -dontwarn io.ktor.**
@@ -72,24 +68,15 @@
 -dontwarn com.fasterxml.jackson.core.JsonFactory
 -dontwarn com.fasterxml.jackson.core.JsonGenerator
 
-# 5. jsoup
+# 4. jsoup
 -dontwarn com.google.re2j.**
 -dontwarn org.jsoup.helper.Re2jRegex**
 
-# 6. Project specific data models
+# 5. Project specific data models
 -keep class me.nanova.summaryexpressive.model.** { *; }
--keep class me.nanova.summaryexpressive.llm.SummaryOutput { *; }
--keep class me.nanova.summaryexpressive.llm.SummaryLength { *; }
 
-# 7. LLM Tools (used by Koog via reflection)
--keep class me.nanova.summaryexpressive.llm.tools.** { *; }
+# 6. LLM Tools (used by Koog via reflection)
+-keep class me.nanova.summaryexpressive.llm.tools.*Tool { *; }
 
-# 8. Room Type Converters
+# 7. Room Type Converters
 -keep class me.nanova.summaryexpressive.data.converters.** { *; }
-
-# 9. ViewModel state classes used in serialization/reflection
--keep class me.nanova.summaryexpressive.vm.SummaryViewModel$SummarySource** { *; }
-
-# 10. Hilt/Dagger (General compat)
--keep class * extends androidx.lifecycle.ViewModel
--keep @dagger.hilt.android.lifecycle.HiltViewModel class * { *; }

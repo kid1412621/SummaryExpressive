@@ -1,6 +1,5 @@
 package me.nanova.summaryexpressive.ui.page.history
 
-import me.nanova.summaryexpressive.ui.component.extractDomain
 import me.nanova.summaryexpressive.ui.component.extractRootDomain
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -24,7 +23,8 @@ class FaviconResolutionTest {
         val domain = "cloudwithazeem.medium.com"
         val rootDomain = extractRootDomain(domain)
         val faviconUrl = "https://www.google.com/s2/favicons?domain_url=https://$domain&sz=128"
-        val rootFaviconUrl = "https://www.google.com/s2/favicons?domain_url=https://$rootDomain&sz=128"
+        val rootFaviconUrl =
+            "https://www.google.com/s2/favicons?domain_url=https://$rootDomain&sz=128"
 
         assertEquals(
             "https://www.google.com/s2/favicons?domain_url=https://cloudwithazeem.medium.com&sz=128",

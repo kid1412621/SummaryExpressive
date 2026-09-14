@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.domain.usecase.SummarizeContentUseCase
-import me.nanova.summaryexpressive.exception.SummaryException
 import me.nanova.summaryexpressive.exception.toSummaryException
 import me.nanova.summaryexpressive.model.SummaryLength
 import javax.inject.Inject

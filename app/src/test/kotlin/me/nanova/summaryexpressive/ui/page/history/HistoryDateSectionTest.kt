@@ -28,14 +28,44 @@ class HistoryDateSectionTest {
     @Test
     fun `test groupShape radii values`() {
         val singleShape = groupShape(GroupPosition.SINGLE, outerRadius = 24.dp, innerRadius = 4.dp)
-        assertEquals(24.dp, singleShape.topStart.toPx(androidx.compose.ui.geometry.Size(100f, 100f), androidx.compose.ui.unit.Density(1f)).dp)
+        assertEquals(
+            24.dp,
+            singleShape.topStart.toPx(
+                androidx.compose.ui.geometry.Size(100f, 100f),
+                androidx.compose.ui.unit.Density(1f)
+            ).dp
+        )
 
         val topShape = groupShape(GroupPosition.TOP, outerRadius = 24.dp, innerRadius = 4.dp)
-        assertEquals(24.dp, topShape.topStart.toPx(androidx.compose.ui.geometry.Size(100f, 100f), androidx.compose.ui.unit.Density(1f)).dp)
-        assertEquals(4.dp, topShape.bottomStart.toPx(androidx.compose.ui.geometry.Size(100f, 100f), androidx.compose.ui.unit.Density(1f)).dp)
+        assertEquals(
+            24.dp,
+            topShape.topStart.toPx(
+                androidx.compose.ui.geometry.Size(100f, 100f),
+                androidx.compose.ui.unit.Density(1f)
+            ).dp
+        )
+        assertEquals(
+            4.dp,
+            topShape.bottomStart.toPx(
+                androidx.compose.ui.geometry.Size(100f, 100f),
+                androidx.compose.ui.unit.Density(1f)
+            ).dp
+        )
 
         val bottomShape = groupShape(GroupPosition.BOTTOM, outerRadius = 24.dp, innerRadius = 4.dp)
-        assertEquals(4.dp, bottomShape.topStart.toPx(androidx.compose.ui.geometry.Size(100f, 100f), androidx.compose.ui.unit.Density(1f)).dp)
-        assertEquals(24.dp, bottomShape.bottomStart.toPx(androidx.compose.ui.geometry.Size(100f, 100f), androidx.compose.ui.unit.Density(1f)).dp)
+        assertEquals(
+            4.dp,
+            bottomShape.topStart.toPx(
+                androidx.compose.ui.geometry.Size(100f, 100f),
+                androidx.compose.ui.unit.Density(1f)
+            ).dp
+        )
+        assertEquals(
+            24.dp,
+            bottomShape.bottomStart.toPx(
+                androidx.compose.ui.geometry.Size(100f, 100f),
+                androidx.compose.ui.unit.Density(1f)
+            ).dp
+        )
     }
 }

@@ -22,7 +22,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import me.nanova.summaryexpressive.model.HistorySummary
-import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryOutput
 import me.nanova.summaryexpressive.ui.component.LengthSelector
 import me.nanova.summaryexpressive.ui.component.SummaryCard

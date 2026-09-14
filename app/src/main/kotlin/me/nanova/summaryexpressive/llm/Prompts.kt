@@ -62,10 +62,10 @@ fun generateFinalPromptString(
     }
 
     if (hasLengthPlaceholder) {
-        if (showLength) {
-            baseToUse = baseToUse.replace("[Length instructions]", lengthInstruction)
+        baseToUse = if (showLength) {
+            baseToUse.replace("[Length instructions]", lengthInstruction)
         } else {
-            baseToUse = baseToUse.lines()
+            baseToUse.lines()
                 .filterNot { it.contains("[Length instructions]") }
                 .joinToString("\n")
         }

@@ -29,7 +29,7 @@ class LlmSwitcherStateTest {
 
     private fun createTestState(
         hapticFeedback: HapticFeedback? = null,
-        onConfirm: ((AIProvider, String) -> Unit)? = null
+        onConfirm: ((AIProvider, String) -> Unit)? = null,
     ): LlmSwitcherState {
         return LlmSwitcherState(
             availableProviders = providers,
@@ -48,7 +48,10 @@ class LlmSwitcherStateTest {
 
         assertFalse(state.isLongPressing)
 
-        state.onLongPressStart(initialProvider = AIProvider.GEMINI, initialModel = "gemini-1.5-flash")
+        state.onLongPressStart(
+            initialProvider = AIProvider.GEMINI,
+            initialModel = "gemini-1.5-flash"
+        )
 
         assertTrue(state.isLongPressing)
         assertEquals(AIProvider.GEMINI, state.selectedProvider)
@@ -67,7 +70,10 @@ class LlmSwitcherStateTest {
         assertEquals("gpt-4o", state.selectedModel)
 
         // Invalid model for provider
-        state.onLongPressStart(initialProvider = AIProvider.OPENAI, initialModel = "non-existent-model")
+        state.onLongPressStart(
+            initialProvider = AIProvider.OPENAI,
+            initialModel = "non-existent-model"
+        )
         assertEquals(AIProvider.OPENAI, state.selectedProvider)
         assertEquals("gpt-4o", state.selectedModel)
     }
