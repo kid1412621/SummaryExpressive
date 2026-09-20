@@ -439,9 +439,10 @@ private fun HistoryItemMetadataRow(
     @Composable
     fun Length() {
         val lengths = remember(summary.allLengthResults, summary.length) {
-            val fromAll = summary.allLengthResults.keys.sortedBy { it.ordinal }
-            fromAll.ifEmpty { listOf(summary.length) }
+            val fromAll = summary.allLengthResults.keys.filter { it != SummaryLength.NONE }.sortedBy { it.ordinal }
+            if (fromAll.isNotEmpty()) fromAll else if (summary.length != SummaryLength.NONE) listOf(summary.length) else emptyList()
         }
+        if (lengths.isEmpty()) return
 
         if (lengths.size > 1) {
             OverlappingRow(
@@ -468,6 +469,7 @@ private fun HistoryItemMetadataRow(
                                 SummaryLength.SHORT -> "S"
                                 SummaryLength.MEDIUM -> "M"
                                 SummaryLength.LONG -> "L"
+                                SummaryLength.NONE -> ""
                             },
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
@@ -482,20 +484,23 @@ private fun HistoryItemMetadataRow(
                 SummaryLength.SHORT -> "Short"
                 SummaryLength.MEDIUM -> "Mid"
                 SummaryLength.LONG -> "Long"
+                SummaryLength.NONE -> ""
             }
-            Surface(
-                shape = RoundedCornerShape(6.dp),
-                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-            ) {
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
+            if (text.isNotEmpty()) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                ) {
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
             }
         }
     }

@@ -37,12 +37,14 @@ class SettingsViewModel @Inject constructor(
         val providerConfigs = userSettings.providerConfigs
         val effectiveProvider = immediateProvider
             ?: prefs.activeProvider?.let { AIProvider.entries.find { p -> p.name == it } }
-        val providerConfig = effectiveProvider?.name?.let { providerConfigs[it] }
+            ?: AIProvider.OPENAI
+        val providerConfig = effectiveProvider.name.let { providerConfigs[it] }
         val storedLength = SummaryLength.entries.find { it.name == prefs.summaryLength }
             ?: SummaryLength.MEDIUM
         val effectiveLength = immediateLength ?: storedLength
-        val effectiveModel = immediateModel
+        val effectiveModel = immediateModel?.takeIf { it.isNotBlank() }
             ?: providerConfig?.activeModel?.takeIf { it.isNotBlank() }
+            ?: effectiveProvider.getEffectiveModel(providerConfig)
 
         SettingsUiState(
             useOriginalLanguage = prefs.useOriginalLanguage,
@@ -167,12 +169,30 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun setProviderModels(provider: String, models: List<String>, selectedModel: String? = null) {
+        val currentActive =
+            _activeProvider.value?.name ?: settingsUiState.value.activeProvider?.name
+        val targetModel =
+            selectedModel ?: models.firstOrNull() ?: ""
+        if (currentActive == provider || currentActive == null) {
+            if (targetModel.isNotBlank()) {
+                _activeModel.value = targetModel
+            }
+            if (_activeProvider.value == null && settingsUiState.value.activeProvider == null) {
+                _activeProvider.value = AIProvider.entries.find { it.name == provider }
+            }
+        }
         viewModelScope.launch {
             updateProviderConfigUseCase.setProviderModels(provider, models, selectedModel)
         }
     }
 
     fun resetProviderModelsToDefault(provider: String) {
+        val currentActive =
+            _activeProvider.value?.name ?: settingsUiState.value.activeProvider?.name
+        if (currentActive == provider || currentActive == null) {
+            val aiProvider = AIProvider.entries.find { it.name == provider }
+            _activeModel.value = aiProvider?.defaultModelIds?.firstOrNull()
+        }
         viewModelScope.launch {
             updateProviderConfigUseCase.resetProviderModelsToDefault(provider)
         }

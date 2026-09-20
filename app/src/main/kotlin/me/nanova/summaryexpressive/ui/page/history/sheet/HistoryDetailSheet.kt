@@ -15,13 +15,16 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import me.nanova.summaryexpressive.model.HistorySummary
+import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryOutput
 import me.nanova.summaryexpressive.ui.component.LengthSelector
 import me.nanova.summaryexpressive.ui.component.SummaryCard
@@ -44,7 +47,7 @@ fun HistoryDetailSheet(
     if (summary == null) return
 
     val availableLengths = remember(summary) {
-        summary.allLengthResults.keys.sortedBy { it.ordinal }
+        summary.allLengthResults.keys.filter { it != SummaryLength.NONE }.sortedBy { it.ordinal }
     }
     var selectedLength by remember(summary) {
         mutableStateOf(
@@ -55,9 +58,16 @@ fun HistoryDetailSheet(
             }
         )
     }
-    val currentResult = summary.allLengthResults[selectedLength]
+    val activeSummary = remember(summary, selectedLength) {
+        summary.copy(length = selectedLength)
+    }
 
     var isPlaying by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
+
+    LaunchedEffect(selectedLength) {
+        scrollState.scrollTo(0)
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -73,7 +83,7 @@ fun HistoryDetailSheet(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(scrollState)
             ) {
                 if (availableLengths.size > 1) {
                     val selectedIndex = availableLengths.indexOf(selectedLength).coerceAtLeast(0)
@@ -92,27 +102,32 @@ fun HistoryDetailSheet(
                     )
                 }
 
-                SummaryCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    summary = SummaryOutput(
-                        title = summary.title,
-                        summary = currentResult?.summary ?: summary.summary,
-                        author = summary.author,
-                        sourceLink = summary.sourceLink,
-                        isYoutubeLink = summary.isYoutubeLink,
-                        isBiliBiliLink = summary.isBiliBiliLink,
-                        length = currentResult?.length ?: summary.length,
-                        provider = currentResult?.provider ?: summary.provider,
-                        model = currentResult?.model ?: summary.model,
-                    ),
-                    cardColors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    ),
-                    isExpandedByDefault = true,
-                    isPlaying = isPlaying,
-                    onPlayRequest = { isPlaying = !isPlaying },
-                    onShowSnackbar = onShowSnackbar
-                )
+                key(selectedLength) {
+                    SummaryCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        summary = SummaryOutput(
+                            title = summary.title,
+                            summary = activeSummary.summary,
+                            author = summary.author,
+                            sourceLink = summary.sourceLink,
+                            isYoutubeLink = summary.isYoutubeLink,
+                            isBiliBiliLink = summary.isBiliBiliLink,
+                            length = activeSummary.length,
+                            provider = activeSummary.provider ?: summary.provider,
+                            model = activeSummary.model ?: summary.model,
+                            overview = activeSummary.overview,
+                            keyPoints = activeSummary.keyPoints,
+                            tags = activeSummary.tags.ifEmpty { summary.tags },
+                        ),
+                        cardColors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        isExpandedByDefault = true,
+                        isPlaying = isPlaying,
+                        onPlayRequest = { isPlaying = !isPlaying },
+                        onShowSnackbar = onShowSnackbar
+                    )
+                }
             }
         }
     }

@@ -13,6 +13,7 @@ import me.nanova.summaryexpressive.domain.repository.HistoryRepository
 import me.nanova.summaryexpressive.domain.usecase.DeleteHistorySummaryUseCase
 import me.nanova.summaryexpressive.domain.usecase.GetHistorySummariesUseCase
 import me.nanova.summaryexpressive.domain.usecase.RestoreHistorySummaryUseCase
+import me.nanova.summaryexpressive.model.HistoryLengthResult
 import me.nanova.summaryexpressive.model.HistorySummary
 import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryType
@@ -100,19 +101,29 @@ class HistoryViewModelTest {
                 id = "id-1",
                 title = "Article 1",
                 author = "Author 1",
-                summary = "Summary 1",
                 length = SummaryLength.SHORT,
                 type = SummaryType.ARTICLE,
-                provider = "OPENAI"
+                lengthResults = mapOf(
+                    SummaryLength.SHORT to HistoryLengthResult(
+                        length = SummaryLength.SHORT,
+                        summary = "Summary 1",
+                        provider = "OPENAI"
+                    )
+                )
             )
             val summary2 = HistorySummary(
                 id = "id-2",
                 title = "Video 2",
                 author = "Author 2",
-                summary = "Summary 2",
                 length = SummaryLength.LONG,
                 type = SummaryType.VIDEO,
-                provider = "GEMINI"
+                lengthResults = mapOf(
+                    SummaryLength.LONG to HistoryLengthResult(
+                        length = SummaryLength.LONG,
+                        summary = "Summary 2",
+                        provider = "GEMINI"
+                    )
+                )
             )
 
             viewModel.restoreSummary(summary1)

@@ -409,8 +409,8 @@ private fun HomeContent(
 
                     if (settings.showLength) {
                         LengthSelector(
-                            selectedIndex = settings.summaryLength.ordinal,
-                            onSelectedIndexChange = { actions.onLengthSelect(SummaryLength.entries[it]) },
+                            selectedIndex = SummaryLength.userSelectable.indexOf(settings.summaryLength).coerceAtLeast(0),
+                            onSelectedIndexChange = { actions.onLengthSelect(SummaryLength.userSelectable[it]) },
                             options = lengthOptions,
                             enabled = !summarizationState.isLoading,
                         )

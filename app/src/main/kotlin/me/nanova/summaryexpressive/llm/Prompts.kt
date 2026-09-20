@@ -32,10 +32,12 @@ fun generateFinalPromptString(
     customBasePrompt: String,
     additionalSystemPrompt: String,
 ): String {
+    val effectiveShowLength = showLength && length != SummaryLength.NONE
     val lengthInstruction = when (length) {
         SummaryLength.SHORT -> "a few sentences(better within 100 words)"
         SummaryLength.MEDIUM -> "two to three paragraphs"
         SummaryLength.LONG -> "a detailed, multi-paragraph summary"
+        SummaryLength.NONE -> ""
     }
 
     val languageInstruction = if (useContentLanguage) {
@@ -62,7 +64,7 @@ fun generateFinalPromptString(
     }
 
     if (hasLengthPlaceholder) {
-        baseToUse = if (showLength) {
+        baseToUse = if (effectiveShowLength) {
             baseToUse.replace("[Length instructions]", lengthInstruction)
         } else {
             baseToUse.lines()
@@ -84,7 +86,7 @@ fun generateFinalPromptString(
             append(languageInstruction)
         }
 
-        if (showLength && !hasLengthPlaceholder) {
+        if (effectiveShowLength && !hasLengthPlaceholder) {
             append("\n")
             append("The summary should be about $lengthInstruction long, and must not exceed the length of the original content.")
         }

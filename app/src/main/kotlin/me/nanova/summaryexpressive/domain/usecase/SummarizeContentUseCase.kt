@@ -12,6 +12,7 @@ import me.nanova.summaryexpressive.exception.SummaryException
 import me.nanova.summaryexpressive.exception.toSummaryException
 import me.nanova.summaryexpressive.llm.AIProvider
 import me.nanova.summaryexpressive.llm.LLMHandler
+import me.nanova.summaryexpressive.model.HistoryLengthResult
 import me.nanova.summaryexpressive.model.HistorySummary
 import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryOutput
@@ -56,9 +57,13 @@ class SummarizeContentUseCaseImpl @Inject constructor(
                 throw SummaryException.NoContentException()
             }
 
-            val targetLength = overrideLength
-                ?: SummaryLength.entries.find { it.name == prefs.summaryLength }
-                ?: SummaryLength.MEDIUM
+            val targetLength = if (prefs.showLength) {
+                overrideLength
+                    ?: SummaryLength.entries.find { it.name == prefs.summaryLength && it != SummaryLength.NONE }
+                    ?: SummaryLength.MEDIUM
+            } else {
+                SummaryLength.NONE
+            }
 
             val agent = llmHandler.getSummarizationAgent(
                 provider = activeProviderEnum,
@@ -157,17 +162,25 @@ class SummarizeContentUseCaseImpl @Inject constructor(
             is SummarySource.None -> return
         }
 
+        val initialResult = HistoryLengthResult(
+            length = summaryLength,
+            summary = summaryOutput.summary.trim(),
+            provider = provider,
+            model = model,
+            overview = summaryOutput.overview,
+            keyPoints = summaryOutput.keyPoints,
+            tags = summaryOutput.tags,
+        )
+
         val summary = HistorySummary(
             title = summaryOutput.title,
             author = summaryOutput.author,
-            summary = summaryOutput.summary.trim(),
             length = summaryLength,
             type = type,
             subtype = subtype,
             sourceLink = sourceLink,
             sourceText = sourceText,
-            provider = provider,
-            model = model,
+            lengthResults = mapOf(summaryLength to initialResult),
         )
         if (summary.summary.isNotBlank() && summary.summary != "invalid link") {
             historyRepository.addSummary(summary)

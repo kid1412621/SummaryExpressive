@@ -103,8 +103,10 @@ fun ModelSettingsDialog(
 
     val addModel = {
         val trimmed = newModelText.trim()
-        if (trimmed.isNotBlank() && !modelsList.contains(trimmed)) {
-            modelsList = listOf(trimmed) + modelsList
+        if (trimmed.isNotBlank()) {
+            if (!modelsList.contains(trimmed)) {
+                modelsList = listOf(trimmed) + modelsList
+            }
             selectedModel = trimmed
             newModelText = ""
             scope.launch {

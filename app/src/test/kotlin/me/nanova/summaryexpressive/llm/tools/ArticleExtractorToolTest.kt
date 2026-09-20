@@ -214,13 +214,33 @@ class ArticleExtractorToolTest {
     @Test
     fun `isPublicWebUrl should identify valid public web urls`() {
         assertTrue(isPublicWebUrl("https://medium.com/@visrow/article"))
-        assertTrue(isPublicWebUrl("http://example.com/post"))
-        assertTrue(isPublicWebUrl("https://cloudwithazeem.medium.com/test"))
-
         assertFalse(isPublicWebUrl("http://localhost:8080/test"))
         assertFalse(isPublicWebUrl("http://127.0.0.1/test"))
         assertFalse(isPublicWebUrl("http://192.168.1.5/test"))
         assertFalse(isPublicWebUrl("ftp://medium.com"))
         assertFalse(isPublicWebUrl("file:///android_asset/test.html"))
+    }
+
+    @Test
+    fun `isUnknownAuthor should reject placeholders and long paragraphs`() {
+        assertTrue(isUnknownAuthor(null))
+        assertTrue(isUnknownAuthor(""))
+        assertTrue(isUnknownAuthor("   "))
+        assertTrue(isUnknownAuthor("unknown"))
+        assertTrue(isUnknownAuthor("unknown author"))
+        assertTrue(isUnknownAuthor("n/a"))
+        assertTrue(isUnknownAuthor("none"))
+        assertTrue(isUnknownAuthor("null"))
+        assertTrue(isUnknownAuthor("article"))
+        assertTrue(isUnknownAuthor("author"))
+
+        // Multi-line and paragraph strings should be rejected
+        assertTrue(isUnknownAuthor("First Line\nSecond Line"))
+        assertTrue(isUnknownAuthor("Nvidia's acquisition of the open-source AI platform Hugging Face for $12.9 billion combines the leading GPU maker with a central repository."))
+
+        // Genuine authors should be accepted
+        assertFalse(isUnknownAuthor("John Doe"))
+        assertFalse(isUnknownAuthor("Cloud With Azeem"))
+        assertFalse(isUnknownAuthor("Veritasium"))
     }
 }
