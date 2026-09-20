@@ -286,9 +286,13 @@ enum class AIProvider(
     fun getEffectiveModels(providerConfig: ProviderConfig?): List<String> =
         providerConfig?.models?.takeIf { it.isNotEmpty() } ?: defaultModelIds
 
-    fun getEffectiveModel(providerConfig: ProviderConfig?): String =
-        providerConfig?.activeModel?.takeIf { it.isNotBlank() } ?: defaultModelIds.firstOrNull()
-        ?: ""
+    fun getEffectiveModel(providerConfig: ProviderConfig?): String {
+        val effectiveModels = getEffectiveModels(providerConfig)
+        return providerConfig?.activeModel?.takeIf { it.isNotBlank() && it in effectiveModels }
+            ?: effectiveModels.firstOrNull()
+            ?: defaultModelIds.firstOrNull()
+            ?: ""
+    }
 
     companion object {
         fun getEffectiveProviders(order: List<String>): List<AIProvider> {

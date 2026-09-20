@@ -60,6 +60,22 @@ class PromptsTest {
     }
 
     @Test
+    fun `test default prompt hides length instruction when length is SummaryLength NONE`() {
+        val prompt = generateFinalPromptString(
+            length = SummaryLength.NONE,
+            showLength = true,
+            useContentLanguage = true,
+            appLanguage = "English",
+            isAppendMode = true,
+            customBasePrompt = "",
+            additionalSystemPrompt = ""
+        )
+
+        assertFalse(prompt.contains("[Length instructions]"))
+        assertFalse(prompt.contains("The summary should be about"))
+    }
+
+    @Test
     fun `test custom prompt without placeholders appends length and language instructions`() {
         val customPrompt = "Custom instructions for summarizing."
         val prompt = generateFinalPromptString(

@@ -7,30 +7,52 @@ import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.PauseCircleFilled
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PlayCircleFilled
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.Stop
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,8 +69,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -84,7 +108,15 @@ enum class PlaybackSpeed(val rate: Float, val label: String) {
 
 private const val MAX_LINES_WHEN_COLLAPSE = 7
 
-@OptIn(ExperimentalFoundationApi::class)
+/**
+ * Material 3 Expressive Summary Card.
+ * Adheres to M3 Expressive visual design:
+ * - 28dp extra-large corner radius with tonal surface container
+ * - 8dp spacing system with clear typography hierarchy
+ * - Deduplicated overview and strict author validation
+ * - Expressive spring physics on expand/collapse and TTS playback controls
+ */
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SummaryCard(
     modifier: Modifier = Modifier,
@@ -101,6 +133,13 @@ fun SummaryCard(
     var isExpanded by remember { mutableStateOf(isExpandedByDefault) }
     var isTextOverflowing by remember { mutableStateOf(false) }
 
+    val hasTitle = summary.title.isNotBlank()
+    val knownAuthor = summary.author.takeIf { isKnownAuthor(it) }
+    val hasMeta = knownAuthor != null || summary.isYoutubeLink || summary.isBiliBiliLink || summary.provider != null
+    val showOverview = remember(summary.overview, summary.summary) {
+        shouldShowOverview(summary.overview, summary.summary)
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -114,58 +153,78 @@ fun SummaryCard(
                     Modifier.clickable { if (isTextOverflowing) isExpanded = !isExpanded }
                 }
             ),
-        shape = MaterialTheme.shapes.large,
+        shape = MaterialTheme.shapes.extraLarge,
         colors = cardColors,
     ) {
         Column(
-            modifier = Modifier.animateContentSize()
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                )
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            val hasTitle = summary.title.isNotBlank()
-            val knownAuthor = summary.author.takeIf { isKnownAuthor(it) }
-            val hasMeta = knownAuthor != null || summary.isYoutubeLink || summary.isBiliBiliLink || summary.provider != null
-
+            // Title
             if (hasTitle) {
                 Text(
                     text = summary.title,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .padding(top = 12.dp, start = 12.dp, end = 12.dp)
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 28.sp,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
+            // Meta row: Author, Source Icon, Provider/Model Indicator
             if (hasMeta) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            start = 12.dp,
-                            end = 12.dp,
-                            top = if (hasTitle) 4.dp else 12.dp,
-                            bottom = 4.dp
-                        )
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     if (knownAuthor != null) {
-                        Text(
-                            text = knownAuthor,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
                             modifier = Modifier.padding(end = 8.dp)
-                        )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Person,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = knownAuthor,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
 
                     if (summary.isYoutubeLink) {
                         Icon(
                             painter = painterResource(id = R.drawable.youtube),
-                            contentDescription = "YouTube Icon",
-                            modifier = Modifier.padding(top = 1.dp)
+                            contentDescription = "YouTube",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .padding(end = 4.dp)
                         )
                     } else if (summary.isBiliBiliLink) {
                         Icon(
                             painter = painterResource(id = R.drawable.bilibili),
-                            contentDescription = "BiliBili Icon",
-                            modifier = Modifier.padding(top = 1.dp)
+                            contentDescription = "BiliBili",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .padding(end = 4.dp)
                         )
                     }
 
@@ -180,155 +239,156 @@ fun SummaryCard(
                             model = summary.model,
                             boxSize = 22.dp,
                             fontSize = 6.sp,
-                            modifier = Modifier.padding(end = 4.dp)
+                            modifier = Modifier.padding(start = 4.dp)
                         )
                     }
                 }
             }
 
+            // Topic Tags
             if (summary.tags.isNotEmpty()) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.padding(
-                        start = 12.dp,
-                        end = 12.dp,
-                        top = if (hasTitle || hasMeta) 4.dp else 12.dp,
-                        bottom = 4.dp
-                    )
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     summary.tags.forEach { tag ->
                         Surface(
-                            shape = MaterialTheme.shapes.extraSmall,
-                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
                         ) {
                             Text(
                                 text = "#$tag",
                                 style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
                     }
                 }
             }
 
-            if (!summary.errorReason.isNullOrBlank()) {
+            // Expressive Overview Box (only if distinct and non-duplicated)
+            if (showOverview) {
                 Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Info,
-                            contentDescription = "Caveat",
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(16.dp)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 3.dp, height = 14.dp)
+                                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                            )
+                            Text(
+                                text = "Overview",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                         Text(
-                            text = summary.errorReason,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                    }
-                }
-            }
-
-            if (!summary.overview.isNullOrBlank()) {
-                Surface(
-                    shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(10.dp)) {
-                        Text(
-                            text = "Overview",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = summary.overview,
+                            text = summary.overview!!.trim(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(top = 2.dp)
+                            lineHeight = 22.sp
                         )
                     }
                 }
             }
 
+            // Key Points
             if (summary.keyPoints.isNotEmpty()) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = "Key Points",
+                        text = "Key Takeaways",
                         style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 2.dp)
                     )
                     summary.keyPoints.forEach { point ->
                         Row(
-                            modifier = Modifier.padding(vertical = 2.dp),
-                            verticalAlignment = Alignment.Top
+                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = "• ",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 7.dp)
+                                    .size(6.dp)
+                                    .background(MaterialTheme.colorScheme.primary, CircleShape)
                             )
                             Text(
                                 text = point,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                lineHeight = 20.sp
                             )
                         }
                     }
                 }
             }
 
-            Text(
-                text = summary.summary,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = if (isExpanded) Int.MAX_VALUE else MAX_LINES_WHEN_COLLAPSE,
-                overflow = TextOverflow.Ellipsis,
-                onTextLayout = { textLayoutResult ->
-                    isTextOverflowing =
-                        textLayoutResult.lineCount > MAX_LINES_WHEN_COLLAPSE || textLayoutResult.hasVisualOverflow
-                },
-                modifier = Modifier
-                    .padding(
-                        start = 12.dp,
-                        end = 12.dp,
-                        top = if (!hasTitle && !hasMeta && summary.tags.isEmpty() && summary.errorReason.isNullOrBlank() && summary.overview.isNullOrBlank() && summary.keyPoints.isEmpty()) 12.dp else 6.dp,
-                        bottom = if (isTextOverflowing) 0.dp else 12.dp
-                    )
-            )
+            // Summary Body
+            if (summary.summary.isNotBlank()) {
+                Text(
+                    text = summary.summary.trim(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    lineHeight = 22.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = if (isExpanded) Int.MAX_VALUE else MAX_LINES_WHEN_COLLAPSE,
+                    overflow = TextOverflow.Ellipsis,
+                    onTextLayout = { textLayoutResult ->
+                        isTextOverflowing =
+                            textLayoutResult.lineCount > MAX_LINES_WHEN_COLLAPSE || textLayoutResult.hasVisualOverflow
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-            AnimatedVisibility(visible = isTextOverflowing) {
-                TextButton(
-                    onClick = { isExpanded = !isExpanded },
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .padding(end = 8.dp)
+                AnimatedVisibility(
+                    visible = isTextOverflowing,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
                 ) {
-                    Text(if (isExpanded) "Show Less" else "Show More")
+                    TextButton(
+                        onClick = { isExpanded = !isExpanded },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text(
+                            text = if (isExpanded) "Show Less" else "Show More",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
         }
+
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
 
         SummaryActionButtons(
             summary = summary,
@@ -339,40 +399,46 @@ fun SummaryCard(
     }
 }
 
+/**
+ * Validates that an author string is genuine and not an accidental paragraph, summary text, or placeholder.
+ */
 private fun isKnownAuthor(author: String?): Boolean {
     if (author.isNullOrBlank()) return false
-    val trimmed = author.trim().lowercase(Locale.ROOT)
-    return trimmed != "unknown" &&
-            trimmed != "unknown author" &&
-            trimmed != "n/a" &&
-            trimmed != "none" &&
-            trimmed != "null"
-}
-
-@Preview
-@Composable
-fun SummaryCardPreview() {
-    val summary = SummaryOutput(
-        title = "Sample Title",
-        author = "Sample Author",
-        overview = "A quick overview of what this sample summary contains.",
-        keyPoints = listOf("First key point", "Second key point with more details"),
-        tags = listOf("Android", "AI", "Koog"),
-        summary = "This is a sample summary for preview purposes. It should be long enough to test the TTS functionality and also the layout of the card.",
-        isYoutubeLink = true,
-        length = SummaryLength.SHORT,
-        sourceLink = "",
-        isBiliBiliLink = false
-    )
-    SummaryCard(
-        summary = summary,
-        onShowSnackbar = {}
+    val trimmed = author.trim()
+    if (trimmed.length > 60 || trimmed.contains('\n') || trimmed.contains('\r')) return false
+    val lower = trimmed.lowercase(Locale.ROOT)
+    return lower !in setOf(
+        "unknown",
+        "unknown author",
+        "n/a",
+        "none",
+        "null",
+        "article",
+        "author",
+        "creator",
+        "speaker"
     )
 }
 
+/**
+ * Determines whether the overview block should be displayed.
+ * Prevents redundant display when overview is identical to or contained in the summary body.
+ */
+private fun shouldShowOverview(overview: String?, summary: String): Boolean {
+    if (overview.isNullOrBlank()) return false
+    val o = overview.trim()
+    val s = summary.trim()
+    if (o.isEmpty() || s.isEmpty()) return false
+    if (s.equals(o, ignoreCase = true)) return false
+    if (s.startsWith(o, ignoreCase = true)) return false
+    if (s.contains(o, ignoreCase = true)) return false
+    if (s.length < o.length * 1.25) return false
+    return true
+}
 
 private const val TAG = "TTS"
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun SummaryActionButtons(
     summary: SummaryOutput,
@@ -383,6 +449,7 @@ private fun SummaryActionButtons(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val clipboard = LocalClipboard.current
+    val haptics = LocalHapticFeedback.current
     val summaryText = summary.summary
 
     var tts: TextToSpeech? by remember { mutableStateOf(null) }
@@ -420,7 +487,6 @@ private fun SummaryActionButtons(
                     end: Int,
                     frame: Int,
                 ) {
-                    // Is called when a new range of text is being spoken
                     currentPosition = resumeOffset + end
                 }
             }
@@ -480,25 +546,48 @@ private fun SummaryActionButtons(
         }
     }
 
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onPlayRequest) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // TTS Play / Stop
+        FilledTonalIconButton(
+            onClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                onPlayRequest()
+            },
+            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                containerColor = if (isPlaying) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                contentColor = if (isPlaying) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            modifier = Modifier.size(38.dp)
+        ) {
             Icon(
-                Icons.AutoMirrored.Outlined.VolumeUp,
-                contentDescription = if (isPlaying) "Finish" else "Read",
-                modifier = Modifier.size(24.dp)
+                imageVector = if (isPlaying) Icons.Rounded.Stop else Icons.AutoMirrored.Outlined.VolumeUp,
+                contentDescription = if (isPlaying) "Stop" else "Read",
+                modifier = Modifier.size(20.dp)
             )
         }
 
-        AnimatedVisibility(visible = isPlaying) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        // Animated In-Flight TTS Controls (Pause & Speed)
+        AnimatedVisibility(
+            visible = isPlaying,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(start = 6.dp)
+            ) {
                 IconButton(
                     onClick = {
                         if (isPaused) {
                             resumeOffset = currentPosition
-                            val remainingText =
-                                summaryText.substring(currentPosition)
-                            utteranceId =
-                                UUID.randomUUID().toString()
+                            val remainingText = summaryText.substring(currentPosition)
+                            utteranceId = UUID.randomUUID().toString()
                             tts?.setSpeechRate(playbackSpeed.rate)
                             tts?.speak(
                                 remainingText,
@@ -511,93 +600,110 @@ private fun SummaryActionButtons(
                             tts?.stop()
                             isPaused = true
                         }
-                    }
+                    },
+                    modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
-                        if (isPaused) Icons.Outlined.PlayCircleFilled else Icons.Outlined.PauseCircleFilled,
+                        imageVector = if (isPaused) Icons.Outlined.PlayCircleFilled else Icons.Outlined.PauseCircleFilled,
                         contentDescription = if (isPaused) "Continue" else "Pause",
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
                 }
-                TextButton(onClick = {
-                    val newSpeed = playbackSpeed.next()
-                    playbackSpeed = newSpeed
-                    if (!isPaused) {
-                        tts?.stop()
-                        resumeOffset = currentPosition
-                        val remainingText = summaryText.substring(currentPosition)
-                        utteranceId = UUID.randomUUID().toString()
-                        tts?.setSpeechRate(newSpeed.rate)
-                        tts?.speak(
-                            remainingText,
-                            TextToSpeech.QUEUE_FLUSH,
-                            null,
-                            utteranceId
+
+                AssistChip(
+                    onClick = {
+                        val newSpeed = playbackSpeed.next()
+                        playbackSpeed = newSpeed
+                        if (!isPaused) {
+                            tts?.stop()
+                            resumeOffset = currentPosition
+                            val remainingText = summaryText.substring(currentPosition)
+                            utteranceId = UUID.randomUUID().toString()
+                            tts?.setSpeechRate(newSpeed.rate)
+                            tts?.speak(
+                                remainingText,
+                                TextToSpeech.QUEUE_FLUSH,
+                                null,
+                                utteranceId
+                            )
+                        }
+                    },
+                    label = {
+                        Text(
+                            text = playbackSpeed.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold
                         )
-                    }
-                }) {
-                    Text(text = playbackSpeed.label)
-                }
+                    },
+                    shape = CircleShape,
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f),
+                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    modifier = Modifier.height(30.dp)
+                )
             }
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        summary.sourceLink?.let {
-            if (it.isNotEmpty()) {
-                IconButton(
-                    onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, it.toUri())
-                        context.startActivity(intent)
-                    }
-                ) {
-                    Icon(
-                        Icons.Rounded.Link,
-                        contentDescription = "Original Link",
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+        // Original Source Link
+        summary.sourceLink?.takeIf { it.isNotBlank() }?.let { link ->
+            IconButton(
+                onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW, link.toUri())
+                    context.startActivity(intent)
+                },
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Link,
+                    contentDescription = "Original Link",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
 
+        // Copy Button
         IconButton(
             onClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 scope.launch {
                     clipboard.setClipEntry(
-                        ClipData.newPlainText(
-                            "User Input",
-                            summaryText
-                        ).toClipEntry()
+                        ClipData.newPlainText("Summary", summaryText).toClipEntry()
                     )
                     onShowSnackbar(copied)
                 }
-            }
+            },
+            modifier = Modifier.size(40.dp)
         ) {
             Icon(
-                Icons.Rounded.ContentCopy,
+                imageVector = Icons.Rounded.ContentCopy,
                 contentDescription = "Copy",
-                modifier = Modifier.size(24.dp)
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
             )
         }
 
+        // Share Button
         IconButton(
             onClick = {
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
-                    putExtra(
-                        Intent.EXTRA_TEXT,
-                        summaryText
-                    )
+                    putExtra(Intent.EXTRA_TEXT, summaryText)
                 }
-                val chooserIntent =
-                    Intent.createChooser(shareIntent, null)
+                val chooserIntent = Intent.createChooser(shareIntent, null)
                 context.startActivity(chooserIntent)
-            }
+            },
+            modifier = Modifier.size(40.dp)
         ) {
             Icon(
                 imageVector = Icons.Outlined.Share,
                 contentDescription = "Share",
-                modifier = Modifier.size(24.dp)
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
             )
         }
     }
@@ -605,19 +711,26 @@ private fun SummaryActionButtons(
 
 @Preview
 @Composable
-fun SummaryActionButtonsPreview() {
+fun SummaryCardPreview() {
     val summary = SummaryOutput(
-        title = "Sample Title",
-        author = "Sample Author",
-        summary = "This is a sample summary for preview purposes. It should be long enough to test the TTS functionality and also the layout of the card.",
-        sourceLink = "https://xxx.yyy",
+        title = "Nvidia Acquires Hugging Face: The End of Frontier AI Monopolies?",
+        author = "Tech Reporter",
+        overview = "Nvidia combines leading hardware with the primary open-source model hub in a blockbuster deal.",
+        keyPoints = listOf(
+            "Acquisition provides enterprise turnkey hardware-software stack.",
+            "Challenges proprietary API moats from OpenAI and Anthropic."
+        ),
+        tags = listOf("AI", "OpenSource", "Nvidia", "HuggingFace"),
+        summary = "Nvidia's acquisition of the open-source AI platform Hugging Face for $12.9 billion combines the leading GPU maker with a central repository for machine learning models. The integration enables enterprises to deploy private hardware and software alternatives to closed frontier labs.",
         isYoutubeLink = true,
         length = SummaryLength.SHORT,
-        isBiliBiliLink = false
+        sourceLink = "https://youtube.com/watch?v=123",
+        isBiliBiliLink = false,
+        provider = AIProvider.GEMINI.name,
+        model = "gemini-2.0-flash"
     )
-    SummaryActionButtons(
+    SummaryCard(
         summary = summary,
-        onShowSnackbar = {},
-        isPlaying = true,
-        onPlayRequest = {})
+        onShowSnackbar = {}
+    )
 }

@@ -52,22 +52,22 @@ class HistoryRepositoryImpl @Inject constructor(
             for (record in existingRecords) {
                 mergedLengthResults.putAll(record.toDomain().allLengthResults)
             }
-            val newResult = HistoryLengthResult(
+            val newResult = summary.activeResult ?: HistoryLengthResult(
                 length = summary.length,
                 summary = summary.summary,
                 provider = summary.provider,
                 model = summary.model,
+                overview = summary.overview,
+                keyPoints = summary.keyPoints,
+                tags = summary.tags,
             )
             mergedLengthResults[summary.length] = newResult
 
             val updated = primary.copy(
                 title = summary.title.ifBlank { primary.title },
                 author = summary.author.ifBlank { primary.author },
-                summary = summary.summary,
                 length = summary.length,
                 createdOn = System.currentTimeMillis(),
-                provider = summary.provider,
-                model = summary.model,
                 lengthResults = mergedLengthResults,
             )
             historyDao.insert(updated.toEntity())

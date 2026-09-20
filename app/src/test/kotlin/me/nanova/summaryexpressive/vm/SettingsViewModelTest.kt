@@ -281,22 +281,31 @@ class SettingsViewModelTest {
             )
 
             val viewModel = createViewModel()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.settingsUiState.collect {}
+            }
 
-            // Explicit selectedModel
+            // Explicit selectedModel (e.g. newly added and auto-selected model)
             viewModel.setProviderModels("OPENAI", listOf("gpt-4o", "o1"), selectedModel = "o1")
             var config = fakeConfigRepo.getConfig("OPENAI")
             assertEquals("o1", config?.activeModel)
             assertEquals(listOf("gpt-4o", "o1"), config?.models)
+            assertEquals("o1", viewModel.settingsUiState.value.activeModel)
 
             // Fallback to first when current activeModel not in list
             viewModel.setProviderModels("OPENAI", listOf("custom-1", "custom-2"))
             config = fakeConfigRepo.getConfig("OPENAI")
             assertEquals("custom-1", config?.activeModel)
+            assertEquals("custom-1", viewModel.settingsUiState.value.activeModel)
         }
 
     @Test
-    fun `test resetProviderModelsToDefault restores default models`() = runTest(testDispatcher) {
+    fun `test resetProviderModelsToDefault restores default models and updates settingsUiState`() = runTest(testDispatcher) {
+        fakePrefsRepo.prefs.value = UserPreferences(activeProvider = "CLAUDE")
         val viewModel = createViewModel()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.settingsUiState.collect {}
+        }
         val defaultModels = AIProvider.CLAUDE.defaultModelIds
 
         viewModel.resetProviderModelsToDefault("CLAUDE")
@@ -305,6 +314,7 @@ class SettingsViewModelTest {
         assertNotNull(config)
         assertEquals(defaultModels, config?.models)
         assertEquals(defaultModels.first(), config?.activeModel)
+        assertEquals(defaultModels.first(), viewModel.settingsUiState.value.activeModel)
     }
 
     @Test

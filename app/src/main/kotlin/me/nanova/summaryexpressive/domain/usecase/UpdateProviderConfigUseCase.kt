@@ -82,6 +82,10 @@ class UpdateProviderConfigUseCase @Inject constructor(
             provider,
             currentConfig.copy(models = models, activeModel = targetModel)
         )
+        val currentActiveProvider = userPreferencesRepository.preferencesFlow.first().activeProvider
+        if (currentActiveProvider == null) {
+            userPreferencesRepository.setActiveProvider(provider)
+        }
     }
 
     suspend fun resetProviderModelsToDefault(provider: String) {

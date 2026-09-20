@@ -341,8 +341,10 @@ internal fun extractAuthorFromUrl(url: String): String {
 
 internal fun isUnknownAuthor(author: String?): Boolean {
     if (author.isNullOrBlank()) return true
-    val trimmed = author.trim().lowercase(Locale.ROOT)
-    return trimmed in setOf("unknown", "unknown author", "n/a", "none", "article")
+    val trimmed = author.trim()
+    if (trimmed.length > 60 || trimmed.contains('\n') || trimmed.contains('\r')) return true
+    val lower = trimmed.lowercase(Locale.ROOT)
+    return lower in setOf("unknown", "unknown author", "n/a", "none", "null", "article", "author", "creator")
 }
 
 internal fun isAntiBotPage(html: String): Boolean {

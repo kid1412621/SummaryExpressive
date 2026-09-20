@@ -11,7 +11,6 @@ import me.nanova.summaryexpressive.model.isBiliBiliLink
 import me.nanova.summaryexpressive.model.isYouTubeLink
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -19,26 +18,22 @@ import org.junit.jupiter.api.Test
 class HistoryModelTest {
 
     @Test
-    fun `test allLengthResults fallback when lengthResults is empty`() {
+    fun `test computed getters return defaults when lengthResults is empty`() {
         val summary = HistorySummary(
             id = "1",
             title = "Test Title",
             author = "Test Author",
-            summary = "Default Short Summary",
-            length = SummaryLength.SHORT,
             type = SummaryType.ARTICLE,
-            provider = "OPENAI",
-            model = "gpt-4o",
             lengthResults = emptyMap()
         )
 
-        val results = summary.allLengthResults
-        assertEquals(1, results.size)
-        val shortResult = results[SummaryLength.SHORT]
-        assertNotNull(shortResult)
-        assertEquals("Default Short Summary", shortResult?.summary)
-        assertEquals("OPENAI", shortResult?.provider)
-        assertEquals("gpt-4o", shortResult?.model)
+        assertEquals("", summary.summary)
+        assertNull(summary.overview)
+        assertTrue(summary.keyPoints.isEmpty())
+        assertTrue(summary.tags.isEmpty())
+        assertNull(summary.provider)
+        assertNull(summary.model)
+        assertTrue(summary.allLengthResults.isEmpty())
     }
 
     @Test
@@ -62,11 +57,8 @@ class HistoryModelTest {
             id = "1",
             title = "Test Title",
             author = "Test Author",
-            summary = "Long text",
             length = SummaryLength.LONG,
             type = SummaryType.ARTICLE,
-            provider = "GEMINI",
-            model = "gemini-1.5-pro",
             lengthResults = lengthMap
         )
 
@@ -97,12 +89,9 @@ class HistoryModelTest {
             id = "test-id",
             title = "Domain Title",
             author = "Domain Author",
-            summary = "Medium summary",
             length = SummaryLength.MEDIUM,
             type = SummaryType.VIDEO,
             sourceLink = "https://youtube.com/watch?v=123",
-            provider = "DEEPSEEK",
-            model = "deepseek-chat",
             lengthResults = lengthMap
         )
 
@@ -120,8 +109,6 @@ class HistoryModelTest {
     fun `test isBiliBiliLink detects bilibili subtype or url`() {
         val withSubtype = HistorySummary(
             title = "Bili Video",
-            summary = "Summary",
-            length = SummaryLength.SHORT,
             type = SummaryType.VIDEO,
             subtype = VideoSubtype.BILIBILI
         )
@@ -129,8 +116,6 @@ class HistoryModelTest {
 
         val withUrl = HistorySummary(
             title = "Bili Video",
-            summary = "Summary",
-            length = SummaryLength.SHORT,
             type = SummaryType.VIDEO,
             sourceLink = "https://www.bilibili.com/video/BV1xx411c7mD"
         )
@@ -138,8 +123,6 @@ class HistoryModelTest {
 
         val withB23 = HistorySummary(
             title = "Bili Video",
-            summary = "Summary",
-            length = SummaryLength.SHORT,
             type = SummaryType.ARTICLE,
             sourceLink = "https://b23.tv/BV1xx411c7mD"
         )
@@ -150,8 +133,6 @@ class HistoryModelTest {
     fun `test isYoutubeLink detects youtube subtype or url`() {
         val withSubtype = HistorySummary(
             title = "YT Video",
-            summary = "Summary",
-            length = SummaryLength.SHORT,
             type = SummaryType.VIDEO,
             subtype = VideoSubtype.YOUTUBE
         )
@@ -159,8 +140,6 @@ class HistoryModelTest {
 
         val withShortUrl = HistorySummary(
             title = "YT Video",
-            summary = "Summary",
-            length = SummaryLength.SHORT,
             type = SummaryType.VIDEO,
             sourceLink = "https://youtu.be/dQw4w9WgXcQ"
         )
@@ -231,6 +210,113 @@ class HistoryModelTest {
             assertFalse(isBiliBiliLink(url), "Expected '$url' not to be BiliBili")
             assertNull(VideoSubtype.fromUrl(url), "Expected '$url' to resolve to null")
         }
+    }
+
+    @Test
+    fun `test HistorySummary with SummaryLength NONE has no length and delegates properties`() {
+        val summary = HistorySummary(
+            id = "none-id",
+            title = "No Length Title",
+            author = "Author",
+            length = SummaryLength.NONE,
+            type = SummaryType.ARTICLE,
+            lengthResults = mapOf(
+                SummaryLength.NONE to HistoryLengthResult(
+                    length = SummaryLength.NONE,
+                    summary = "Summary generated without length constraints",
+                    provider = "OPENAI",
+                    model = "gpt-4.1",
+                    overview = "Natural Overview",
+                    keyPoints = listOf("Key Point 1"),
+                    tags = listOf("Tech")
+                )
+            )
+        )
+
+        assertFalse(summary.hasLength)
+        assertEquals(SummaryLength.NONE, summary.length)
+        assertEquals("Summary generated without length constraints", summary.summary)
+        assertEquals("Natural Overview", summary.overview)
+        assertEquals(listOf("Key Point 1"), summary.keyPoints)
+        assertEquals(listOf("Tech"), summary.tags)
+        assertEquals("OPENAI", summary.provider)
+        assertEquals("gpt-4.1", summary.model)
+    }
+
+    @Test
+    fun `test HistorySummary resolves getters dynamically based on active length`() {
+        val shortResult = HistoryLengthResult(
+            length = SummaryLength.SHORT,
+            summary = "Short text",
+            provider = "OPENAI",
+            model = "gpt-4o-mini",
+            overview = "Short Overview"
+        )
+        val longResult = HistoryLengthResult(
+            length = SummaryLength.LONG,
+            summary = "Long text",
+            provider = "GEMINI",
+            model = "gemini-2.0-flash",
+            overview = "Long Overview"
+        )
+        val multiSummary = HistorySummary(
+            id = "multi-id",
+            title = "Multi Length Title",
+            length = SummaryLength.SHORT,
+            type = SummaryType.ARTICLE,
+            lengthResults = mapOf(
+                SummaryLength.SHORT to shortResult,
+                SummaryLength.LONG to longResult
+            )
+        )
+
+        assertEquals("Short text", multiSummary.summary)
+        assertEquals("Short Overview", multiSummary.overview)
+        assertEquals("OPENAI", multiSummary.provider)
+        assertEquals("gpt-4o-mini", multiSummary.model)
+
+        val switched = multiSummary.copy(length = SummaryLength.LONG)
+        assertEquals("Long text", switched.summary)
+        assertEquals("Long Overview", switched.overview)
+        assertEquals("GEMINI", switched.provider)
+        assertEquals("gemini-2.0-flash", switched.model)
+    }
+
+    @Test
+    fun `test HistoryMapper with SummaryLength NONE round-trips cleanly`() {
+        val domain = HistorySummary(
+            id = "none-test-id",
+            title = "No Length Domain",
+            author = "Author",
+            length = SummaryLength.NONE,
+            type = SummaryType.TEXT,
+            lengthResults = mapOf(
+                SummaryLength.NONE to HistoryLengthResult(
+                    length = SummaryLength.NONE,
+                    summary = "Natural summary without length",
+                    provider = "OPENAI",
+                    model = "gpt-4.1",
+                    overview = "Overview",
+                    keyPoints = listOf("KP1"),
+                    tags = listOf("Tag1")
+                )
+            )
+        )
+
+        val entity = domain.toEntity()
+        assertEquals(SummaryLength.NONE, entity.length)
+        assertEquals("Natural summary without length", entity.summary)
+        assertEquals("OPENAI", entity.provider)
+        assertEquals("gpt-4.1", entity.model)
+
+        val roundTrip = entity.toDomain()
+        assertEquals(domain.id, roundTrip.id)
+        assertEquals(SummaryLength.NONE, roundTrip.length)
+        assertFalse(roundTrip.hasLength)
+        assertEquals(domain.summary, roundTrip.summary)
+        assertEquals(domain.overview, roundTrip.overview)
+        assertEquals(domain.keyPoints, roundTrip.keyPoints)
+        assertEquals(domain.tags, roundTrip.tags)
     }
 }
 
