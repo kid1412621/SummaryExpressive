@@ -40,8 +40,8 @@
     <string name="nothingFound">Nichts gefunden</string>
     <string name="welcome">Willkommen bei Summary Expressive!</string>
     <string name="welcomeDescription">Fasse Webseiten, Artikel und YouTube-Videos zusammen</string>
-    <string name="instruction">Füge einfach den Link zu einer Website, einem Artikel oder einem YouTube-Video ein, um eine Zusammenfassung zu generieren.</string>
-    <string name="instructionsShare">Oder teile einfach einen Link mit der App, um eine Zusammenfassung zu generieren.</string>
+    <string name="instructionSummary">Füge einfach den Link zu einer Website, einem Artikel oder einem YouTube-Video ein, um eine Zusammenfassung zu generieren.</string>
+    <string name="instructionsViaShare">Oder teile einfach einen Link mit der App, um eine Zusammenfassung zu generieren.</string>
     <string name="instructionsHistory">Greife im Bereich Verlauf auf deine vergangenen Zusammenfassungen zu.</string>
     <string name="finishButton">Fertig</string>
     <string name="continueButton">Weiter</string>

@@ -75,8 +75,17 @@
     <string name="nothingFound">未找到任何内容</string>
     <string name="welcome">欢迎使用Summary Expressive！</string>
     <string name="welcomeDescription">总结网站、文章和YouTube视频</string>
-    <string name="instruction">只需粘贴网站、文章或YouTube视频的链接即可生成摘要。</string>
-    <string name="instructionsShare">或者轻松与应用程序共享链接以生成摘要。</string>
+    <string name="onboardingLlmTitle">AI 模型配置与快速切换</string>
+    <string name="onboardingLlmDescription">支持自带 API 密钥 (BYOK)。点击切换器呼出面板选择模型，或长按滑动（↔ 提供商，↕ 模型）即时切换。</string>
+    <string name="onboardingTapToSelect">点击选择</string>
+    <string name="onboardingTapToCycle">单击轮换</string>
+    <string name="onboardingLongPressToDrag">长按滑选</string>
+    <string name="onboardingInstantOverlay">悬浮即时总结</string>
+    <string name="onboardingSummarizeTitle">粘贴与即时总结</string>
+    <string name="onboardingShareTitle">系统分享与悬浮总结</string>
+    <string name="onboardingHistoryTitle">本地历史与即时搜索</string>
+    <string name="instructionSummary">只需粘贴网站、文章或YouTube视频的链接即可生成摘要。</string>
+    <string name="instructionsViaShare">或者轻松与应用程序共享链接以生成摘要。</string>
     <string name="instructionsHistory">在“历史”部分查看以前的摘要。</string>
     <string name="finishButton">完成</string>
     <string name="continueButton">继续</string>
@@ -104,4 +113,5 @@
     <string name="drag_horizontal_provider">↔ 服务商</string>
     <string name="drag_vertical_model">↕ 模型</string>
     <string name="release_to_switch">松开以确认切换</string>
+    <string name="open_in_app">在应用中打开</string>
 </resources>

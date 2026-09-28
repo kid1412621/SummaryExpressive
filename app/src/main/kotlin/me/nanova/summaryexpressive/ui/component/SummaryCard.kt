@@ -184,62 +184,62 @@ fun SummaryCard(
             if (hasMeta) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    if (knownAuthor != null) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.weight(1f, fill = false)
+                    ) {
+                        if (knownAuthor != null) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.weight(1f, fill = false)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Person,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = knownAuthor,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+
+                        if (summary.isYoutubeLink) {
                             Icon(
-                                imageVector = Icons.Outlined.Person,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp)
+                                painter = painterResource(id = R.drawable.youtube),
+                                contentDescription = "YouTube",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
                             )
-                            Text(
-                                text = knownAuthor,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                        } else if (summary.isBiliBiliLink) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.bilibili),
+                                contentDescription = "BiliBili",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
 
-                    if (summary.isYoutubeLink) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.youtube),
-                            contentDescription = "YouTube",
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier
-                                .size(20.dp)
-                                .padding(end = 4.dp)
-                        )
-                    } else if (summary.isBiliBiliLink) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.bilibili),
-                            contentDescription = "BiliBili",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .size(20.dp)
-                                .padding(end = 4.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.weight(1f))
-
                     val aiProvider = summary.provider?.let { providerName ->
-                        AIProvider.entries.find { it.name == providerName }
+                        AIProvider.entries.find { it.name.equals(providerName, ignoreCase = true) }
                     }
                     if (aiProvider != null) {
                         LlmIndicator(
                             provider = aiProvider,
                             model = summary.model,
-                            boxSize = 22.dp,
-                            fontSize = 6.sp,
-                            modifier = Modifier.padding(start = 4.dp)
+                            style = LlmIndicatorStyle.PILL,
+                            modifier = Modifier.padding(start = 8.dp)
                         )
                     }
                 }
@@ -406,6 +406,11 @@ private fun isKnownAuthor(author: String?): Boolean {
     if (author.isNullOrBlank()) return false
     val trimmed = author.trim()
     if (trimmed.length > 60 || trimmed.contains('\n') || trimmed.contains('\r')) return false
+    if (trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith(
+            "https://",
+            ignoreCase = true
+        )
+    ) return false
     val lower = trimmed.lowercase(Locale.ROOT)
     return lower !in setOf(
         "unknown",

@@ -182,12 +182,31 @@ fun HomeScreen(
         }
 
     LaunchedEffect(appStartAction) {
-        appStartAction.content?.let { content ->
-            summaryViewModel.clearCurrentSummary()
-            documentFilename = null
+        if (appStartAction.content != null || appStartAction.initialSummary != null) {
+            val initialSummary = appStartAction.initialSummary
+            val content = appStartAction.content ?: initialSummary?.sourceLink.orEmpty()
             urlOrText = content
-            if (appStartAction.autoTrigger) {
-                summarize()
+            if (content.startsWith("content://") || content.startsWith("file://")) {
+                documentFilename =
+                    runCatching { getFileName(context, Uri.parse(content)) }.getOrNull()
+            } else {
+                documentFilename = null
+            }
+
+            if (initialSummary != null) {
+                if (initialSummary.length != SummaryLength.NONE) {
+                    settingsViewModel.setSummaryLength(initialSummary.length)
+                }
+                summaryViewModel.setExistingSummary(
+                    output = initialSummary,
+                    input = content,
+                    lengthResults = appStartAction.lengthResults
+                )
+            } else {
+                summaryViewModel.clearCurrentSummary()
+                if (appStartAction.autoTrigger) {
+                    summarize()
+                }
             }
             appViewModel.onStartActionHandled()
         }
@@ -207,8 +226,10 @@ fun HomeScreen(
         }
     }
 
-    LaunchedEffect(settings.summaryLength) {
-        summaryViewModel.switchLength(settings.summaryLength)
+    LaunchedEffect(settings.summaryLength, settings.showLength) {
+        if (settings.showLength && settings.summaryLength != SummaryLength.NONE) {
+            summaryViewModel.switchLength(settings.summaryLength)
+        }
     }
 
     val scrollBehavior =

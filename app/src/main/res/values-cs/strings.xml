@@ -38,8 +38,8 @@
     <string name="nothingFound">Nic nenalezeno</string>
     <string name="welcome">Vítejte v Summary Expressive!</string>
     <string name="welcomeDescription">Shrňte stránky, články a YouTube videa</string>
-    <string name="instruction">Jednoduše vložte odkaz na webovou stránku, článek nebo YouTube video pro vygenerování shrnutí.</string>
-    <string name="instructionsShare">Nebo jednoduše sdilejte odkaz s aplikaci pro vygenerování shrnutí.</string>
+    <string name="instructionSummary">Jednoduše vložte odkaz na webovou stránku, článek nebo YouTube video pro vygenerování shrnutí.</string>
+    <string name="instructionsViaShare">Nebo jednoduše sdilejte odkaz s aplikaci pro vygenerování shrnutí.</string>
     <string name="instructionsHistory">Zobrazte  vaše staré shrnutí v sekci Historie.</string>
     <string name="finishButton">Dokončit</string>
     <string name="continueButton">Pokračovat</string>

@@ -6,7 +6,12 @@ import me.nanova.summaryexpressive.model.ProviderConfig
 import me.nanova.summaryexpressive.model.SummaryLength
 import me.nanova.summaryexpressive.model.SummaryOutput
 
-data class AppStartAction(val content: String? = null, val autoTrigger: Boolean = false)
+data class AppStartAction(
+    val content: String? = null,
+    val autoTrigger: Boolean = false,
+    val initialSummary: SummaryOutput? = null,
+    val lengthResults: Map<SummaryLength, SummaryOutput> = emptyMap(),
+)
 
 data class SettingsUiState(
     val useOriginalLanguage: Boolean = true,

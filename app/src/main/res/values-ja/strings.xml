@@ -68,8 +68,8 @@
     <string name="nothingFound">何も見つかりませんでした</string>
     <string name="welcome">ようこそ、Summary Expressiveへ！</string>
     <string name="welcomeDescription">ウェブサイト、記事、YouTubeビデオを要約します</string>
-    <string name="instruction">要約を生成するには、ウェブサイト、記事、またはYouTubeビデオのリンクを単純に貼り付けてください。</string>
-    <string name="instructionsShare">または、アプリでリンクを簡単に共有して要約を生成します。</string>
+    <string name="instructionSummary">要約を生成するには、ウェブサイト、記事、またはYouTubeビデオのリンクを単純に貼り付けてください。</string>
+    <string name="instructionsViaShare">または、アプリでリンクを簡単に共有して要約を生成します。</string>
     <string name="instructionsHistory">過去の要約には履歴セクションからアクセスできます。</string>
     <string name="finishButton">終了</string>
     <string name="continueButton">続ける</string>

@@ -15,6 +15,9 @@ import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
 import androidx.navigation3.runtime.rememberNavBackStack
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.serialization.json.Json
+import me.nanova.summaryexpressive.model.SummaryLength
+import me.nanova.summaryexpressive.model.SummaryOutput
 import me.nanova.summaryexpressive.ui.AppNavigation
 import me.nanova.summaryexpressive.ui.Nav
 import me.nanova.summaryexpressive.ui.theme.SummaryExpressiveTheme
@@ -72,14 +75,60 @@ class MainActivity : ComponentActivity() {
         when (intent.action) {
             Intent.ACTION_SEND -> {
                 val type = intent.type ?: ""
+                val autoTrigger = intent.getBooleanExtra("auto_trigger", false)
+                val summaryJson = intent.getStringExtra("summary_result_json")
+                val lengthResultsJson = intent.getStringExtra("length_results_json")
+
+                val json = Json { ignoreUnknownKeys = true }
+                val initialSummary = summaryJson?.let {
+                    runCatching { json.decodeFromString<SummaryOutput>(it) }
+                        .onFailure { e ->
+                            android.util.Log.e(
+                                "MainActivity",
+                                "Failed to decode summaryJson: $summaryJson",
+                                e
+                            )
+                        }
+                        .getOrNull()
+                }
+                val lengthResults = lengthResultsJson?.let {
+                    runCatching {
+                        json.decodeFromString<Map<String, SummaryOutput>>(it)
+                            .mapNotNull { (k, v) ->
+                                runCatching { SummaryLength.valueOf(k) to v }.getOrNull()
+                            }.toMap()
+                    }.getOrDefault(emptyMap())
+                } ?: emptyMap()
+
+                val shouldAutoTrigger = if (initialSummary != null) false else autoTrigger
+
                 if (type.startsWith("application/") || type.startsWith("image/")) {
                     val contentUri: Uri? =
                         intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-                    contentUri?.let { appViewModel.onEvent(AppStartAction(it.toString())) }
-                } else if (type == "text/plain") {
+                    contentUri?.let {
+                        appViewModel.onEvent(
+                            AppStartAction(
+                                content = it.toString(),
+                                autoTrigger = shouldAutoTrigger,
+                                initialSummary = initialSummary,
+                                lengthResults = lengthResults,
+                            )
+                        )
+                    }
+                } else {
                     val content = intent.getStringExtra(Intent.EXTRA_TEXT)
-                    appViewModel.onEvent(AppStartAction(content))
+                    appViewModel.onEvent(
+                        AppStartAction(
+                            content = content,
+                            autoTrigger = shouldAutoTrigger,
+                            initialSummary = initialSummary,
+                            lengthResults = lengthResults,
+                        )
+                    )
                 }
+
+                // Clear intent action so recreating activity won't re-trigger
+                intent.action = null
             }
 
             Intent.ACTION_VIEW -> {

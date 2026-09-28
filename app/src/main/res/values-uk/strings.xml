@@ -37,8 +37,8 @@
     <string name="nothingFound">Нічого не знайдено</string>
     <string name="welcome">Ласкаво просимо до Summary Expressive!</string>
     <string name="welcomeDescription">Узагальнюйте веб-сайти, статті та відео на YouTube</string>
-    <string name="instruction">Просто вставте посилання на веб-сайт, статтю або відео на YouTube, щоб згенерувати узагальнення.</string>
-    <string name="instructionsShare">Або легко поділіться посиланням за допомогою додатка, щоб згенерувати узагальнення.</string>
+    <string name="instructionSummary">Просто вставте посилання на веб-сайт, статтю або відео на YouTube, щоб згенерувати узагальнення.</string>
+    <string name="instructionsViaShare">Або легко поділіться посиланням за допомогою додатка, щоб згенерувати узагальнення.</string>
     <string name="instructionsHistory">Отримуйте доступ до своїх минулих узагальнень у розділі Історія.</string>
     <string name="finishButton">Завершити</string>
     <string name="continueButton">Продовжити</string>

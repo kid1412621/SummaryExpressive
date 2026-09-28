@@ -76,10 +76,13 @@ package previously.
   - Anthropic Claude
   - Alibaba Qwen
   - DeepSeek
+  - Kimi
+  - MiniMax
+  - Zhipu
+  - Qwen
   - Mistral
   - OpenRouter
   - Ollama
-  - AWS Bedrock
   - Custom OpenAI-compatible endpoints
 
 - **Custom Model Management**: Add, edit, delete, and drag-and-drop reorder models per provider with fallback to Koog defaults

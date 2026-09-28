@@ -6,6 +6,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.json.Json
 import me.nanova.summaryexpressive.domain.usecase.SummarizeContentUseCase
 import me.nanova.summaryexpressive.exception.SummaryException
 import me.nanova.summaryexpressive.model.SummaryLength
@@ -117,6 +118,21 @@ class SummaryViewModelTest {
     }
 
     @Test
+    fun `test switchLength preserves un-lengthed summary when specific length not cached`() =
+        runTest(testDispatcher) {
+            val noneOutput = createSummaryOutput(SummaryLength.NONE, "Un-lengthed summary")
+            viewModel.setExistingSummary(output = noneOutput, input = "https://example.com")
+
+            // Switch to MEDIUM (not yet cached) - should fall back to NONE output
+            viewModel.switchLength(SummaryLength.MEDIUM)
+            assertEquals(noneOutput, viewModel.summarizationState.value.summaryResult)
+
+            // Switch to NONE directly
+            viewModel.switchLength(SummaryLength.NONE)
+            assertEquals(noneOutput, viewModel.summarizationState.value.summaryResult)
+        }
+
+    @Test
     fun `test clearCurrentSummary clears all results and cache`() = runTest(testDispatcher) {
         fakeUseCase.summaryToReturn = createSummaryOutput(SummaryLength.SHORT)
         viewModel.summarize("https://example.com", SummaryLength.SHORT)
@@ -127,6 +143,70 @@ class SummaryViewModelTest {
         assertNull(viewModel.summarizationState.value.summaryResult)
         assertNull(viewModel.summarizationState.value.error)
         assertTrue(viewModel.summarizationState.value.lengthResults.isEmpty())
+    }
+
+    @Test
+    fun `test setExistingSummary directly updates state without invoking useCase`() {
+        val output = createSummaryOutput(SummaryLength.MEDIUM, "Direct medium summary")
+
+        viewModel.setExistingSummary(output = output, input = "https://example.com/existing")
+
+        assertNull(fakeUseCase.lastInput)
+        val state = viewModel.summarizationState.value
+        assertFalse(state.isLoading)
+        assertNull(state.error)
+        assertEquals(output, state.summaryResult)
+        assertEquals(output, state.lengthResults[SummaryLength.MEDIUM])
+    }
+
+    @Test
+    fun `test setExistingSummary with lengthResults allows switchLength immediately`() {
+        val mediumOutput = createSummaryOutput(SummaryLength.MEDIUM, "Medium summary")
+        val shortOutput = createSummaryOutput(SummaryLength.SHORT, "Short summary")
+        val lengthResults = mapOf(
+            SummaryLength.MEDIUM to mediumOutput,
+            SummaryLength.SHORT to shortOutput,
+        )
+
+        viewModel.setExistingSummary(
+            output = mediumOutput,
+            input = "https://example.com",
+            lengthResults = lengthResults
+        )
+
+        assertEquals(mediumOutput, viewModel.summarizationState.value.summaryResult)
+
+        // Switch to SHORT
+        viewModel.switchLength(SummaryLength.SHORT)
+        assertEquals(shortOutput, viewModel.summarizationState.value.summaryResult)
+
+        // Switch back to MEDIUM
+        viewModel.switchLength(SummaryLength.MEDIUM)
+        assertEquals(mediumOutput, viewModel.summarizationState.value.summaryResult)
+    }
+
+    @Test
+    fun `test serialization and deserialization of summaryResult and lengthResults`() {
+        val original = createSummaryOutput(SummaryLength.MEDIUM, "Serialized summary")
+        val shortOutput = createSummaryOutput(SummaryLength.SHORT, "Short summary")
+        val lengthResults = mapOf(
+            SummaryLength.MEDIUM to original,
+            SummaryLength.SHORT to shortOutput
+        )
+
+        val json = Json { ignoreUnknownKeys = true }
+        val encodedSummary = json.encodeToString(original)
+        val encodedLengths = json.encodeToString(lengthResults.mapKeys { it.key.name })
+
+        val decodedSummary = json.decodeFromString<SummaryOutput>(encodedSummary)
+        val decodedLengths = json.decodeFromString<Map<String, SummaryOutput>>(encodedLengths)
+            .mapNotNull { (k, v) -> runCatching { SummaryLength.valueOf(k) to v }.getOrNull() }
+            .toMap()
+
+        assertEquals(original, decodedSummary)
+        assertEquals(2, decodedLengths.size)
+        assertEquals(original, decodedLengths[SummaryLength.MEDIUM])
+        assertEquals(shortOutput, decodedLengths[SummaryLength.SHORT])
     }
 
     companion object {

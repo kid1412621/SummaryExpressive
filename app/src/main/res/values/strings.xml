@@ -55,8 +55,17 @@
     <string name="nothingFound">Nothing found</string>
     <string name="welcome">Welcome to Summary Expressive!</string>
     <string name="welcomeDescription">Summarize websites, articles and YouTube-Videos</string>
-    <string name="instruction">Simply paste the link to a website, article or YouTube video to generate a summary.</string>
-    <string name="instructionsShare">Or easily share a link with the app to generate a summary.</string>
+    <string name="onboardingLlmTitle">AI Providers &amp; Quick Switcher</string>
+    <string name="onboardingLlmDescription">Bring your own API key (BYOK). Tap the switcher to select providers &amp; models, or long-press and drag (↔ provider, ↕ model) to switch instantly.</string>
+    <string name="onboardingTapToSelect">Tap to Select</string>
+    <string name="onboardingTapToCycle">Tap: Cycle</string>
+    <string name="onboardingLongPressToDrag">Hold to Drag</string>
+    <string name="onboardingInstantOverlay">Instant Overlay</string>
+    <string name="onboardingSummarizeTitle">Paste &amp; Summarize</string>
+    <string name="onboardingShareTitle">Instant Share Overlay</string>
+    <string name="onboardingHistoryTitle">History &amp; Offline Search</string>
+    <string name="instructionSummary">Simply paste the link to a website, article or YouTube video to generate a summary.</string>
+    <string name="instructionsViaShare">Or easily share a link with the app to generate a summary.</string>
     <string name="instructionsHistory">Access your past summaries in the History section.</string>
     <string name="finishButton">Finish</string>
     <string name="continueButton">Continue</string>
@@ -115,4 +124,5 @@
     <string name="drag_horizontal_provider">↔ Provider</string>
     <string name="drag_vertical_model">↕ Model</string>
     <string name="release_to_switch">Release to switch</string>
+    <string name="open_in_app">Open in App</string>
 </resources>

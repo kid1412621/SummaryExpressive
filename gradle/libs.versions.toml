@@ -20,7 +20,7 @@ kotlin = "2.4.20"
 kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
 ksp = "2.3.11"
-ktor = "3.5.2"
+ktor = "3.6.0"
 lifecycle = "2.11.0"
 # Keep alpha override for material expressive features, as intended
 # https://developer.android.com/jetpack/androidx/releases/compose-material3#compose_material3_version_15_2

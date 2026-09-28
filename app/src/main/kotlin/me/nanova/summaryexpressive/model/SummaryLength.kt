@@ -1,5 +1,8 @@
 package me.nanova.summaryexpressive.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class SummaryLength {
     SHORT,
     MEDIUM,

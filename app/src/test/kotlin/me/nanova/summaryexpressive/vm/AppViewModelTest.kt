@@ -12,6 +12,8 @@ import kotlinx.coroutines.test.setMain
 import me.nanova.summaryexpressive.domain.repository.UserPreferencesRepository
 import me.nanova.summaryexpressive.domain.usecase.GetOnboardingStatusUseCase
 import me.nanova.summaryexpressive.domain.usecase.SetOnboardingStatusUseCase
+import me.nanova.summaryexpressive.model.SummaryLength
+import me.nanova.summaryexpressive.model.SummaryOutput
 import me.nanova.summaryexpressive.model.UserPreferences
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -101,5 +103,36 @@ class AppViewModelTest {
         viewModel.onStartActionHandled()
         assertNull(viewModel.appStartAction.value.content)
         assertFalse(viewModel.appStartAction.value.autoTrigger)
+    }
+
+    @Test
+    fun `test appStartAction with initialSummary dispatch and reset`() {
+        val viewModel = AppViewModel(getOnboardingStatusUseCase, setOnboardingStatusUseCase)
+        val initialSummary = SummaryOutput(
+            title = "Title",
+            author = "Author",
+            summary = "Summary",
+            sourceLink = "https://example.com",
+            isYoutubeLink = false,
+            isBiliBiliLink = false,
+            length = SummaryLength.MEDIUM,
+        )
+
+        viewModel.onEvent(
+            AppStartAction(
+                content = "https://example.com",
+                autoTrigger = false,
+                initialSummary = initialSummary,
+            )
+        )
+        assertEquals("https://example.com", viewModel.appStartAction.value.content)
+        assertFalse(viewModel.appStartAction.value.autoTrigger)
+        assertEquals(initialSummary, viewModel.appStartAction.value.initialSummary)
+
+        viewModel.onStartActionHandled()
+        assertNull(viewModel.appStartAction.value.content)
+        assertFalse(viewModel.appStartAction.value.autoTrigger)
+        assertNull(viewModel.appStartAction.value.initialSummary)
+        assertTrue(viewModel.appStartAction.value.lengthResults.isEmpty())
     }
 }

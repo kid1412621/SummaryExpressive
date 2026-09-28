@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.domain.usecase.SummarizeContentUseCase
 import me.nanova.summaryexpressive.exception.toSummaryException
 import me.nanova.summaryexpressive.model.SummaryLength
+import me.nanova.summaryexpressive.model.SummaryOutput
 import javax.inject.Inject
 
 @HiltViewModel
@@ -35,6 +36,27 @@ class SummaryViewModel @Inject constructor(
         }
     }
 
+    fun setExistingSummary(
+        output: SummaryOutput,
+        input: String? = null,
+        lengthResults: Map<SummaryLength, SummaryOutput> = emptyMap(),
+    ) {
+        currentInput = input ?: output.sourceLink
+        _summarizationState.update {
+            val combinedResults = if (lengthResults.isNotEmpty()) {
+                lengthResults + (output.length to output)
+            } else {
+                mapOf(output.length to output)
+            }
+            it.copy(
+                isLoading = false,
+                summaryResult = output,
+                lengthResults = combinedResults,
+                error = null,
+            )
+        }
+    }
+
     fun switchLength(length: SummaryLength) {
         if (_summarizationState.value.isLoading) return
         val currentResults = _summarizationState.value.lengthResults.ifEmpty {
@@ -42,7 +64,7 @@ class SummaryViewModel @Inject constructor(
             if (current?.length != null) mapOf(current.length to current) else emptyMap()
         }
         if (currentResults.isEmpty()) return
-        val cachedResult = currentResults[length]
+        val cachedResult = currentResults[length] ?: currentResults[SummaryLength.NONE]
         _summarizationState.update {
             it.copy(
                 summaryResult = cachedResult,

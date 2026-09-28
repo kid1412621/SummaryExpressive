@@ -36,10 +36,17 @@ fun AppNavigation(
     val handleOnboardingDone: (Nav?) -> Unit = remember(backStack, appViewModel) {
         { targetRoute ->
             appViewModel.setIsOnboarded(true)
-            backStack.clear()
-            backStack.add(Nav.Home)
-            if (targetRoute != null && targetRoute != Nav.Home) {
-                backStack.add(targetRoute)
+            if (backStack.contains(Nav.Home)) {
+                backStack.removeLastOrNull()
+                if (targetRoute != null && targetRoute != Nav.Home && backStack.lastOrNull() != targetRoute) {
+                    backStack.add(targetRoute)
+                }
+            } else {
+                backStack.clear()
+                backStack.add(Nav.Home)
+                if (targetRoute != null && targetRoute != Nav.Home) {
+                    backStack.add(targetRoute)
+                }
             }
         }
     }

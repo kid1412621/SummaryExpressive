@@ -46,8 +46,8 @@
     <string name="nothingFound">Hiçbir şey bulunamadı</string>
     <string name="welcome">Summary Expressive\'ya Hoş Geldiniz!</string>
     <string name="welcomeDescription">Web sitelerini, makaleleri ve YouTube Videolarını özetleyin</string>
-    <string name="instruction">Özet oluşturmak için bir web sitesinin, makalenin veya YouTube videosunun bağlantısını yapıştırmanız yeterlidir.</string>
-    <string name="instructionsShare">Ya da özet oluşturmak için uygulama ile kolayca bir bağlantı paylaşın.</string>
+    <string name="instructionSummary">Özet oluşturmak için bir web sitesinin, makalenin veya YouTube videosunun bağlantısını yapıştırmanız yeterlidir.</string>
+    <string name="instructionsViaShare">Ya da özet oluşturmak için uygulama ile kolayca bir bağlantı paylaşın.</string>
     <string name="instructionsHistory">Geçmiş bölümünden geçmiş özetlerinize erişin.</string>
     <string name="finishButton">Bitir</string>
     <string name="continueButton">Devam et</string>

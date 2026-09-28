@@ -138,4 +138,58 @@ class SummaryCardInstrumentedTest {
         composeTestRule.onNodeWithText("Article With Paragraph Author").assertIsDisplayed()
         composeTestRule.onNodeWithText(longAuthor).assertDoesNotExist()
     }
+
+    @Test
+    fun summaryCard_doesNotDisplayUrlAsAuthor() {
+        val urlAuthor = "https://www.theguardian.com/profile/justinmccurry"
+        val summaryOutput = SummaryOutput(
+            title = "Article With URL Author",
+            author = urlAuthor,
+            summary = "Real summary text.",
+            length = SummaryLength.MEDIUM,
+            isYoutubeLink = false,
+            isBiliBiliLink = false
+        )
+
+        composeTestRule.setContent {
+            SummaryExpressiveTheme {
+                SummaryCard(
+                    summary = summaryOutput,
+                    isExpandedByDefault = true,
+                    onShowSnackbar = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Article With URL Author").assertIsDisplayed()
+        composeTestRule.onNodeWithText(urlAuthor).assertDoesNotExist()
+    }
+
+    @Test
+    fun summaryCard_rendersLlmIndicatorPill() {
+        val summaryOutput = SummaryOutput(
+            title = "Article With Model Pill",
+            author = "Jane Doe",
+            summary = "Summary text.",
+            provider = "OPEN_ROUTER",
+            model = "anthropic/claude-3-haiku",
+            length = SummaryLength.MEDIUM,
+            isYoutubeLink = false,
+            isBiliBiliLink = false
+        )
+
+        composeTestRule.setContent {
+            SummaryExpressiveTheme {
+                SummaryCard(
+                    summary = summaryOutput,
+                    isExpandedByDefault = true,
+                    onShowSnackbar = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Article With Model Pill").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Jane Doe").assertIsDisplayed()
+        composeTestRule.onNodeWithText("claude-3-haiku").assertIsDisplayed()
+    }
 }

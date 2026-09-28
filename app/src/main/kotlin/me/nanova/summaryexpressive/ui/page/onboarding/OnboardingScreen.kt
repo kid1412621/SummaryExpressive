@@ -11,15 +11,11 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import coil.ImageLoader
-import coil.decode.ImageDecoderDecoder
 import kotlinx.coroutines.launch
 import me.nanova.summaryexpressive.ui.Nav
 import me.nanova.summaryexpressive.ui.page.onboarding.section.ONBOARDING_PAGE_COUNT
@@ -36,15 +32,6 @@ fun OnboardingScreen(
 ) {
     val pagerState = rememberPagerState(pageCount = { ONBOARDING_PAGE_COUNT })
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val imageLoader = remember(context) {
-        ImageLoader.Builder(context)
-            .components {
-                add(ImageDecoderDecoder.Factory())
-            }
-            .build()
-    }
-
     val isFirst = pagerState.currentPage == 0
     val isLast = pagerState.currentPage == pagerState.pageCount - 1
 
@@ -68,7 +55,6 @@ fun OnboardingScreen(
                 ) {
                     OnboardingStepPage(
                         page = page,
-                        imageLoader = imageLoader,
                         modifier = Modifier.widthIn(max = 560.dp)
                     )
                 }

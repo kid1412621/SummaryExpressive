@@ -68,8 +68,8 @@
     <string name="nothingFound">Nada encontrado</string>
     <string name="welcome">¡Bienvenido a Summary Expressive!</string>
     <string name="welcomeDescription">Resumir sitios web, artículos y videos de YouTube</string>
-    <string name="instruction">Simplemente pega el enlace de un sitio web, artículo o video de YouTube para generar un resumen.</string>
-    <string name="instructionsShare">O comparte fácilmente un enlace con la aplicación para generar un resumen.</string>
+    <string name="instructionSummary">Simplemente pega el enlace de un sitio web, artículo o video de YouTube para generar un resumen.</string>
+    <string name="instructionsViaShare">O comparte fácilmente un enlace con la aplicación para generar un resumen.</string>
     <string name="instructionsHistory">Accede a tus resúmenes anteriores en la sección Historial.</string>
     <string name="finishButton">Finalizar</string>
     <string name="continueButton">Continuar</string>

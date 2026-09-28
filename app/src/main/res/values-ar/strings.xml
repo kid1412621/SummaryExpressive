@@ -39,8 +39,8 @@
     <string name="nothingFound">لا شيء تم العثور عليه</string>
     <string name="welcome">مرحبًا بك في Summary Expressive!</string>
     <string name="welcomeDescription">اجمع المواقع الإلكترونية والمقالات ومقاطع الفيديو على YouTube</string>
-    <string name="instruction">ببساطة قم بلصق الرابط إلى موقع ويب أو مقال أو فيديو على YouTube لإنشاء ملخص.</string>
-    <string name="instructionsShare">أو قم بمشاركة رابط بسهولة مع التطبيق لإنشاء ملخص.</string>
+    <string name="instructionSummary">ببساطة قم بلصق الرابط إلى موقع ويب أو مقال أو فيديو على YouTube لإنشاء ملخص.</string>
+    <string name="instructionsViaShare">أو قم بمشاركة رابط بسهولة مع التطبيق لإنشاء ملخص.</string>
     <string name="instructionsHistory">اطلع على ملخصاتك السابقة في قسم السجل.</string>
     <string name="finishButton">انتهاء</string>
     <string name="continueButton">متابعة</string>
