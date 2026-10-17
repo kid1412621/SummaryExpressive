@@ -114,7 +114,7 @@ The app uses the [Koog Agents library](https://docs.koog.ai/) for orchestrating 
 - **Language**: Kotlin 2.4.x
 - **UI Framework**: Jetpack Compose with Material 3 Expressive (`1.5.0-alpha26` for expressive features)
 - **Dependency Injection**: Dagger / Hilt
-- **Database**: Room (SQLite) 2.8.x with Paging 3
+- **Database**: Room (SQLite) 3.0.x with Paging 3
 - **Networking**: Ktor Client 3.x
 - **LLM Integration**: Koog library (`ai.koog:koog-agents`, client executors for OpenAI, Gemini, Anthropic, DeepSeek, Mistral, Qwen, Ollama, OpenRouter)
 - **HTML Parsing**: Jsoup

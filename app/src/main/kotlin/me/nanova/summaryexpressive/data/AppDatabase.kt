@@ -1,7 +1,7 @@
 package me.nanova.summaryexpressive.data
 
-import androidx.room.Database
-import androidx.room.RoomDatabase
+import androidx.room3.Database
+import androidx.room3.RoomDatabase
 import me.nanova.summaryexpressive.data.local.database.entity.HistoryEntity
 
 @Database(

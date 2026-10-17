@@ -1,14 +1,17 @@
 package me.nanova.summaryexpressive.data
 
 import androidx.paging.PagingSource
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room3.Dao
+import androidx.room3.DaoReturnTypeConverters
+import androidx.room3.Insert
+import androidx.room3.OnConflictStrategy
+import androidx.room3.Query
+import androidx.room3.paging.PagingSourceDaoReturnTypeConverter
 import me.nanova.summaryexpressive.data.local.database.entity.HistoryEntity
 import me.nanova.summaryexpressive.model.SummaryType
 
 @Dao
+@DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)
 interface HistoryDao {
     @Query(
         """

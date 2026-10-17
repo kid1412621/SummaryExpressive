@@ -1,9 +1,11 @@
 package me.nanova.summaryexpressive.di
 
 import android.content.Context
-import androidx.room.Room
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.room3.Room
+import androidx.room3.migration.Migration
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.driver.AndroidSQLiteDriver
+import androidx.sqlite.execSQL
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,19 +32,19 @@ object AppModule {
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
         val migrationV2 = object : Migration(1, 2) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE history ADD COLUMN provider TEXT DEFAULT NULL")
-                db.execSQL("ALTER TABLE history ADD COLUMN model TEXT DEFAULT NULL")
-                db.execSQL("ALTER TABLE history ADD COLUMN lengthResults TEXT DEFAULT NULL")
-                db.execSQL("CREATE TABLE IF NOT EXISTS `ai_provider_config` (`provider` TEXT NOT NULL, `apiKey` TEXT NOT NULL, `baseUrl` TEXT NOT NULL, `active_model` TEXT NOT NULL, `models` TEXT DEFAULT NULL, PRIMARY KEY(`provider`))")
+            override suspend fun migrate(connection: SQLiteConnection) {
+                connection.execSQL("ALTER TABLE history ADD COLUMN provider TEXT DEFAULT NULL")
+                connection.execSQL("ALTER TABLE history ADD COLUMN model TEXT DEFAULT NULL")
+                connection.execSQL("ALTER TABLE history ADD COLUMN lengthResults TEXT DEFAULT NULL")
+                connection.execSQL("CREATE TABLE IF NOT EXISTS `ai_provider_config` (`provider` TEXT NOT NULL, `apiKey` TEXT NOT NULL, `baseUrl` TEXT NOT NULL, `active_model` TEXT NOT NULL, `models` TEXT DEFAULT NULL, PRIMARY KEY(`provider`))")
             }
         }
 
-        return Room.databaseBuilder(
+        return Room.databaseBuilder<AppDatabase>(
             context,
-            AppDatabase::class.java,
             "summary_expressive_db"
         )
+            .setDriver(AndroidSQLiteDriver())
             .addMigrations(migrationV2)
             .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = false)
             .build()

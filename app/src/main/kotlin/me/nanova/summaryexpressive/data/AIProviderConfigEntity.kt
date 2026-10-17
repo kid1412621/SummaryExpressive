@@ -1,15 +1,15 @@
 package me.nanova.summaryexpressive.data
 
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import androidx.room.TypeConverters
+import androidx.room3.ColumnInfo
+import androidx.room3.ColumnTypeConverters
+import androidx.room3.Entity
+import androidx.room3.PrimaryKey
 import me.nanova.summaryexpressive.data.converters.StringListConverter
 import me.nanova.summaryexpressive.model.ProviderConfig
 import me.nanova.summaryexpressive.util.SecurityUtil
 
 @Entity(tableName = "ai_provider_config")
-@TypeConverters(StringListConverter::class)
+@ColumnTypeConverters(StringListConverter::class)
 data class AIProviderConfigEntity(
     @PrimaryKey val provider: String,
     val apiKey: String,

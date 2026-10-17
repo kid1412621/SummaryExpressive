@@ -1,6 +1,6 @@
 package me.nanova.summaryexpressive.data.converters
 
-import androidx.room.TypeConverter
+import androidx.room3.ColumnTypeConverter
 import kotlinx.serialization.json.Json
 import me.nanova.summaryexpressive.model.HistoryLengthResult
 import me.nanova.summaryexpressive.model.SummaryLength
@@ -8,12 +8,12 @@ import me.nanova.summaryexpressive.model.SummaryLength
 class HistoryLengthResultsConverter {
     private val json = Json { ignoreUnknownKeys = true }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun fromLengthResults(value: Map<SummaryLength, HistoryLengthResult>?): String? {
         return value?.takeIf { it.isNotEmpty() }?.let { json.encodeToString(it) }
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun toLengthResults(value: String?): Map<SummaryLength, HistoryLengthResult>? {
         if (value.isNullOrBlank()) return null
         return runCatching {

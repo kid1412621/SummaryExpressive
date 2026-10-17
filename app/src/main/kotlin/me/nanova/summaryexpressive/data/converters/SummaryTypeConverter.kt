@@ -1,15 +1,15 @@
 package me.nanova.summaryexpressive.data.converters
 
-import androidx.room.TypeConverter
+import androidx.room3.ColumnTypeConverter
 import me.nanova.summaryexpressive.model.SummaryType
 
 class SummaryTypeConverter {
-    @TypeConverter
+    @ColumnTypeConverter
     fun fromSummaryType(value: SummaryType): String {
         return value.name
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun toSummaryType(value: String): SummaryType {
         return SummaryType.valueOf(value)
     }

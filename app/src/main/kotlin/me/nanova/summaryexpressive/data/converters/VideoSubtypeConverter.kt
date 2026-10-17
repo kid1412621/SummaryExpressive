@@ -1,15 +1,15 @@
 package me.nanova.summaryexpressive.data.converters
 
-import androidx.room.TypeConverter
+import androidx.room3.ColumnTypeConverter
 import me.nanova.summaryexpressive.model.VideoSubtype
 
 class VideoSubtypeConverter {
-    @TypeConverter
+    @ColumnTypeConverter
     fun fromVideoSubtype(value: VideoSubtype?): String? {
         return value?.name
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun toVideoSubtype(value: String?): VideoSubtype? {
         return value?.let { VideoSubtype.valueOf(it) }
     }

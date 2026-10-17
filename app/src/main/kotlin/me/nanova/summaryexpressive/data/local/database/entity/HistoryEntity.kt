@@ -1,9 +1,9 @@
 package me.nanova.summaryexpressive.data.local.database.entity
 
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import androidx.room.TypeConverters
+import androidx.room3.ColumnInfo
+import androidx.room3.ColumnTypeConverters
+import androidx.room3.Entity
+import androidx.room3.PrimaryKey
 import me.nanova.summaryexpressive.data.converters.HistoryLengthResultsConverter
 import me.nanova.summaryexpressive.data.converters.SummaryLengthConverter
 import me.nanova.summaryexpressive.data.converters.SummaryTypeConverter
@@ -14,7 +14,7 @@ import me.nanova.summaryexpressive.model.SummaryType
 import me.nanova.summaryexpressive.model.VideoSubtype
 
 @Entity(tableName = "history")
-@TypeConverters(
+@ColumnTypeConverters(
     SummaryLengthConverter::class,
     SummaryTypeConverter::class,
     VideoSubtypeConverter::class,

@@ -1,17 +1,17 @@
 package me.nanova.summaryexpressive.data.converters
 
-import androidx.room.TypeConverter
+import androidx.room3.ColumnTypeConverter
 import kotlinx.serialization.json.Json
 
 class StringListConverter {
     private val json = Json { ignoreUnknownKeys = true }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun fromStringList(value: List<String>?): String? {
         return value?.let { json.encodeToString(it) }
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun toStringList(value: String?): List<String>? {
         if (value.isNullOrBlank()) return null
         return runCatching {
