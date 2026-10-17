@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-10-17
+
+### Added
+
+- Kimi, MiniMax, and Zhipu AI provider support
+- Quick switcher: long-press to switch models
+- Custom prompts, models, and provider reordering
+- Structured summaries (overview, key points, tags)
+- Flexible summary lengths and unconstrained mode
+
+### Changed
+
+- Brand-new Material 3 Expressive UI and animations
+- Improved article extraction and instant handoff
+- History search with filters and date grouping
+- [BREAKING CHANGE] Previous LLM config may need to re-config
+
+### Fixed
+
+- Gemini request errors and general stability fixes
+
 ## [1.4.0] - 2026-07-29
 
 - Bump dependencies (koog 1.1.1, compose 2.26.01.00)

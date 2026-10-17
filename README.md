@@ -30,9 +30,10 @@ documents with AI/LLM.
 ## 📱 Screenshots
 
 <div style="text-align: center;">
-  <img src=".github/screenshots/screen1.webp" alt="Screenshot 1" width="32%">
-  <img src=".github/screenshots/screen2.webp" alt="Screenshot 2" width="32%">
-  <img src=".github/screenshots/screen3.webp" alt="Screenshot 3" width="32%">
+  <img src=".github/screenshots/home.png" alt="Home" width="24%">
+  <img src=".github/screenshots/instant.png" alt="Instant Summary" width="24%">
+  <img src=".github/screenshots/history.png" alt="History" width="24%">
+  <img src=".github/screenshots/dark.png" alt="Dark Mode" width="24%">
 </div>
 
 ## 🔗 Downloads

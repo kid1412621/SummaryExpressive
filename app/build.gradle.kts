@@ -20,8 +20,8 @@ android {
         applicationId = "me.nanova.summaryexpressive"
         minSdk = 33
         targetSdk = 37
-        versionCode = 50
-        versionName = "1.4.0"
+        versionCode = 51
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -157,7 +157,7 @@ dependencies {
     // Uses Google Play Services
     "gmsImplementation"(libs.play.services.mlkit.text.recognition)
     
-    // Koog Stable (Version 1.1.1)
+    // Koog
     implementation(libs.koog.agents)
     implementation(libs.http.client.ktor)
     implementation(libs.prompt.executor.openai.client.android)
