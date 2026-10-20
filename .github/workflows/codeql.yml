@@ -59,7 +59,7 @@ jobs:
       - name: Run manual build steps
         if: matrix.build-mode == 'manual'
         shell: bash
-        run: ./gradlew assembleGmsDebug
+        run: ./gradlew clean assembleGmsDebug --no-daemon --no-build-cache -Pkotlin.compiler.execution.strategy=in-process
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
