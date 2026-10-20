@@ -19,6 +19,7 @@ class UpdateProviderConfigUseCase @Inject constructor(
                 "https://",
                 ignoreCase = true
             ) -> trimmed
+
             else -> "https://$trimmed"
         }
     }
@@ -72,7 +73,11 @@ class UpdateProviderConfigUseCase @Inject constructor(
         )
     }
 
-    suspend fun setProviderModels(provider: String, models: List<String>, selectedModel: String? = null) {
+    suspend fun setProviderModels(
+        provider: String,
+        models: List<String>,
+        selectedModel: String? = null,
+    ) {
         val currentConfig = aiProviderConfigRepository.getConfig(provider) ?: ProviderConfig()
         val targetModel =
             selectedModel ?: currentConfig.activeModel.takeIf { it in models }

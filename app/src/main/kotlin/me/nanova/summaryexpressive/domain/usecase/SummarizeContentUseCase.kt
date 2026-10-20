@@ -112,6 +112,7 @@ class SummarizeContentUseCaseImpl @Inject constructor(
                     SummarySource.Article(processedText)
                 }
             }
+
             processedText.isNotBlank() -> SummarySource.Text(processedText)
             else -> SummarySource.None
         }
@@ -146,19 +147,23 @@ class SummarizeContentUseCaseImpl @Inject constructor(
                 type = SummaryType.ARTICLE
                 sourceLink = source.url
             }
+
             is SummarySource.Document -> {
                 type = SummaryType.DOCUMENT
                 sourceLink = source.uri
             }
+
             is SummarySource.Text -> {
                 type = SummaryType.TEXT
                 sourceText = source.content
             }
+
             is SummarySource.Video -> {
                 type = SummaryType.VIDEO
                 sourceLink = source.url
                 subtype = VideoSubtype.fromUrl(source.url)
             }
+
             is SummarySource.None -> return
         }
 

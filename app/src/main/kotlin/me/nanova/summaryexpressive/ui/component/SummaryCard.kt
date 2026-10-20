@@ -135,7 +135,8 @@ fun SummaryCard(
 
     val hasTitle = summary.title.isNotBlank()
     val knownAuthor = summary.author.takeIf { isKnownAuthor(it) }
-    val hasMeta = knownAuthor != null || summary.isYoutubeLink || summary.isBiliBiliLink || summary.provider != null
+    val hasMeta =
+        knownAuthor != null || summary.isYoutubeLink || summary.isBiliBiliLink || summary.provider != null
     val showOverview = remember(summary.overview, summary.summary) {
         shouldShowOverview(summary.overview, summary.summary)
     }
@@ -643,7 +644,9 @@ private fun SummaryActionButtons(
                     },
                     shape = CircleShape,
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f),
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(
+                            alpha = 0.7f
+                        ),
                         labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     modifier = Modifier.height(30.dp)

@@ -45,7 +45,8 @@ class LLMHandler(
         tool(fileExtractorTool)
     }
 
-    private val agentCache = ConcurrentHashMap<AgentCacheKey, AIAgent<SummarySource, SummaryOutput>>()
+    private val agentCache =
+        ConcurrentHashMap<AgentCacheKey, AIAgent<SummarySource, SummaryOutput>>()
 
     fun getSummarizationAgent(
         provider: AIProvider,
@@ -83,7 +84,8 @@ class LLMHandler(
             if (agentCache.size > MAX_AGENT_CACHE_SIZE) {
                 agentCache.clear()
             }
-            val executor = executorFactory.getOrCreateExecutor(provider, apiKey, baseUrl, appLanguage)
+            val executor =
+                executorFactory.getOrCreateExecutor(provider, apiKey, baseUrl, appLanguage)
             val agentConfig = AgentConfigFactory.createAgentConfig(provider, model, promptString)
 
             AIAgent(

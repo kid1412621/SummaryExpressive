@@ -99,15 +99,15 @@ fun createSummarizationStrategy(
             edge(
                 nodeStart forwardTo nodeExtractYoutube
                         onCondition {
-                            it is SummarySource.Video && YouTubeTranscriptTool.isYouTubeLink(it.url)
-                        }
+                    it is SummarySource.Video && YouTubeTranscriptTool.isYouTubeLink(it.url)
+                }
                         transformed { it as SummarySource.Video }
             )
             edge(
                 nodeStart forwardTo nodeExtractBiliBili
                         onCondition {
-                            it is SummarySource.Video && BiliBiliSubtitleTool.isBiliBiliLink(it.url)
-                        }
+                    it is SummarySource.Video && BiliBiliSubtitleTool.isBiliBiliLink(it.url)
+                }
                         transformed { it as SummarySource.Video }
             )
             edge(
@@ -157,7 +157,12 @@ fun createSummarizationStrategy(
                     )
                 }
                 ?: payload.sourceLink?.let { extractTitleFromUrl(it) }?.takeIf { isValidTitle(it) }
-                ?: payload.content.title.takeIf { it.isNotBlank() && !it.equals("Text Input", ignoreCase = true) }
+                ?: payload.content.title.takeIf {
+                    it.isNotBlank() && !it.equals(
+                        "Text Input",
+                        ignoreCase = true
+                    )
+                }
                 ?: ""
 
             val rawAuthor = structuredResult?.author?.takeIf { !isUnknownAuthor(it) }

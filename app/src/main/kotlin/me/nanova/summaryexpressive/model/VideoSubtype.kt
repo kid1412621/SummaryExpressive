@@ -28,11 +28,9 @@ private val BILIBILI_REGEX = Regex(
 )
 
 fun isYouTubeLink(input: String?): Boolean {
-    if (input.isNullOrBlank()) return false
-    return YOUTUBE_REGEX.containsMatchIn(input)
+    return !input.isNullOrBlank() && YOUTUBE_REGEX.containsMatchIn(input)
 }
 
 fun isBiliBiliLink(input: String?): Boolean {
-    if (input.isNullOrBlank()) return false
-    return BILIBILI_REGEX.containsMatchIn(input)
+    return !input.isNullOrBlank() && BILIBILI_REGEX.containsMatchIn(input)
 }

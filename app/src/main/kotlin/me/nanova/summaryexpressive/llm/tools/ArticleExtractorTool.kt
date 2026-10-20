@@ -101,8 +101,7 @@ class ArticleExtractorTool(private val client: HttpClient) : Tool<Article, Extra
     }
 
     private fun shouldFallbackToReader(e: Throwable, url: String): Boolean {
-        if (!isPublicWebUrl(url)) return false
-        return when (e) {
+        return isPublicWebUrl(url) && when (e) {
             is SummaryException.AccessDeniedException -> true
             is SummaryException.NoContentException -> true
             is SummaryException.PaywallException -> true
@@ -344,7 +343,16 @@ internal fun isUnknownAuthor(author: String?): Boolean {
     val trimmed = author.trim()
     if (trimmed.length > 60 || trimmed.contains('\n') || trimmed.contains('\r')) return true
     val lower = trimmed.lowercase(Locale.ROOT)
-    return lower in setOf("unknown", "unknown author", "n/a", "none", "null", "article", "author", "creator")
+    return lower in setOf(
+        "unknown",
+        "unknown author",
+        "n/a",
+        "none",
+        "null",
+        "article",
+        "author",
+        "creator"
+    )
 }
 
 internal fun isAntiBotPage(html: String): Boolean {

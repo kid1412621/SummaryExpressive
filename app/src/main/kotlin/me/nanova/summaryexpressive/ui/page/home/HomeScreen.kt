@@ -430,7 +430,8 @@ private fun HomeContent(
 
                     if (settings.showLength) {
                         LengthSelector(
-                            selectedIndex = SummaryLength.userSelectable.indexOf(settings.summaryLength).coerceAtLeast(0),
+                            selectedIndex = SummaryLength.userSelectable.indexOf(settings.summaryLength)
+                                .coerceAtLeast(0),
                             onSelectedIndexChange = { actions.onLengthSelect(SummaryLength.userSelectable[it]) },
                             options = lengthOptions,
                             enabled = !summarizationState.isLoading,

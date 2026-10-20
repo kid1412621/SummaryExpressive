@@ -1,12 +1,11 @@
 package me.nanova.summaryexpressive.exception
 
-import androidx.annotation.StringRes
-import me.nanova.summaryexpressive.R
-
 import ai.koog.agents.core.agent.exception.AIAgentMaxNumberOfIterationsReachedException
 import ai.koog.prompt.executor.clients.LLMClientException
+import androidx.annotation.StringRes
 import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.network.sockets.SocketTimeoutException
+import me.nanova.summaryexpressive.R
 import java.net.UnknownHostException
 
 sealed class SummaryException(message: String) : Exception(message) {
@@ -100,6 +99,7 @@ sealed class SummaryException(message: String) : Exception(message) {
     ) : SummaryException(message) {
         override fun getUserMessageResId(apiKey: String?) =
             if (cleanMessage.isNullOrBlank()) R.string.unknown_error else null
+
         override fun getUserFriendlyMessage(): String? = cleanMessage
     }
 
@@ -137,8 +137,15 @@ sealed class SummaryException(message: String) : Exception(message) {
                 ) -> NoContentException()
 
                 // LLM error messages
-                message.contains("API key", ignoreCase = true) -> IncorrectKeyException(detail = clean)
-                message.contains("rate limit", ignoreCase = true) -> RateLimitException(detail = clean)
+                message.contains(
+                    "API key",
+                    ignoreCase = true
+                ) -> IncorrectKeyException(detail = clean)
+
+                message.contains(
+                    "rate limit",
+                    ignoreCase = true
+                ) -> RateLimitException(detail = clean)
 
                 else -> UnknownException(message = message, cleanMessage = parsed.cleanMessage)
             }
@@ -173,7 +180,11 @@ fun Throwable.toSummaryException(): SummaryException {
     val rawLower = msg.lowercase()
 
     // Handle Koog LLM client exceptions, HTTP errors, or parsed status codes
-    if (this is LLMClientException || msg.contains("Error from client", ignoreCase = true) || statusCode != null) {
+    if (this is LLMClientException || msg.contains(
+            "Error from client",
+            ignoreCase = true
+        ) || statusCode != null
+    ) {
         return when {
             statusCode == 401 ||
                     errorCode == "invalid_api_key" ||
@@ -189,7 +200,10 @@ fun Throwable.toSummaryException(): SummaryException {
                     errorCode == "access_denied" ||
                     rawLower.contains("access denied") ||
                     rawLower.contains("forbidden") -> {
-                SummaryException.AccessDeniedException(detail = cleanMsg, statusCode = statusCode ?: 403)
+                SummaryException.AccessDeniedException(
+                    detail = cleanMsg,
+                    statusCode = statusCode ?: 403
+                )
             }
 
             statusCode == 404 ||

@@ -80,6 +80,7 @@ fun groupShape(
             bottomStart = innerRadius,
             bottomEnd = innerRadius
         )
+
         GroupPosition.MIDDLE -> RoundedCornerShape(innerRadius)
         GroupPosition.BOTTOM -> RoundedCornerShape(
             topStart = innerRadius,
@@ -293,7 +294,10 @@ private fun OverlappingRow(
         }
         val placeables = measurables.map { it.measure(constraints) }
         val overlapPx = overlapOffset.roundToPx()
-        val totalWidth = placeables.first().width + (placeables.size - 1) * (placeables.first().width - overlapPx).coerceAtLeast(0)
+        val totalWidth =
+            placeables.first().width + (placeables.size - 1) * (placeables.first().width - overlapPx).coerceAtLeast(
+                0
+            )
         val maxHeight = placeables.maxOfOrNull { it.height } ?: 0
 
         layout(totalWidth, maxHeight) {
@@ -439,8 +443,11 @@ private fun HistoryItemMetadataRow(
     @Composable
     fun Length() {
         val lengths = remember(summary.allLengthResults, summary.length) {
-            val fromAll = summary.allLengthResults.keys.filter { it != SummaryLength.NONE }.sortedBy { it.ordinal }
-            if (fromAll.isNotEmpty()) fromAll else if (summary.length != SummaryLength.NONE) listOf(summary.length) else emptyList()
+            val fromAll = summary.allLengthResults.keys.filter { it != SummaryLength.NONE }
+                .sortedBy { it.ordinal }
+            if (fromAll.isNotEmpty()) fromAll else if (summary.length != SummaryLength.NONE) listOf(
+                summary.length
+            ) else emptyList()
         }
         if (lengths.isEmpty()) return
 

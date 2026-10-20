@@ -38,7 +38,8 @@ fun getDateSectionTitle(timestamp: Long): String {
     val itemTime = Calendar.getInstance().apply { timeInMillis = timestamp }
 
     val isSameYear = now.get(Calendar.YEAR) == itemTime.get(Calendar.YEAR)
-    val isSameDay = isSameYear && now.get(Calendar.DAY_OF_YEAR) == itemTime.get(Calendar.DAY_OF_YEAR)
+    val isSameDay =
+        isSameYear && now.get(Calendar.DAY_OF_YEAR) == itemTime.get(Calendar.DAY_OF_YEAR)
 
     if (isSameDay) return "Today"
 

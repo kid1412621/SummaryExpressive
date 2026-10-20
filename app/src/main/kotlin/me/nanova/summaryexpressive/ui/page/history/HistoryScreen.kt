@@ -198,10 +198,12 @@ fun HistoryScreen(
                     if (summary != null) {
                         val currentSection = getDateSectionTitle(summary.createdOn)
                         val prevSection = if (index > 0) {
-                            historySummaries.peek(index - 1)?.let { getDateSectionTitle(it.createdOn) }
+                            historySummaries.peek(index - 1)
+                                ?.let { getDateSectionTitle(it.createdOn) }
                         } else null
                         val nextSection = if (index < historySummaries.itemCount - 1) {
-                            historySummaries.peek(index + 1)?.let { getDateSectionTitle(it.createdOn) }
+                            historySummaries.peek(index + 1)
+                                ?.let { getDateSectionTitle(it.createdOn) }
                         } else null
 
                         val isFirstInSection = prevSection != currentSection

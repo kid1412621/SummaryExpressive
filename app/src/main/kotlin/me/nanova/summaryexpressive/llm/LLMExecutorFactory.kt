@@ -200,7 +200,8 @@ class LLMExecutorFactory(
         appLanguage: Locale,
     ): PromptExecutor {
         val isSimplifiedChinese = appLanguage.language == "zh" && appLanguage.script == "Hans"
-        val defaultBaseUrl = if (isSimplifiedChinese) "https://api.moonshot.cn/v1" else "https://api.moonshot.ai/v1"
+        val defaultBaseUrl =
+            if (isSimplifiedChinese) "https://api.moonshot.cn/v1" else "https://api.moonshot.ai/v1"
         val finalBaseUrl = (baseUrl?.takeIf { it.isNotBlank() } ?: defaultBaseUrl).trimEnd('/')
 
         val client = OpenAILLMClient(
@@ -220,7 +221,8 @@ class LLMExecutorFactory(
         appLanguage: Locale,
     ): PromptExecutor {
         val isSimplifiedChinese = appLanguage.language == "zh" && appLanguage.script == "Hans"
-        val defaultBaseUrl = if (isSimplifiedChinese) "https://api.minimaxi.com/v1" else "https://api.minimax.io/v1"
+        val defaultBaseUrl =
+            if (isSimplifiedChinese) "https://api.minimaxi.com/v1" else "https://api.minimax.io/v1"
         val finalBaseUrl = (baseUrl?.takeIf { it.isNotBlank() } ?: defaultBaseUrl).trimEnd('/')
 
         val client = OpenAILLMClient(
@@ -240,7 +242,8 @@ class LLMExecutorFactory(
         appLanguage: Locale,
     ): PromptExecutor {
         val isSimplifiedChinese = appLanguage.language == "zh" && appLanguage.script == "Hans"
-        val defaultBaseUrl = if (isSimplifiedChinese) "https://open.bigmodel.cn/api/paas/v4" else "https://api.z.ai/api/paas/v4"
+        val defaultBaseUrl =
+            if (isSimplifiedChinese) "https://open.bigmodel.cn/api/paas/v4" else "https://api.z.ai/api/paas/v4"
         val finalBaseUrl = (baseUrl?.takeIf { it.isNotBlank() } ?: defaultBaseUrl).trimEnd('/')
 
         val client = OpenAILLMClient(

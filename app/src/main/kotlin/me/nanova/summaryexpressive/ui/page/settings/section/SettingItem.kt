@@ -1,7 +1,6 @@
 package me.nanova.summaryexpressive.ui.page.settings.section
 
 import androidx.compose.animation.Animatable
-import androidx.compose.animation.core.Animatable as CoreAnimatable
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -37,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import androidx.compose.animation.core.Animatable as CoreAnimatable
 
 /**
  * Android 16 Settings Item with Individual Rounded Shape and Tonal Background
@@ -84,6 +84,7 @@ fun SettingItem(
             onClick = onClick,
             onLongClick = onLongClick
         )
+
         onClick != null -> Modifier.clickable(onClick = onClick)
         else -> Modifier
     }
@@ -116,7 +117,9 @@ fun SettingItem(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(
+                        alpha = 0.38f
+                    ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -125,7 +128,9 @@ fun SettingItem(
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+                        color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = 0.38f
+                        ),
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis
                     )

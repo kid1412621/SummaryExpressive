@@ -376,7 +376,8 @@ private fun SettingsContent(
 
                 // Footer (App Version & Info)
                 item(key = "footer") {
-                    val appInfo = "${BuildConfig.VERSION_NAME} - ${BuildConfig.VERSION_CODE} (${BuildConfig.FLAVOR})"
+                    val appInfo =
+                        "${BuildConfig.VERSION_NAME} - ${BuildConfig.VERSION_CODE} (${BuildConfig.FLAVOR})"
                     val copiedText = stringResource(id = R.string.copied)
 
                     SettingsFooter(

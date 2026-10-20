@@ -51,13 +51,14 @@ object LlmErrorParser {
                         parsedErrorCode = errorElement["code"]?.jsonPrimitive?.contentOrNull
                             ?: errorElement["type"]?.jsonPrimitive?.contentOrNull
                     } else if (errorElement != null) {
-                        parsedMessage = runCatching { errorElement.jsonPrimitive.contentOrNull }.getOrNull()
+                        parsedMessage =
+                            runCatching { errorElement.jsonPrimitive.contentOrNull }.getOrNull()
                     }
 
                     if (parsedMessage.isNullOrBlank()) {
                         parsedMessage = element["message"]?.jsonPrimitive?.contentOrNull
                             ?: element["detail"]?.jsonPrimitive?.contentOrNull
-                            ?: element["description"]?.jsonPrimitive?.contentOrNull
+                                    ?: element["description"]?.jsonPrimitive?.contentOrNull
                     }
 
                     if (parsedErrorCode.isNullOrBlank()) {
@@ -70,7 +71,7 @@ object LlmErrorParser {
 
         parsedStatusCode = parsedErrorCode?.toIntOrNull()
             ?: statusCodeRegex.find(rawMessage)?.groupValues?.getOrNull(1)?.toIntOrNull()
-            ?: standaloneCodeRegex.find(rawMessage)?.value?.toIntOrNull()
+                    ?: standaloneCodeRegex.find(rawMessage)?.value?.toIntOrNull()
 
         val cleanMsg = cleanMessageText(parsedMessage ?: rawMessage)
 

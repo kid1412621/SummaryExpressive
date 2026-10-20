@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
                     }.getOrDefault(emptyMap())
                 } ?: emptyMap()
 
-                val shouldAutoTrigger = if (initialSummary != null) false else autoTrigger
+                val shouldAutoTrigger = initialSummary == null && autoTrigger
 
                 if (type.startsWith("application/") || type.startsWith("image/")) {
                     val contentUri: Uri? =

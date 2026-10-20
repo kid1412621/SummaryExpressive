@@ -35,6 +35,7 @@ fun groupShape(
             bottomStart = innerRadius,
             bottomEnd = innerRadius
         )
+
         GroupPosition.MIDDLE -> RoundedCornerShape(innerRadius)
         GroupPosition.BOTTOM -> RoundedCornerShape(
             topStart = innerRadius,

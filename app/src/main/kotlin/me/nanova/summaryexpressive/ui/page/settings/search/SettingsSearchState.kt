@@ -168,7 +168,11 @@ fun rememberSettingsSearchState(
                 iconBadge = {
                     val (bg, fg) = SettingBadges.languageColors()
                     SettingIconBadge(bg, fg) {
-                        Icon(Icons.Rounded.Language, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Rounded.Language,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 },
                 onClick = {
@@ -186,7 +190,11 @@ fun rememberSettingsSearchState(
                 iconBadge = {
                     val (bg, fg) = SettingBadges.themeColors()
                     SettingIconBadge(bg, fg) {
-                        Icon(Icons.Rounded.DarkMode, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Rounded.DarkMode,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 },
                 onClick = onShowThemeDialog
@@ -199,7 +207,11 @@ fun rememberSettingsSearchState(
                 iconBadge = {
                     val (bg, fg) = SettingBadges.dynamicColorColors()
                     SettingIconBadge(bg, fg) {
-                        Icon(Icons.Rounded.Palette, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Rounded.Palette,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 },
                 trailingContent = {
@@ -218,7 +230,11 @@ fun rememberSettingsSearchState(
                 iconBadge = {
                     val (bg, fg) = SettingBadges.aiColors()
                     SettingIconBadge(bg, fg) {
-                        Icon(Icons.Default.Cloud, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Default.Cloud,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 },
                 onClick = onShowAIProviderDialog
@@ -231,7 +247,11 @@ fun rememberSettingsSearchState(
                 iconBadge = {
                     val (bg, fg) = SettingBadges.modelColors()
                     SettingIconBadge(bg, fg) {
-                        Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 },
                 onClick = onShowModelDialog
@@ -244,7 +264,11 @@ fun rememberSettingsSearchState(
                 iconBadge = {
                     val (bg, fg) = SettingBadges.advancedColors()
                     SettingIconBadge(bg, fg) {
-                        Icon(Icons.AutoMirrored.Rounded.ShortText, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ShortText,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 },
                 onClick = { onNav(Nav.AdvancedSummarySetup) }
@@ -257,7 +281,11 @@ fun rememberSettingsSearchState(
                 iconBadge = {
                     val (bg, fg) = SettingBadges.bilibiliColors()
                     SettingIconBadge(bg, fg) {
-                        Icon(painterResource(id = R.drawable.bilibili), contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            painterResource(id = R.drawable.bilibili),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 },
                 onClick = {
@@ -279,7 +307,11 @@ fun rememberSettingsSearchState(
                 iconBadge = {
                     val (bg, fg) = SettingBadges.linkColors()
                     SettingIconBadge(bg, fg) {
-                        Icon(Icons.Rounded.Link, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Rounded.Link,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 },
                 trailingContent = {
@@ -298,7 +330,11 @@ fun rememberSettingsSearchState(
                 iconBadge = {
                     val (bg, fg) = SettingBadges.tutorialColors()
                     SettingIconBadge(bg, fg) {
-                        Icon(Icons.AutoMirrored.Rounded.HelpCenter, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.AutoMirrored.Rounded.HelpCenter,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 },
                 onClick = { onNav(Nav.Onboarding) }
@@ -311,7 +347,11 @@ fun rememberSettingsSearchState(
                 iconBadge = {
                     val (bg, fg) = SettingBadges.playStoreColors()
                     SettingIconBadge(bg, fg) {
-                        Icon(Icons.Rounded.StarRate, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Rounded.StarRate,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 },
                 onClick = {
@@ -327,7 +367,11 @@ fun rememberSettingsSearchState(
                 iconBadge = {
                     val (bg, fg) = SettingBadges.discordColors()
                     SettingIconBadge(bg, fg) {
-                        Icon(ImageVector.vectorResource(id = R.drawable.discord), contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            ImageVector.vectorResource(id = R.drawable.discord),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 },
                 onClick = {
@@ -343,7 +387,11 @@ fun rememberSettingsSearchState(
                 iconBadge = {
                     val (bg, fg) = SettingBadges.githubColors()
                     SettingIconBadge(bg, fg) {
-                        Icon(ImageVector.vectorResource(id = R.drawable.github), contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            ImageVector.vectorResource(id = R.drawable.github),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 },
                 onClick = {
