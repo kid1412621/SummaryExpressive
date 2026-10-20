@@ -9,22 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Kimi, MiniMax, and Zhipu AI provider support
-- Quick switcher: long-press to switch models
-- Custom prompts, models, and provider reordering
+- Kimi, MiniMax, and Zhipu AI support
+- Long-press quick model switcher
+- Custom prompts, models & provider ordering
 - Structured summaries (overview, key points, tags)
-- Flexible summary lengths and unconstrained mode
+- Flexible lengths & unconstrained mode
 
 ### Changed
 
-- Brand-new Material 3 Expressive UI and animations
-- Improved article extraction and instant handoff
-- History search with filters and date grouping
-- [BREAKING CHANGE] Previous LLM config may need to re-config
+- Brand-new Material 3 Expressive UI
+- Improved article extraction & instant handoff
+- History search, filters & date grouping
+- [BREAKING] LLM configs may need reconfiguration
 
 ### Fixed
 
-- Gemini request errors and general stability fixes
+- Gemini request errors & stability fixes
 
 ## [1.4.0] - 2026-07-29
 

@@ -15,21 +15,21 @@ jobs:
       contents: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: true
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: 'zulu'
           java-version: 25
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Cache Gradle packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.gradle/caches
@@ -86,7 +86,7 @@ jobs:
           cp "app/build/outputs/bundle/gmsRelease/app-gms-release.aab" "${{ env.APK_DIR }}/SummaryExpressive-gms-${{ env.VERSION_NAME }}(${{ env.VERSION_CODE }}).aab"
 
       - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           name: "Release ${{ env.VERSION_NAME }} (${{ env.VERSION_CODE }})"
@@ -114,11 +114,28 @@ jobs:
             sed -i -e 's/^### //g' -e 's/^- /• /g' "${WHATS_NEW_FILE}"
           fi
 
+          # Enforce Google Play 500-character limit
+          CHAR_COUNT=$(wc -m < "${WHATS_NEW_FILE}")
+          if (( CHAR_COUNT > 500 )); then
+            echo "::warning::Release notes length (${CHAR_COUNT}) exceeds 500 characters; truncating to 500."
+            python3 -c '
+          import sys
+          p = sys.argv[1]
+          with open(p, "r", encoding="utf-8") as f:
+              text = f.read()
+          if len(text) > 500:
+              lines = text[:497].rsplit("\n", 1)[0]
+              text = (lines if lines else text[:497]) + "..."
+              with open(p, "w", encoding="utf-8") as f:
+                  f.write(text)
+          ' "${WHATS_NEW_FILE}"
+          fi
+
       - name: Release to Google Play
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           packageName: me.nanova.summaryexpressive
           releaseFiles: ${{ env.APK_DIR }}/*.aab
-          track: internal
+          tracks: internal
           whatsNewDirectory: whatsnew
