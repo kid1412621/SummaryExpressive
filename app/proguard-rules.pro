@@ -25,9 +25,9 @@
 -keep class ai.koog.agents.core.tools.Tool { *; }
 -keep class ai.koog.prompt.executor.model.PromptExecutor { *; }
 -keep class ai.koog.prompt.llm.LLMProvider { *; }
--keep class * implements ai.koog.agents.core.tools.Tool { *; }
--keep class * implements ai.koog.prompt.executor.model.PromptExecutor { *; }
--keep class * implements ai.koog.prompt.llm.LLMProvider { *; }
+-keepclassmembers class * implements ai.koog.agents.core.tools.Tool { *; }
+-keep,allowshrinking,allowoptimization class * implements ai.koog.prompt.executor.model.PromptExecutor
+-keep,allowshrinking,allowoptimization class * implements ai.koog.prompt.llm.LLMProvider
 
 # Preserve ServiceLoader implementations for KoogHttpClient
 -keep class * implements ai.koog.http.client.KoogHttpClient$Factory
@@ -40,14 +40,11 @@
 # Narrowed keep for kotlin-reflect to reduce impact on binary size.
 -keep class kotlin.reflect.KClass { *; }
 -keep class kotlin.reflect.KType { *; }
--keep class kotlin.reflect.KProperty* { *; }
+-keep,allowshrinking,allowoptimization class kotlin.reflect.KProperty* { *; }
 -keep class kotlin.reflect.KCallable { *; }
 -dontwarn kotlin.reflect.**
 
 # 3. Ktor & Networking
-# Recommended rules for Ktor on Android to prevent deadlocks and ensure coroutine safety.
--keepclassmembers class io.ktor.** { volatile <fields>; }
--keep class io.ktor.client.engine.android.** { *; }
 -dontwarn io.ktor.**
 
 # Ktor and its dependencies (Netty, Reactor, etc.) have optional references
@@ -72,11 +69,5 @@
 -dontwarn com.google.re2j.**
 -dontwarn org.jsoup.helper.Re2jRegex**
 
-# 5. Project specific data models
--keep class me.nanova.summaryexpressive.model.** { *; }
-
-# 6. LLM Tools (used by Koog via reflection)
--keep class me.nanova.summaryexpressive.llm.tools.*Tool { *; }
-
-# 7. Room Type Converters
--keep class me.nanova.summaryexpressive.data.converters.** { *; }
+# 5. Structured LLM response model (inspected reflectively for schema generation)
+-keep class me.nanova.summaryexpressive.model.LlmSummaryResponse { *; }
