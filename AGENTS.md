@@ -265,3 +265,4 @@ The app defines two product flavors under the `distribution` dimension (`app/bui
 - **ProGuard / R8**: Release builds enable minification and resource shrinking with rules in `app/proguard-rules.pro`.
 - **Packaging Exclusions**: Certain license and netty property files are excluded from the APK in `packaging.resources`.
 - **Lint**: `MissingTranslation` rule is disabled in `app/build.gradle.kts` for localization flexibility.
+- **Release**: `CHANGELOG.md` will cover the whatsnew for each release, it MUST be within 500 characters for each version.
