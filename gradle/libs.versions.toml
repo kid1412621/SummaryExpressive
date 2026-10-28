@@ -24,7 +24,7 @@ ktor = "3.6.0"
 lifecycle = "2.11.0"
 # Keep alpha override for material expressive features, as intended
 # https://developer.android.com/jetpack/androidx/releases/compose-material3#compose_material3_version_15_2
-material3-alpha = "1.5.0-beta01"
+material3-alpha = "1.5.0-beta02"
 mlkit = "16.0.1"
 nav3-core = "1.2.0"
 nav3-lifecycle-viewmodel = "2.11.0"
